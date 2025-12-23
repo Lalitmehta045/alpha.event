@@ -1,0 +1,32 @@
+[
+    {
+        "id" :1,
+        "page" : "Home",
+        "path" : "/"
+    },
+    {
+        "id" :2,
+        "page" : "About",
+        "path" : "/about"
+    },
+    {
+        "id" :3,
+        "page" : "Category",
+        "path" : "/category"
+    },
+    {
+        "id" :4,
+        "page" : "Blogs",
+        "path" : "/blogs"
+    },
+    {
+        "id" :5,
+        "page" : "Contact",
+        "path" : "/contact"
+    },
+    {
+        "id" :6,
+        "page" : "404",
+        "path" : "*"
+    }
+]
