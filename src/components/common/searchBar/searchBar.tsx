@@ -1,0 +1,120 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { FaSearch } from "react-icons/fa";
+import { TypingAnimation } from "@/components/ui/typing-animation";
+import { getAllProduct } from "@/services/operations/product";
+import { useDispatch } from "react-redux";
+import { ProductFormValues } from "@/@types/product";
+import { valideURLConvert } from "@/utils/valideURLConvert";
+import Link from "next/link";
+
+const SearchBar = () => {
+  const dispatch = useDispatch();
+  const [inputValue, setInputValue] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState<ProductFormValues[]>(
+    []
+  );
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Backend search (debounced)
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (inputValue.trim() === "") {
+        setFilteredProducts([]);
+        return;
+      }
+
+      try {
+        const results = await getAllProduct(dispatch, inputValue);
+        setFilteredProducts(results || []);
+      } catch (error) {
+        console.error("Search error:", error);
+      }
+    };
+
+    const debounce = setTimeout(fetchResults, 300); // 300ms debounce
+
+    return () => clearTimeout(debounce);
+  }, [inputValue]);
+
+  return (
+    <div className="relative w-full max-w-xl sm:max-w-2xl md:max-w-3xl">
+      {/* Placeholder text animation */}
+      {!inputValue && !isFocused && (
+        <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none font-medium text-gray-800 text-sm sm:text-base flex items-center gap-1">
+          <span>Search for</span>
+          <TypingAnimation
+            words={[
+              "props",
+              "premium décor",
+              "event lights",
+              "stage backdrops",
+              "creative setups",
+            ]}
+            loop
+          />
+        </div>
+      )}
+
+      {/* Search Field */}
+      <div className="flex items-center bg-white border border-gray-400/40 rounded-full px-4 py-2 sm:py-3 focus-within:border-indigo-400 transition-all duration-300">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="flex-1 bg-transparent outline-none font-medium text-gray-800 text-base px-2 placeholder-transparent"
+        />
+        <button className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#3a0103] text-white hover:bg-[#9c6567] transition-all duration-300">
+          <FaSearch
+            className="text-base sm:text-lg cursor-pointer"
+            onClick={async () => {
+              const searchedProducts = await getAllProduct(
+                dispatch,
+                inputValue
+              );
+              setFilteredProducts(searchedProducts); // update UI
+            }}
+          />
+        </button>
+      </div>
+
+      {/* Result Dropdown */}
+      {filteredProducts.length > 0 && (
+        <div className="absolute z-50 w-full max-w-11/12 left-4 md:left-6 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-y-auto">
+          {filteredProducts.map((product) => (
+            <Link
+              href={`/product/${valideURLConvert(product.name)}-${product._id}`}
+              key={product._id}
+            >
+              <div
+                // key={product._id}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer transition-all"
+              >
+                <img
+                  src={product.image[0]}
+                  alt={product.name}
+                  className="w-10 h-10 object-cover rounded-md"
+                />
+                <span className="text-gray-800 text-sm sm:text-base">
+                  {product.name}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* No results */}
+      {inputValue && filteredProducts.length === 0 && (
+        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-300 rounded-xl shadow-lg px-4 py-2 text-gray-500 text-sm text-center">
+          No products found.
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SearchBar;

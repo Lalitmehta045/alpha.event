@@ -1,0 +1,22 @@
+[
+    {
+        "id" :1,
+        "page" : "Privacy Policy",
+        "path" : "/privacy-policy"
+    },
+    {
+        "id" :2,
+        "page" : "Terms & Conditions",
+        "path" : "/terms-and-conditions"
+    },
+    {
+        "id" :3,
+        "page" : "Rental Policy",
+        "path" : "/rental-policy"
+    },
+    {
+        "id" :4,
+        "page" : "Refund Policy",
+        "path" : "/refund-policy"
+    }
+]
