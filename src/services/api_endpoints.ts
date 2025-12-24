@@ -1,4 +1,10 @@
-const BASE_URL: string = process.env.NEXT_PUBLIC_BASE_ALPHA || "";
+// Remove trailing slash and handle empty case
+const getBaseUrl = (): string => {
+  const url = process.env.NEXT_PUBLIC_BASE_ALPHA || "";
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+};
+
+const BASE_URL: string = getBaseUrl();
 
 export const superAdminEndpoints = {
   // =========================================================

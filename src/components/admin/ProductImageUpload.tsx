@@ -6,7 +6,13 @@ import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import axios from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_ALPHA;
+// Remove trailing slash and handle empty case
+const getBaseUrl = (): string => {
+  const url = process.env.NEXT_PUBLIC_BASE_ALPHA || "";
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+};
+
+const BASE_URL = getBaseUrl();
 
 interface ProductImageUploadProps {
   imageFile: File | null;
