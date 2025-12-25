@@ -106,64 +106,120 @@ export default function RecentPage() {
     console.log("Applying crop for slot", index);
     console.log("Cropped area pixels:", slot.croppedAreaPixels);
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.src = URL.createObjectURL(slot.imageFile);
+    try {
+      // Show loading state
+      const newSlots = [...slots];
+      newSlots[index].isCropping = true;
+      setSlots(newSlots);
+      toast.loading("Processing cropped image...");
 
-    img.onload = () => {
-      console.log("Image loaded, dimensions:", img.width, img.height);
-      canvas.width = slot.croppedAreaPixels.width;
-      canvas.height = slot.croppedAreaPixels.height;
-      ctx?.drawImage(
-        img,
-        slot.croppedAreaPixels.x,
-        slot.croppedAreaPixels.y,
-        slot.croppedAreaPixels.width,
-        slot.croppedAreaPixels.height,
-        0,
-        0,
-        slot.croppedAreaPixels.width,
-        slot.croppedAreaPixels.height
-      );
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+      
+      // Use createImageBitmap for better performance
+      const imageBitmap = await createImageBitmap(slot.imageFile);
+      img.src = URL.createObjectURL(slot.imageFile);
 
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          console.log("Blob created, size:", blob.size);
-          const croppedFile = new File([blob], slot.imageFile!.name, { type: blob.type });
-          // Upload to AWS S3
-          const formData = new FormData();
-          formData.append("my_file", croppedFile);
+      await new Promise((resolve, reject) => {
+        img.onload = async () => {
           try {
-            console.log("Uploading to:", "/api/admin/product/upload-image");
-            const response = await axios.post("/api/admin/product/upload-image", formData);
-            console.log("Upload response:", response.data);
-            if (response.data.success) {
-              console.log("Setting uploadedImageUrl to:", response.data.result.url);
-              const newSlots = [...slots];
-              newSlots[index].uploadedImageUrl = response.data.result.url;
-              newSlots[index].isCropping = false;
-              setSlots(newSlots);
-              setCropDialogOpen(false);
-              setCurrentCropIndex(null);
-              toast.success("Image cropped and uploaded successfully!");
-              console.log("Slot updated, uploadedImageUrl:", newSlots[index].uploadedImageUrl);
-            }
-          } catch (error) {
-            console.error("Upload error:", error);
-            toast.error("Failed to upload image");
-          }
-        } else {
-          console.error("Failed to create blob");
-          toast.error("Failed to process cropped image");
-        }
-      });
-    };
+            console.log("Image loaded, dimensions:", img.width, img.height);
+            canvas.width = slot.croppedAreaPixels.width;
+            canvas.height = slot.croppedAreaPixels.height;
+            
+            // Use imageBitmap for better performance
+            ctx?.drawImage(
+              imageBitmap,
+              slot.croppedAreaPixels.x,
+              slot.croppedAreaPixels.y,
+              slot.croppedAreaPixels.width,
+              slot.croppedAreaPixels.height,
+              0,
+              0,
+              slot.croppedAreaPixels.width,
+              slot.croppedAreaPixels.height
+            );
 
-    img.onerror = () => {
-      console.error("Failed to load image");
-      toast.error("Failed to load image for cropping");
-    };
+            // Use higher quality for blob creation
+            canvas.toBlob(async (blob) => {
+              if (blob) {
+                console.log("Blob created, size:", blob.size);
+                const croppedFile = new File([blob], slot.imageFile!.name, { type: blob.type });
+                
+                // Upload to AWS S3
+                const formData = new FormData();
+                formData.append("my_file", croppedFile);
+                
+                try {
+                  console.log("Uploading to:", "/api/admin/product/upload-image");
+                  const response = await axios.post("/api/admin/product/upload-image", formData, {
+                    timeout: 30000, // 30 second timeout
+                    onUploadProgress: (progressEvent) => {
+                      const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
+                      console.log("Upload progress:", progress + "%");
+                    }
+                  });
+                  
+                  console.log("Upload response:", response.data);
+                  if (response.data.success) {
+                    console.log("Setting uploadedImageUrl to:", response.data.result.url);
+                    const updatedSlots = [...slots];
+                    updatedSlots[index].uploadedImageUrl = response.data.result.url;
+                    updatedSlots[index].isCropping = false;
+                    setSlots(updatedSlots);
+                    setCropDialogOpen(false);
+                    setCurrentCropIndex(null);
+                    toast.dismiss();
+                    toast.success("Image cropped and uploaded successfully!");
+                    console.log("Slot updated, uploadedImageUrl:", updatedSlots[index].uploadedImageUrl);
+                  }
+                } catch (error) {
+                  console.error("Upload error:", error);
+                  toast.dismiss();
+                  toast.error("Failed to upload image");
+                  // Reset loading state on error
+                  const errorSlots = [...slots];
+                  errorSlots[index].isCropping = false;
+                  setSlots(errorSlots);
+                }
+              } else {
+                console.error("Failed to create blob");
+                toast.dismiss();
+                toast.error("Failed to process cropped image");
+                // Reset loading state on error
+                const errorSlots = [...slots];
+                errorSlots[index].isCropping = false;
+                setSlots(errorSlots);
+              }
+            }, 'image/jpeg', 0.9); // Specify quality and format
+          } catch (error) {
+            console.error("Canvas processing error:", error);
+            reject(error);
+          }
+        };
+
+        img.onerror = () => {
+          console.error("Failed to load image");
+          toast.dismiss();
+          toast.error("Failed to load image for cropping");
+          // Reset loading state on error
+          const errorSlots = [...slots];
+          errorSlots[index].isCropping = false;
+          setSlots(errorSlots);
+          reject(new Error("Image load failed"));
+        };
+      });
+
+    } catch (error) {
+      console.error("Crop processing error:", error);
+      toast.dismiss();
+      toast.error("Failed to process image");
+      // Reset loading state on error
+      const errorSlots = [...slots];
+      errorSlots[index].isCropping = false;
+      setSlots(errorSlots);
+    }
   };
 
   const handleUpload = async (index: number) => {

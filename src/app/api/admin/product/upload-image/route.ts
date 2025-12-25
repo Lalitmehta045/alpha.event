@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No file received." });
     }
 
-    // Convert the file data to a buffer
+    // Convert file data to a buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -27,24 +27,32 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split('.').pop();
     const fileName = `recent/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
 
-    // Upload to S3
+    // Upload to S3 with optimized settings
     const uploadParams = {
       Bucket: process.env.AWS_S3_BUCKET!,
       Key: fileName,
       Body: buffer,
       ContentType: file.type,
+      CacheControl: 'max-age=31536000', // 1 year cache
       // ACL removed - bucket should have public read policy
     };
 
     const command = new PutObjectCommand(uploadParams);
-    await s3Client.send(command);
+    
+    // Add timeout for S3 upload
+    const uploadPromise = s3Client.send(command);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Upload timeout')), 25000) // 25 second timeout
+    );
+    
+    await Promise.race([uploadPromise, timeoutPromise]);
 
-    // Generate presigned URL for viewing
+    // Generate presigned URL for viewing with shorter expiry for better performance
     const getObjectCommand = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET!,
       Key: fileName,
     });
-    const url = await getSignedUrl(s3Client, getObjectCommand, { expiresIn: 3600 }); // 1 hour expiry
+    const url = await getSignedUrl(s3Client, getObjectCommand, { expiresIn: 1800 }); // 30 minutes expiry
     console.log("Generated presigned URL:", url);
 
     return NextResponse.json({
@@ -56,6 +64,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Upload error:", error);
-    return NextResponse.json({ success: false, error: "Upload failed." });
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Upload failed." 
+    });
   }
 }
