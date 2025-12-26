@@ -23,5 +23,5 @@ const subCategorySchema = new Schema(
 // Compound index for uniqueness per category
 subCategorySchema.index({ name: 1, category: 1 }, { unique: true });
 
-export default mongoose.models.SubCategory ||
+export default (mongoose.models as any).SubCategory ||
   mongoose.model("SubCategory", subCategorySchema);

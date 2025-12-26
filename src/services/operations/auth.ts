@@ -3,7 +3,7 @@
 import { toast } from "react-hot-toast";
 import { endpoints } from "../api_endpoints";
 import { apiConnector } from "../apiconnector";
-import { setToken, setUser, setRefreshToken } from "@/redux/slices/authSlice";
+import { setToken, setUser } from "@/redux/slices/authSlice";
 import { logoutAction } from "@/actions/auth";
 
 const { SENDOTPEMAIL_API, SIGNUP_API, SIGNIN_API, RESETPASSWORD_API } =
@@ -117,7 +117,6 @@ export async function signIn(
 
     // ⬇️ DISPATCH FIRST (VERY IMPORTANT)
     dispatch(setToken(accessToken));
-    dispatch(setRefreshToken(refreshToken));
     dispatch(setUser(user));
 
     toast.dismiss(toastId);
@@ -151,8 +150,6 @@ export async function logout(router: any, dispatch: any) {
 
     // 3. Reset Redux
     dispatch(setUser(null));
-    dispatch(setToken(null));
-    dispatch(setRefreshToken(null));
 
     toast.dismiss();
     toast.success("Logged out successfully!");

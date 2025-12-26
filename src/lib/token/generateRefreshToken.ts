@@ -18,7 +18,7 @@ export async function generateRefreshToken(
   };
 
   // ✅ Create refresh token
-  const token = jwt.sign(payload, secret, { expiresIn: "30d" });
+  const token = jwt.sign(payload, secret, { expiresIn: "7d" });
 
   // ✅ Store refresh token in DB
   await UserModel.updateOne({ _id: userId }, { refresh_token: token });

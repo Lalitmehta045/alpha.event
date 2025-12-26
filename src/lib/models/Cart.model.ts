@@ -24,5 +24,5 @@ const CartSchema = new Schema<ICart>(
 
 CartSchema.index({ userId: 1, productId: 1 }, { unique: true });
 
-export default mongoose.models.Cart ||
+export default (mongoose.models as any).Cart ||
   mongoose.model<ICart>("Cart", CartSchema);

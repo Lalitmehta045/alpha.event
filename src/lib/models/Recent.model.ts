@@ -35,6 +35,6 @@ const RecentSchema = new Schema<IRecent>(
   }
 );
 
-const RecentModel = mongoose.models.Recent || mongoose.model<IRecent>("Recent", RecentSchema);
+const RecentModel = (mongoose.models as any).Recent || mongoose.model<IRecent>("Recent", RecentSchema);
 
 export default RecentModel;

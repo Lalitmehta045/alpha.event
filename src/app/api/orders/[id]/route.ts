@@ -23,12 +23,12 @@ export async function GET(req: NextRequest, { params }: ParamsPromise) {
       .populate("userId")
       .populate("delivery_address")
       .populate("products.productId")
-      .lean<{
+      .lean() as {
         _id: string;
         userId: { _id: string };
         delivery_address: any;
         products: any[];
-      }>();
+      } | null;
 
     if (!order)
       return NextResponse.json(

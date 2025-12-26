@@ -19,7 +19,7 @@ export async function generateAccessToken(
   };
 
   const token = jwt.sign(payload, secret, {
-    expiresIn: "30d",
+    expiresIn: "5h",
   });
 
   return token;
