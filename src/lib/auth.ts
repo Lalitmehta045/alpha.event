@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await User.findOne({
           email: credentials?.email,
-        }).lean<IUserProfile>();
+        }).lean() as IUserProfile | null;
         if (!user) return null;
 
         const ok = await bcrypt.compare(credentials!.password, user.password);
