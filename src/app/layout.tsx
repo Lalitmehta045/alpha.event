@@ -6,6 +6,7 @@ import ReduxProvider from "@/redux/provider";
 import { Toaster } from "react-hot-toast";
 import CartMobileBar from "@/components/common/cart/CartMobileBar";
 import NextAuthProvider from "@/components/NextAuthProvider";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Alpha Art & Events",
@@ -27,10 +28,12 @@ export default function RootLayout({
       <body className="font-satoshi">
         <NextAuthProvider>
           <ReduxProvider>
-            <ScrollToTop />
-            {children}
-            <CartMobileBar />
-            <Toaster />
+            <AuthProvider>
+              <ScrollToTop />
+              {children}
+              <CartMobileBar />
+              <Toaster />
+            </AuthProvider>
           </ReduxProvider>
         </NextAuthProvider>
       </body>

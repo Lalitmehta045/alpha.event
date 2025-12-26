@@ -27,17 +27,22 @@ export default function CartPage() {
   );
 
   const fetchCartItem = async () => {
+    if (!token) {
+      console.log("No token found, skipping cart fetch");
+      return;
+    }
+    
     try {
-      const mappedCartData = await getAllCartItems();
+      const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
     } catch (error) {
-      console.log(error);
+      console.log("Error fetching cart items:", error);
     }
   };
 
   useEffect(() => {
     fetchCartItem();
-  }, []);
+  }, [token]);
 
   const redirectToCheckoutPage = () => {
     if (!token) {

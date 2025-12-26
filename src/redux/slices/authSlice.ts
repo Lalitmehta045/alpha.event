@@ -19,6 +19,7 @@ interface AuthState {
   isAuthenticated: boolean;
   signupData: any[] | null;
   token: string | null;
+  refreshToken: string | null;
   loading: boolean;
 }
 
@@ -36,6 +37,10 @@ const initialState: AuthState = {
   token:
     typeof window !== "undefined" && localStorage.getItem("accessToken")
       ? localStorage.getItem("accessToken")
+      : null,
+  refreshToken:
+    typeof window !== "undefined" && localStorage.getItem("refreshToken")
+      ? localStorage.getItem("refreshToken")
       : null,
   loading: false,
   signupData: null,
@@ -63,10 +68,18 @@ const authSlice = createSlice({
         localStorage.removeItem("accessToken");
       }
     },
+    setRefreshToken(state, action: PayloadAction<string | null>) {
+      state.refreshToken = action.payload;
+      if (typeof window !== "undefined" && action.payload) {
+        localStorage.setItem("refreshToken", action.payload);
+      } else if (typeof window !== "undefined") {
+        localStorage.removeItem("refreshToken");
+      }
+    },
   },
 });
 
-export const { setUser, setSignupData, setLoading, setToken } =
+export const { setUser, setSignupData, setLoading, setToken, setRefreshToken } =
   authSlice.actions;
 
 export default authSlice.reducer;

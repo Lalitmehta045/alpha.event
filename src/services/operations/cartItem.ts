@@ -13,9 +13,10 @@ const {
   DELETECART_ITEM_API,
 } = cartEndpoints;
 
-export const getAllCartItems = async () => {
+export const getAllCartItems = async (token?: string) => {
   try {
-    const res = await apiConnector("GET", GETALLCART_ITEM_API, null);
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const res = await apiConnector("GET", GETALLCART_ITEM_API, null, headers);
 
     if (!res?.data?.success) {
       throw new Error(res?.data?.message || "Failed to fetch cart");
@@ -70,7 +71,9 @@ export const addCartItem = async (
     }
 
     // Refresh cart after successful update
-    await getAllCartItems();
+    if (token) {
+      await getAllCartItems(token);
+    }
 
     return res.data.data; // Return item payload for Redux
   } catch (error: any) {
@@ -99,7 +102,9 @@ export const updateCartItem = async (
       throw new Error("Could not update cart item");
     }
 
-    await getAllCartItems();
+    if (token) {
+      await getAllCartItems(token);
+    }
 
     toast.success("Item updated to cart");
 
@@ -125,7 +130,9 @@ export const deleteCartItem = async (id: string, token: string) => {
     // DISPATCH THE REDUX ACTION
     // const productId = res.data.data.productId; // Check your actual API response structure
 
-    await getAllCartItems();
+    if (token) {
+      await getAllCartItems(token);
+    }
     toast.success("Removed from cart");
     return res.data.data;
   } catch (error: any) {

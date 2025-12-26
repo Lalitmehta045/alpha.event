@@ -8,8 +8,9 @@ import { getAllCategory } from "@/services/operations/category";
 import { getAllSubCategory } from "@/services/operations/subcategory";
 import { getAllProduct } from "@/services/operations/product";
 import { getAllCartItems } from "@/services/operations/cartItem";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { handleAddItemCart } from "@/redux/slices/cartSlice";
+import { RootState } from "@/redux/store/store";
 import { ArrowRight, ShoppingBag, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ interface Props {
 const SubCategorySlug: React.FC<Props> = ({ data, category, subCategory }) => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.auth.token);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const fetchData = async () => {
@@ -39,8 +41,10 @@ const SubCategorySlug: React.FC<Props> = ({ data, category, subCategory }) => {
   };
 
   const fetchCartItem = async () => {
+    if (!token) return;
+    
     try {
-      const mappedCartData = await getAllCartItems();
+      const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
     } catch (error) {
       console.log(error);
@@ -50,7 +54,7 @@ const SubCategorySlug: React.FC<Props> = ({ data, category, subCategory }) => {
   useEffect(() => {
     fetchData();
     fetchCartItem();
-  }, []);
+  }, [token]);
 
   return (
     <>
