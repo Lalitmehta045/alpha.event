@@ -60,15 +60,28 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
     e.stopPropagation();
 
     if (!isLoggedIn) {
-      toast.error("Please Login First");
-      router.push("/auth/sign-in");
+      // Store the current URL to redirect back after login
+      const currentPath = window.location.pathname;
+      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
       return;
     }
 
-    // If Google login (NextAuth session) but no Redux token, generate JWT token first
-    if (session?.user && !reduxToken) {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
+      const productId = data._id;
+      
+      // Always get a fresh token if available
+      const currentToken = localStorage.getItem("accessToken") || token;
+      
+      if (!currentToken) {
+        toast.error("Session expired. Please log in again.");
+        const currentPath = window.location.pathname;
+        router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+        return;
+      }
+
+      // If Google login (NextAuth session) but no Redux token, generate JWT token first
+      if (session?.user && !reduxToken) {
         const res = await fetch("/api/auth/google-token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -90,12 +103,11 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
         localStorage.setItem("refreshToken", tokenResponse.data.refreshToken);
         localStorage.setItem("user", JSON.stringify(tokenResponse.data.user));
 
-        // Now proceed with add to cart using the new token
-        const productId = data._id;
+        // Use the new token for add to cart
         const response = await addCartItem(productId, router, tokenResponse.data.accessToken);
         
         if (!response) {
-          toast.error("Something went wrong!");
+          // Error is already handled in addCartItem
           return;
         }
 
@@ -107,38 +119,29 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
 
         dispatch(addToCart(addPayload));
         toast.success("Item added to cart!");
+      } else {
+        // Regular flow for users with existing tokens
+        const response = await addCartItem(productId, router, currentToken as string);
         
-      } catch (error) {
-        console.error("Token generation or add to cart error:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to add item");
-      } finally {
-        setLoading(false);
+        if (!response) {
+          // Error is already handled in addCartItem
+          return;
+        }
+
+        const addPayload = {
+          _id: response._id,
+          quantity: response.quantity,
+          product: response.productId,
+        };
+
+        dispatch(addToCart(addPayload));
+        toast.success("Item added to cart!");
       }
-      return; // Exit early since we handled everything above
-    }
-
-    // Regular flow for users with existing tokens
-    try {
-      setLoading(true);
-      const productId = data._id;
-      const response = await addCartItem(productId, router, reduxToken!);
-      
-      if (!response) {
-        toast.error("Something went wrong!");
-        return;
-      }
-
-      const addPayload = {
-        _id: response._id,
-        quantity: response.quantity,
-        product: response.productId,
-      };
-
-      dispatch(addToCart(addPayload));
-      toast.success("Item added to cart!");
     } catch (error) {
       console.error("Add to cart error:", error);
-      toast.error("Failed to add item");
+      if (error instanceof Error) {
+        toast.error(error.message || "Failed to add item");
+      }
     } finally {
       setLoading(false);
     }
@@ -151,12 +154,14 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
 
     if (!isLoggedIn) {
       toast.error("Please Login First");
+      const currentPath = window.location.pathname;
+      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
       return;
     }
 
     // Ensure token exists for Google users
-    let finalToken = reduxToken;
-    if (session?.user && !reduxToken) {
+    let finalToken = reduxToken || localStorage.getItem("accessToken");
+    if (session?.user && !finalToken) {
       try {
         const res = await fetch("/api/auth/google-token", {
           method: "POST",
@@ -167,11 +172,17 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
             dispatch(setToken(data.data.accessToken));
             dispatch(setUser(data.data.user));
             localStorage.setItem("accessToken", data.data.accessToken);
+            localStorage.setItem("refreshToken", data.data.refreshToken);
+            localStorage.setItem("user", JSON.stringify(data.data.user));
             finalToken = data.data.accessToken;
           }
         }
       } catch (error) {
         console.error("Token generation failed:", error);
+        toast.error("Session expired. Please log in again.");
+        const currentPath = window.location.pathname;
+        router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+        return;
       }
     }
 
@@ -206,12 +217,14 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
 
     if (!isLoggedIn) {
       toast.error("Please Login First");
+      const currentPath = window.location.pathname;
+      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
       return;
     }
 
     // Ensure token exists for Google users
-    let finalToken = reduxToken;
-    if (session?.user && !reduxToken) {
+    let finalToken = reduxToken || localStorage.getItem("accessToken");
+    if (session?.user && !finalToken) {
       try {
         const res = await fetch("/api/auth/google-token", {
           method: "POST",
@@ -222,11 +235,17 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
             dispatch(setToken(data.data.accessToken));
             dispatch(setUser(data.data.user));
             localStorage.setItem("accessToken", data.data.accessToken);
+            localStorage.setItem("refreshToken", data.data.refreshToken);
+            localStorage.setItem("user", JSON.stringify(data.data.user));
             finalToken = data.data.accessToken;
           }
         }
       } catch (error) {
         console.error("Token generation failed:", error);
+        toast.error("Session expired. Please log in again.");
+        const currentPath = window.location.pathname;
+        router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+        return;
       }
     }
 

@@ -65,8 +65,15 @@ export const addCartItem = async (
 
     // If API returns success = false → token invalid or session expired
     if (!res?.data?.success) {
-      toast.error("Session expired, please login again");
-      router.push("/auth/sign-in");
+      // Clear any invalid tokens
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      sessionStorage.clear();
+      
+      // Redirect to login with a return URL
+      const currentPath = window.location.pathname;
+      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
       return null;
     }
 
@@ -78,9 +85,20 @@ export const addCartItem = async (
     return res.data.data; // Return item payload for Redux
   } catch (error: any) {
     console.error("Error while adding item to cart:", error);
-    toast.error("Failed to add item");
+    
+    // If it's an authentication error, clear tokens and redirect
+    if (error?.response?.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      sessionStorage.clear();
+      const currentPath = window.location.pathname;
+      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+    } else {
+      toast.error("Failed to add item. Please try again.");
+    }
 
-    return null; // Always return a safe value
+    return null;
   }
 };
 
