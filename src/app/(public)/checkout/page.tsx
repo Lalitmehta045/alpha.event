@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Check, AlertTriangle, Truck, Shield } from "lucide-react";
+import { MapPin, Check, AlertTriangle, Truck, Shield, Search } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface LocationData {
