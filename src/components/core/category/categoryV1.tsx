@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import React from "react";
+import React, { useMemo } from "react";
 import { RootState } from "@/redux/store/store";
 import { BentoCard } from "@/components/ui/newbentogrid";
 
@@ -29,6 +29,20 @@ const CategoryV1: React.FC = () => {
     (state: RootState) => state.product.allCategory
   );
 
+  const sortedCategories = useMemo(() => {
+    const priorityNames = ["structures"];
+    const lowered = priorityNames.map((name) => name.toLowerCase());
+
+    const prioritized = categoryData.filter((cat) =>
+      lowered.includes(cat?.name?.toLowerCase())
+    );
+    const others = categoryData.filter(
+      (cat) => !lowered.includes(cat?.name?.toLowerCase())
+    );
+
+    return [...prioritized, ...others];
+  }, [categoryData]);
+
   const handleRedirectProductListpage = (id: string, cat: string) => {
     const url = `/category/${createSlug(cat, id)}`;
     router.push(url);
@@ -39,7 +53,7 @@ const CategoryV1: React.FC = () => {
   return (
     <section className="py-8 px-0 md:px-8 mx-auto">
       <div className="max-w-max grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 place-items-center md:place-items-start mx-auto">
-        {categoryData.map((cat: any) => (
+        {sortedCategories.map((cat: any) => (
           <BentoCard
             key={cat._id}
             title={cat.name}

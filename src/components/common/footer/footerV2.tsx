@@ -27,6 +27,10 @@ export default function FooterV2() {
                 width={100}
                 height={100}
                 className="object-contain mb-3 mx-auto"
+                sizes="100px"
+                loading="eager"
+                priority
+                style={{ width: "auto", height: "auto" }}
               />
               <p className="text-2xl sm:text-3xl font-bold text-(--footer-text) hover:text-(--footer-text-Hover)">
                 Alpha Art & Events

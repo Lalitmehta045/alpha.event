@@ -115,6 +115,16 @@ export default function CategoryResolverPage() {
     const subCatsOfCategory = subCategories.filter(
       (s) => s.category?._id === categoryId
     );
+    const priorityNames = ["structures"];
+    const lowered = priorityNames.map((name) => name.toLowerCase());
+
+    const prioritized = subCatsOfCategory.filter((sub) =>
+      lowered.includes(sub?.name?.toLowerCase())
+    );
+    const others = subCatsOfCategory.filter(
+      (sub) => !lowered.includes(sub?.name?.toLowerCase())
+    );
+    const sortedSubCats = [...prioritized, ...others];
 
     return (
       <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">
@@ -140,7 +150,7 @@ export default function CategoryResolverPage() {
             </motion.section>
 
             <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-14 mt-3 mx-auto md:mt-10">
-              {subCatsOfCategory.map((sub, index) => {
+              {sortedSubCats.map((sub, index) => {
                 const subUrl = `/category/${categorySlug}/${sub.name
                   .toLowerCase()
                   .replace(/\s+/g, "-")}-${sub._id}`;
