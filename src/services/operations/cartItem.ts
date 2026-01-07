@@ -103,7 +103,7 @@ export const addCartItem = async (
 };
 
 export const updateCartItem = async (
-  id: string, // Assuming this is the CartItem ID from the server
+  id: string, // Assuming this is CartItem ID from the server
   quantity: any,
   // dispatch: any,
   token: string
@@ -117,7 +117,7 @@ export const updateCartItem = async (
     );
 
     if (!res?.data?.success) {
-      throw new Error("Could not update cart item");
+      throw new Error(res?.data?.message || "Could not update cart item");
     }
 
     if (token) {
@@ -128,7 +128,18 @@ export const updateCartItem = async (
 
     return res.data.data;
   } catch (error: any) {
-    console.error("Error while update item to cart: ", error);
+    console.error("Update cart item error:", error);
+    
+    // Handle specific error cases
+    if (error.response?.status === 404) {
+      throw new Error("Cart item not found. Please refresh and try again.");
+    } else if (error.response?.status === 403) {
+      throw new Error("Access denied. Please login again.");
+    } else if (error.response?.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    } else {
+      throw new Error(error.message || "Failed to update cart item");
+    }
   }
 };
 

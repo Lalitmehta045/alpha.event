@@ -23,19 +23,11 @@ import { RootState } from "@/redux/store/store";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import countryCode from "@/assets/data/countryCode.json";
-import { FaLocationArrow } from "react-icons/fa";
+import FreeLocationComponent from "@/components/common/FreeLocationComponent";
 
 interface AddressProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-interface LocationData {
-  address_line: string;
-  city: string;
-  state: string;
-  pincode: string;
-  country: string;
 }
 
 export default function AddAddressDialog({ open, setOpen }: AddressProps) {
@@ -59,174 +51,13 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
     mobile: "", // Local mobile number part
   });
 
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-
   const citiesForSelectedState =
     cityStateData.find((item) => item.state === address.state)?.cities || [];
 
-  // Function to get address from coordinates using reverse geocoding
-  const getAddressFromCoordinates = async (lat: number, lon: number): Promise<LocationData | null> => {
-    try {
-      // Using Nominatim (OpenStreetMap) for reverse geocoding
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&countrycodes=in`,
-        {
-          headers: {
-            'User-Agent': 'AlphaArtEvents/1.0'
-          },
-          signal: AbortSignal.timeout(5000) // 5 second timeout
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data && data.address) {
-        const addr = data.address;
-        return {
-          address_line: "", // Keep address line empty for user to fill
-          city: addr.city || addr.town || addr.village || '',
-          state: addr.state || '',
-          pincode: addr.postcode || '',
-          country: addr.country || 'India'
-        };
-      } else {
-        throw new Error('No address data found');
-      }
-    } catch (error: any) {
-      console.error('Error getting address from coordinates:', error);
-      if (error.name === 'AbortError') {
-        throw new Error('Address lookup timed out');
-      } else if (error.name === 'TypeError' || error.message?.includes('fetch')) {
-        throw new Error('Network error while fetching address');
-      } else {
-        throw new Error('Failed to get address from location');
-      }
-    }
-  };
-
-  // Function to detect current location
-  const handleDetectLocation = async () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
-    }
-
-    setIsDetectingLocation(true);
-    toast.loading("Detecting your location...");
-
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve, 
-          reject, 
-          {
-            enableHighAccuracy: false, // Set to false for faster response
-            timeout: 5000, // Reduced timeout to 5 seconds
-            maximumAge: 60000 // Allow cached position up to 1 minute old
-          }
-        );
-      });
-
-      const { latitude, longitude } = position.coords;
-      console.log('Got coordinates:', { latitude, longitude });
-      
-      // Try to get address from coordinates
-      let locationData = null;
-      try {
-        locationData = await getAddressFromCoordinates(latitude, longitude);
-        console.log('Got location data:', locationData);
-      } catch (apiError: any) {
-        console.error('Reverse geocoding failed:', apiError);
-        // Continue with fallback
-      }
-
-      if (locationData) {
-        setAddress(prev => ({
-          ...prev,
-          address_line: locationData.address_line,
-          city: locationData.city,
-          state: locationData.state,
-          pincode: locationData.pincode,
-          country: locationData.country
-        }));
-        toast.success("Location detected successfully!");
-        setRetryCount(0); // Reset retry count on success
-      } else {
-        // Fallback: Keep address line empty for user to fill
-        setAddress(prev => ({
-          ...prev,
-          address_line: "", // Keep address line empty
-          city: "",
-          state: "",
-          pincode: "",
-          country: "India"
-        }));
-        toast.success("Location detected! Please enter your complete address details.");
-        setRetryCount(0); // Reset retry count on success
-      }
-    } catch (error: any) {
-      console.error('Location detection error:', error);
-      console.error('Error details:', {
-        name: error?.name,
-        message: error?.message,
-        code: error?.code,
-        toString: error?.toString?.(),
-        stack: error?.stack,
-        isGeolocationPositionError: error?.name === 'GeolocationPositionError'
-      });
-      
-      // Handle specific geolocation errors
-      if (error?.name === 'GeolocationPositionError' || error?.code !== undefined) {
-        // This is a standard geolocation error
-        switch (error?.code) {
-          case 1:
-            toast.error("Location access denied. Please enable location permissions in your browser settings and try again.");
-            setRetryCount(0);
-            break;
-          case 2:
-            toast.error("Location unavailable. Please check if your device's location services are enabled.");
-            setRetryCount(0);
-            break;
-          case 3:
-            // Timeout error - offer retry
-            if (retryCount < 2) {
-              toast.error("Location request timed out. Retrying...");
-              setRetryCount(prev => prev + 1);
-              setTimeout(() => handleDetectLocation(), 1000); // Retry after 1 second
-              return; // Don't set isDetectingLocation to false yet
-            } else {
-              toast.error("Location request timed out after multiple attempts. Please try entering your address manually.");
-              setRetryCount(0);
-            }
-            break;
-          default:
-            toast.error("Location detection failed. Please try entering your address manually.");
-            setRetryCount(0);
-        }
-      } else if (error?.name === 'TypeError' || error?.message?.includes('network') || error?.message?.includes('fetch')) {
-        toast.error("Network error. Please check your internet connection and try again.");
-        setRetryCount(0);
-      } else if (error?.message?.includes('timed out') || error?.name === 'AbortError') {
-        toast.error("Address lookup timed out. Please try again.");
-        setRetryCount(0);
-      } else if (!error || Object.keys(error).length === 0) {
-        // Handle empty error object
-        toast.error("Location detection failed. This might be due to network issues or browser restrictions. Please try entering your address manually.");
-        setRetryCount(0);
-      } else {
-        toast.error(`Location detection failed: ${error?.message || 'Unknown error'}. You can enter your address manually.`);
-        setRetryCount(0);
-      }
-    } finally {
-      setIsDetectingLocation(false);
-      toast.dismiss();
-    }
-  };
+  // Add detected city to dropdown if not already present
+  const allCities = address.city && !citiesForSelectedState.includes(address.city)
+    ? [address.city, ...citiesForSelectedState]  // Detected city first
+    : citiesForSelectedState;
 
   const handleAddAddress = async () => {
     if (!token) {
@@ -283,16 +114,42 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
         </DialogHeader>
 
         <div className="grid gap-4">
-          {/* Auto Location Detection Button */}
-          <Button
-            onClick={handleDetectLocation}
-            disabled={isDetectingLocation}
-            variant="outline"
-            className="w-full py-3 border-blue-500 text-blue-600 hover:bg-blue-50 flex items-center gap-2"
-          >
-            <FaLocationArrow className="w-4 h-4" />
-            {isDetectingLocation ? "Detecting Location..." : "Use Current Location"}
-          </Button>
+          {/* Location Detection */}
+          <FreeLocationComponent
+            onLocationSelect={(locationData) => {
+              // Auto-select state if found and matches our data
+              const matchingState = cityStateData.find(item => 
+                item.state.toLowerCase() === locationData.state.toLowerCase()
+              );
+              
+              const matchingCity = matchingState ? matchingState.cities.find(city => 
+                city.toLowerCase() === locationData.city.toLowerCase()
+              ) : null;
+
+              // Always set the detected city, even if not in our database
+              // User can manually select from dropdown if needed
+              const finalCity = locationData.city;
+              const finalState = matchingState?.state || locationData.state;
+
+              console.log('Location detection:', {
+                detected: locationData,
+                matchingState,
+                matchingCity,
+                finalCity,
+                finalState
+              });
+
+              setAddress(prev => ({
+                ...prev,
+                address_line: locationData.address,
+                city: finalCity,
+                state: finalState,
+                pincode: locationData.pincode,
+                country: locationData.country
+              }));
+            }}
+            placeholder="Enter your complete address"
+          />
 
           {/* Address Line */}
           <div>
@@ -362,7 +219,7 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
                 </SelectTrigger>
 
                 <SelectContent>
-                  {citiesForSelectedState.map((city) => (
+                  {allCities.map((city) => (
                     <SelectItem key={city} value={city}>
                       {city}
                     </SelectItem>

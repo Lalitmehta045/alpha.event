@@ -195,19 +195,31 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
     const newQty = qty + 1;
     const cartId = cartItem?._id;
 
-    const response = await updateCartItem(
-      cartId as string,
-      newQty,
-      finalToken
-    );
+    try {
+      const response = await updateCartItem(
+        cartId as string,
+        newQty,
+        finalToken
+      );
 
-    const updatePayload = {
-      _id: response._id,
-      quantity: response.quantity,
-      product: response.productId,
-    };
+      // Check if response is valid before accessing properties
+      if (!response) {
+        throw new Error("No response from server");
+      }
 
-    dispatch(updateQuantity(updatePayload));
+      const updatePayload = {
+        _id: response._id,
+        quantity: response.quantity,
+        product: response.productId || response.product,
+      };
+
+      dispatch(updateQuantity(updatePayload));
+    } catch (error: any) {
+      console.error("Increase quantity error:", error);
+      toast.error(error.message || "Failed to update quantity");
+      // Optionally refresh cart to sync state
+      // await getAllCartItems(finalToken);
+    }
   };
 
   // ==========Decrease Quantity=======================
@@ -273,19 +285,31 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
         toast.error("Failed to remove item from cart.");
       }
     } else {
-      const response = await updateCartItem(
-        cartId as string,
-        newQty,
-        finalToken
-      );
+      try {
+        const response = await updateCartItem(
+          cartId as string,
+          newQty,
+          finalToken
+        );
 
-      const updatePayload = {
-        _id: response._id,
-        quantity: response.quantity,
-        product: response.productId,
-      };
+        // Check if response is valid before accessing properties
+        if (!response) {
+          throw new Error("No response from server");
+        }
 
-      dispatch(updateQuantity(updatePayload));
+        const updatePayload = {
+          _id: response._id,
+          quantity: response.quantity,
+          product: response.productId || response.product,
+        };
+
+        dispatch(updateQuantity(updatePayload));
+      } catch (error: any) {
+        console.error("Decrease quantity error:", error);
+        toast.error(error.message || "Failed to update quantity");
+        // Optionally refresh cart to sync state
+        // await getAllCartItems(finalToken);
+      }
     }
   };
 
