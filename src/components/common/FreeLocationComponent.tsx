@@ -178,24 +178,43 @@ export default function FreeLocationComponent({
       return;
     }
 
+    // Check if the page is served over HTTPS or localhost
+    if (window.location.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      toast.error("Location access requires a secure (HTTPS) connection or localhost");
+      return;
+    }
+
     setIsDetecting(true);
-    toast.loading("Detecting your location...");
+    const toastId = toast.loading("Detecting your location...");
 
     try {
-      // Try high accuracy first
+      // First try with high accuracy
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
           resolve,
-          reject,
+          (error) => {
+            console.warn('High accuracy geolocation failed, trying with lower accuracy', error);
+            // Fallback to lower accuracy if high accuracy fails
+            navigator.geolocation.getCurrentPosition(
+              resolve,
+              reject,
+              {
+                enableHighAccuracy: false,
+                timeout: 10000,
+                maximumAge: 0
+              }
+            );
+          },
           {
             enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 60000
+            timeout: 10000,
+            maximumAge: 0
           }
         );
       });
 
-      const { latitude, longitude } = position.coords;
+      const { latitude, longitude, accuracy } = position.coords;
+      console.log('Geolocation successful:', { latitude, longitude, accuracy });
       
       // Get address from coordinates
       const locationData = await getAddressFromCoordinates(latitude, longitude);
@@ -207,18 +226,20 @@ export default function FreeLocationComponent({
     } catch (error: any) {
       console.error("Location detection error:", error);
       
+      let errorMessage = "Failed to detect location. Please enter address manually.";
+      
       if (error.code === 1) {
-        toast.error("Location access denied. Please enable location permissions.");
+        errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
       } else if (error.code === 2) {
-        toast.error("Location unavailable. Please check your device's location services.");
+        errorMessage = "Location unavailable. Please check your device's location services and try again.";
       } else if (error.code === 3) {
-        toast.error("Location request timed out. Please try again.");
-      } else {
-        toast.error("Failed to detect location. Please enter address manually.");
+        errorMessage = "Location request timed out. Please check your internet connection and try again.";
       }
+      
+      toast.error(errorMessage);
     } finally {
       setIsDetecting(false);
-      toast.dismiss();
+      toast.dismiss(toastId);
     }
   };
 
