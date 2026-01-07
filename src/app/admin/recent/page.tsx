@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import {
@@ -12,8 +12,14 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import Cropper from "react-easy-crop";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
 interface RecentSlot {
   imageFile: File | null;
@@ -36,6 +42,31 @@ export default function RecentPage() {
   ]);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [currentCropIndex, setCurrentCropIndex] = useState<number | null>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  const centerSquareCrop = (mediaWidth: number, mediaHeight: number): Crop => {
+    const size = Math.min(mediaWidth, mediaHeight) * 0.8;
+    const x = (mediaWidth - size) / 2;
+    const y = (mediaHeight - size) / 2;
+    return {
+      unit: "px",
+      width: size,
+      height: size,
+      x,
+      y,
+    };
+  };
 
   useEffect(() => {
     loadRecentImages();
@@ -74,37 +105,22 @@ export default function RecentPage() {
     newSlots[index].isCropping = false; // Reset cropping state
     setSlots(newSlots);
     setCurrentCropIndex(index);
+    setCompletedCrop(null);
+    const url = URL.createObjectURL(file);
+    setImagePreviewUrl(url);
     setCropDialogOpen(true); // Auto-open crop dialog
     console.log("Crop dialog opened automatically for slot", index);
   };
 
-  const onCropChange = (index: number, crop: { x: number; y: number }) => {
-    const newSlots = [...slots];
-    newSlots[index].crop = crop;
-    setSlots(newSlots);
-  };
-
-  const onZoomChange = (index: number, zoom: number) => {
-    const newSlots = [...slots];
-    newSlots[index].zoom = zoom;
-    setSlots(newSlots);
-  };
-
-  const onCropComplete = (index: number, croppedArea: any, croppedAreaPixels: any) => {
-    const newSlots = [...slots];
-    newSlots[index].croppedAreaPixels = croppedAreaPixels;
-    setSlots(newSlots);
-  };
-
   const applyCrop = async (index: number) => {
     const slot = slots[index];
-    if (!slot.imageFile || !slot.croppedAreaPixels) {
+    if (!slot.imageFile || !completedCrop || !imgRef.current) {
       toast.error("Please select an image and crop area first");
       return;
     }
 
     console.log("Applying crop for slot", index);
-    console.log("Cropped area pixels:", slot.croppedAreaPixels);
+    console.log("Cropped area pixels:", completedCrop);
 
     try {
       // Show loading state
@@ -125,20 +141,24 @@ export default function RecentPage() {
         img.onload = async () => {
           try {
             console.log("Image loaded, dimensions:", img.width, img.height);
-            canvas.width = slot.croppedAreaPixels.width;
-            canvas.height = slot.croppedAreaPixels.height;
-            
-            // Use imageBitmap for better performance
+            const scaleX = imageBitmap.width / (imgRef.current?.width || imageBitmap.width);
+            const scaleY = imageBitmap.height / (imgRef.current?.height || imageBitmap.height);
+            const cropWidth = completedCrop.width * scaleX;
+            const cropHeight = completedCrop.height * scaleY;
+
+            canvas.width = cropWidth;
+            canvas.height = cropHeight;
+
             ctx?.drawImage(
               imageBitmap,
-              slot.croppedAreaPixels.x,
-              slot.croppedAreaPixels.y,
-              slot.croppedAreaPixels.width,
-              slot.croppedAreaPixels.height,
+              completedCrop.x * scaleX,
+              completedCrop.y * scaleY,
+              cropWidth,
+              cropHeight,
               0,
               0,
-              slot.croppedAreaPixels.width,
-              slot.croppedAreaPixels.height
+              cropWidth,
+              cropHeight
             );
 
             // Use higher quality for blob creation
@@ -170,6 +190,9 @@ export default function RecentPage() {
                     setSlots(updatedSlots);
                     setCropDialogOpen(false);
                     setCurrentCropIndex(null);
+                    setImagePreviewUrl(null);
+                    setCrop(undefined);
+                    setCompletedCrop(null);
                     toast.dismiss();
                     toast.success("Image cropped and uploaded successfully!");
                     console.log("Slot updated, uploadedImageUrl:", updatedSlots[index].uploadedImageUrl);
@@ -405,17 +428,25 @@ export default function RecentPage() {
           <DialogHeader>
             <DialogTitle>Crop Image</DialogTitle>
           </DialogHeader>
-          {currentCropIndex !== null && slots[currentCropIndex]?.imageFile && (
-            <div className="relative h-64">
-              <Cropper
-                image={URL.createObjectURL(slots[currentCropIndex].imageFile!)}
-                crop={slots[currentCropIndex].crop}
-                zoom={slots[currentCropIndex].zoom}
-                aspect={16 / 9}
-                onCropChange={(crop) => onCropChange(currentCropIndex, crop)}
-                onZoomChange={(zoom) => onZoomChange(currentCropIndex, zoom)}
-                onCropComplete={(croppedArea, croppedAreaPixels) => onCropComplete(currentCropIndex, croppedArea, croppedAreaPixels)}
-              />
+          {currentCropIndex !== null && slots[currentCropIndex]?.imageFile && imagePreviewUrl && (
+            <div className="relative h-72">
+              <ReactCrop
+                crop={crop}
+                onChange={(c) => setCrop(c)}
+                onComplete={(c) => setCompletedCrop(c as PixelCrop)}
+                className="max-h-72"
+              >
+                <img
+                  ref={imgRef}
+                  src={imagePreviewUrl}
+                  alt="Crop preview"
+                  className="max-h-72 object-contain"
+                  onLoad={(e) => {
+                    const { width, height } = e.currentTarget;
+                    setCrop(centerSquareCrop(width, height));
+                  }}
+                />
+              </ReactCrop>
             </div>
           )}
           <Button onClick={() => currentCropIndex !== null && applyCrop(currentCropIndex)}>
