@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; // ✅ correct for Next.js App Router
+import { usePathname, useRouter } from "next/navigation"; // ✅ correct for Next.js App Router
 import navigationLinks from "@/assets/data/navigation.json";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import CTAButtonV1 from "../ctaButton/ctaButtonV1";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
-import { FaUserCircle } from "react-icons/fa";
+import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { logout } from "@/services/operations/auth";
 import MobileBottomNav from "./MobileBottomNav";
+import SearchBar from "@/components/common/searchBar/searchBar";
 
 import { BsCart2 } from "react-icons/bs";
 import ProfileSheet from "../profile/ProfileSheet";
@@ -20,11 +21,13 @@ import { useSession, signOut } from "next-auth/react";
 
 const HeaderV1 = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useDispatch();
   const reduxUser = useSelector((state: RootState) => state.auth.user);
   const [isOpen, setIsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
+  const [showSearchField, setShowSearchField] = useState(false);
   const { data: session } = useSession();
 
   const user = reduxUser || session?.user;
@@ -34,7 +37,31 @@ const HeaderV1 = () => {
   );
 
   useEffect(() => setIsClient(true), []);
+  useEffect(() => setShowSearchField(false), [pathname]);
   if (!isClient) return null;
+
+  const showSearchBar =
+    pathname?.startsWith("/product") || pathname?.startsWith("/category");
+
+  const scrollToSearch = () => {
+    if (typeof document === "undefined") return;
+    if (!showSearchBar) return;
+    if (showSearchField) {
+      setShowSearchField(false);
+      return;
+    }
+    setShowSearchField(true);
+    setTimeout(() => {
+      const el = document.getElementById("page-search");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const input = el.querySelector("input");
+        if (input instanceof HTMLInputElement) {
+          input.focus();
+        }
+      }
+    }, 50);
+  };
 
   const handleLogout = async () => {
     try {
@@ -70,9 +97,20 @@ const HeaderV1 = () => {
             />
           </Link>
 
-          <h1 className="text-2xl mr-2 font-bold text-center flex-1 md:hidden md:text-left">
-            Alpha Art & Events
-          </h1>
+          <div className="flex items-center justify-center flex-1 gap-3 md:hidden">
+            <h1 className="text-2xl mr-2 font-bold text-center md:text-left">
+              Alpha Art & Events
+            </h1>
+            {showSearchBar && (
+              <button
+                onClick={scrollToSearch}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#3a0103] text-white hover:bg-[#9c6567] transition-all duration-300"
+                aria-label="Search"
+              >
+                <FaSearch className="text-base" />
+              </button>
+            )}
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex flex-1 justify-center">
@@ -130,6 +168,13 @@ const HeaderV1 = () => {
             />
           </div>
         </main>
+
+        {/* Search Bar on product/category pages */}
+        {showSearchBar && showSearchField && (
+          <div id="page-search" className="w-full px-4 pb-3 md:hidden">
+            <SearchBar />
+          </div>
+        )}
 
         {/* Mobile Dropdown Menu */}
         {isOpen && (
