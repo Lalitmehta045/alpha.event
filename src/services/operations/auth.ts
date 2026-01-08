@@ -11,7 +11,7 @@ const { SENDOTPEMAIL_API, SIGNUP_API, SIGNIN_API, RESETPASSWORD_API } =
 
 // ✅ SEND OTP
 export async function sendOtp(email: string, router: any) {
-  const toastId = toast.loading("Sending OTP...");
+  const toastId = toast.loading("📧 Sending verification code...");
 
   try {
     const response = await apiConnector("POST", SENDOTPEMAIL_API, {
@@ -19,20 +19,19 @@ export async function sendOtp(email: string, router: any) {
       checkUserPresent: true,
     });
 
-    // ✅ Check correct structure
     if (!response?.data) {
       toast.dismiss(toastId);
-      toast.error(response.data?.error || "OTP sending failed");
+      toast.error(response.data?.error || "Unable to send verification code. Please try again.");
       return null;
     }
 
-    toast.success("OTP sent successfully ✅");
+    toast.success("✅ Verification code sent successfully! Check your email.");
 
-    router.push("/verify-email"); // ✅ Move to next screen
+    router.push("/verify-email");
     return response.data;
   } catch (err: any) {
     toast.error(
-      err.response?.data?.error || err.message || "Failed to send OTP"
+      err.response?.data?.error || err.message || "Failed to send verification code. Please try again."
     );
     return null;
   } finally {
@@ -51,7 +50,7 @@ export async function signUp(
   otp: number,
   router: any
 ) {
-  const toastId = toast.loading("Creating your account...");
+  const toastId = toast.loading("🔐 Creating your account...");
 
   try {
     const response = await apiConnector("POST", SIGNUP_API, {
@@ -64,22 +63,20 @@ export async function signUp(
       otp,
     });
 
-    // ✅ Backend failed
     if (!response.data.success) {
       toast.dismiss(toastId);
-      toast.error("Registration failed");
+      toast.error("Registration failed. Please check your details and try again.");
       console.log("Registration Error: ", response.data.error);
       return;
     }
 
-    // ✅ Success
     toast.dismiss(toastId);
-    toast.success("Signup successfull ✅");
+    toast.success("🎉 Account created successfully! Please sign in to continue.");
 
     router.push("/auth/sign-in");
   } catch (err: any) {
     toast.dismiss(toastId);
-    toast.error(err.response?.data?.message || "Signup failed");
+    toast.error(err.response?.data?.message || "Registration failed. Please try again.");
   }
 }
 
@@ -90,7 +87,7 @@ export async function signIn(
   router: any,
   dispatch: any
 ) {
-  const toastId = toast.loading("Signing in...");
+  const toastId = toast.loading("🔐 Signing you in...");
 
   try {
     const response = await apiConnector("POST", SIGNIN_API, {
@@ -100,13 +97,12 @@ export async function signIn(
 
     if (!response?.data?.data) {
       toast.dismiss(toastId);
-      toast.error("Signin failed");
+      toast.error("Invalid credentials. Please check your email and password.");
       return null;
     }
 
     const { accessToken, refreshToken, user } = response.data.data;
 
-    // Store Tokens & User
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("user", JSON.stringify(user));
@@ -115,52 +111,44 @@ export async function signIn(
     sessionStorage.setItem("refreshToken", refreshToken);
     sessionStorage.setItem("user", JSON.stringify(user));
 
-    // ⬇️ DISPATCH FIRST (VERY IMPORTANT)
     dispatch(setToken(accessToken));
     dispatch(setUser(user));
 
     toast.dismiss(toastId);
-    toast.success("Login successfull ✅");
+    toast.success(`🎉 Welcome back, ${user.fname}!`);
 
-    // ⬇️ NOW DO REDIRECT AFTER DISPATCH
     const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(user.role);
-
     router.push(isAdmin ? "/admin" : "/");
 
     return response.data;
   } catch (err: any) {
     toast.dismiss(toastId);
-    toast.error(err.message || "Login failed");
+    toast.error(err.message || "Login failed. Please try again.");
     return null;
   }
 }
 
 export async function logout(router: any, dispatch: any) {
-  try {
-    toast.loading("Logging out...");
+  const toastId = toast.loading("👋 Logging you out...");
 
-    // 1. Clear Server-Side Cookies (Crucial)
+  try {
     await logoutAction();
 
-    // 2. Clear Client-Side Storage
-    sessionStorage.clear(); // Clears everything in session
+    sessionStorage.clear();
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
 
-    // 3. Reset Redux
     dispatch(setUser(null));
 
-    toast.dismiss();
-    toast.success("Logged out successfully!");
+    toast.dismiss(toastId);
+    toast.success("Logged out successfully. See you soon!");
 
-    // 4. Force strict navigation
-    // router.refresh() clears the Next.js client router cache
     router.refresh();
     router.replace("/auth/sign-in");
   } catch (err) {
-    toast.dismiss();
-    toast.error("Logout failed");
+    toast.dismiss(toastId);
+    toast.error("Unable to logout. Please try again.");
     console.error("Logout Error:", err);
   }
 }
@@ -172,7 +160,7 @@ export async function resetPasswordService(
   otp: Number,
   router: any
 ) {
-  const toastId = toast.loading("Updating password...");
+  const toastId = toast.loading("🔒 Updating your password...");
 
   try {
     const response = await apiConnector("POST", RESETPASSWORD_API, {
@@ -182,24 +170,22 @@ export async function resetPasswordService(
       otp,
     });
 
-    // Backend error
     if (!response?.data?.success) {
       toast.dismiss(toastId);
-      toast.error("Password reset failed");
+      toast.error("Password reset failed. Please try again.");
       console.log("Reset Password error: ", response.data.message);
       return null;
     }
 
     toast.dismiss(toastId);
-    toast.success("Password updated successfully 🎉");
+    toast.success("🎉 Password updated successfully! You can now sign in with your new password.");
 
-    // Redirect to login
     router.push("/auth/sign-in");
 
     return response.data;
   } catch (err: any) {
     toast.dismiss(toastId);
-    toast.error("Password reset failed");
+    toast.error("Password reset failed. Please try again.");
     console.log("Reset Password error: ", err?.response?.data?.message);
     return null;
   }

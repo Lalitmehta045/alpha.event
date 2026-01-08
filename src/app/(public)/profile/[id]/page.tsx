@@ -186,14 +186,17 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       return;
     }
     try {
-      const editProfile = await updateProfile(id, formData, token, dispatch);
-      // console.log("editProfile: ", editProfile);
+      const response = await updateProfile(id, formData, token, dispatch);
+      setFormData((prev: any) => ({
+        ...prev,
+        fname: response?.fname || prev.fname,
+        lname: response?.lname || prev.lname,
+        avatar: response?.avatar || prev.avatar,
+      }));
       fetchProfileDetails();
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load editProfile data");
-    } finally {
-      toast.success("Your Profile Update Successfully.");
     }
   };
 

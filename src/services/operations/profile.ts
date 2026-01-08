@@ -22,13 +22,21 @@ export const getProfileDetail = async (
 
     const result = response.data.data;
 
-    // 🔥 UPDATE REDUX STORE HERE
-    dispatch(setProfile(result));
+    if (dispatch) {
+      dispatch(setProfile(result));
+    }
 
-    return result; // <-- returns single user object
+    return result;
   } catch (error: any) {
     console.error("GET PROFILE ERROR:", error);
-    toast.error(error.message || "Failed to fetch profile");
+    
+    if (error.response?.status === 401) {
+      toast.error("Session expired. Please login again.");
+    } else if (error.response?.status === 403) {
+      toast.error("Access denied. You can only view your own profile.");
+    } else {
+      toast.error(error.response?.data?.message || "Failed to load profile data");
+    }
     return null;
   }
 };
@@ -40,6 +48,8 @@ export const updateProfile = async (
   token: string,
   dispatch?: any
 ): Promise<IUserProfile | null> => {
+  const toastId = toast.loading("🔄 Updating profile...");
+
   try {
     const response = await apiConnector("PUT", PUTPROFILE_API(id), data, {
       Authorization: `Bearer ${token}`,
@@ -50,10 +60,19 @@ export const updateProfile = async (
       throw new Error(response?.data?.message || "Could not update profile");
     }
 
+    toast.dismiss(toastId);
+    toast.success("✅ Profile updated successfully!");
+
     return response.data.data;
   } catch (error: any) {
     console.error("UPDATE PROFILE ERROR:", error);
-    toast.error(error.message || "Failed to update profile");
+    toast.dismiss(toastId);
+    
+    if (error.response?.status === 401) {
+      toast.error("Session expired. Please login again.");
+    } else {
+      toast.error(error.response?.data?.message || "Failed to update profile");
+    }
     return null;
   }
 };
@@ -64,6 +83,8 @@ export const deleteProfile = async (
   token: string,
   dispatch?: any
 ): Promise<boolean> => {
+  const toastId = toast.loading("🗑️ Deleting profile...");
+
   try {
     const response = await apiConnector("DELETE", DELETEPROFILE_API(id), null, {
       Authorization: `Bearer ${token}`,
@@ -73,10 +94,15 @@ export const deleteProfile = async (
       throw new Error(response?.data?.message || "Could not delete profile");
     }
 
+    toast.dismiss(toastId);
+    toast.success("✅ Profile deleted successfully");
+
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("DELETE PROFILE ERROR:", error);
-    toast.error("Failed to delete profile");
+    toast.dismiss(toastId);
+    
+    toast.error(error.response?.data?.message || "Failed to delete profile");
     return false;
   }
 };

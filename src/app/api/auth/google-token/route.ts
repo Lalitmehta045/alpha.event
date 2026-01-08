@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
           email: user.email,
           role: user.role,
           avatar: user.avatar,
+          phone: user.phone,
         },
       },
     });
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        phone: user.phone,
       }),
       cookieOptions
     );

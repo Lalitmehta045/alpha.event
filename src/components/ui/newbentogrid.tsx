@@ -15,8 +15,6 @@ interface SimpleBentoCardProps extends ComponentPropsWithoutRef<"div"> {
   image: string;
   onClick?: () => void;
   className?: string;
-  loading?: "eager" | "lazy";
-  priority?: boolean;
 }
 
 const BentoGrid = ({ children, className, ...props }: BentoGridProps) => {
@@ -43,8 +41,6 @@ const BentoCard = ({
   image,
   onClick,
   className,
-  loading,
-  priority,
   ...props
 }: SimpleBentoCardProps) => {
   return (
@@ -64,8 +60,6 @@ const BentoCard = ({
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className="absolute inset-0 h-full w-full object-fill sm:object-cover transition-transform duration-500 group-hover:scale-110"
-        loading={loading}
-        priority={priority}
       />
 
       {/* Gradient Overlay */}

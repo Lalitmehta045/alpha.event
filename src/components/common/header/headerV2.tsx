@@ -104,10 +104,6 @@ const HeaderV2 = () => {
               width={50}
               height={50}
               className="w-14 md:w-18 h-auto cursor-pointer"
-              sizes="(max-width: 768px) 56px, 72px"
-              loading="eager"
-              priority
-              style={{ width: "auto", height: "auto" }}
             />
           </Link>
 

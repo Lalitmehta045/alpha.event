@@ -6,7 +6,7 @@ export interface User {
   lname: string;
   email: string;
   avatar?: string;
-  phone: number;
+  phone?: string | null;
   verify_email: boolean;
   last_login_date?: string | null;
   status: string;
@@ -19,6 +19,7 @@ interface AuthState {
   isAuthenticated: boolean;
   signupData: any[] | null;
   token: string | null;
+  loginProvider: "google" | "credentials" | null;
   loading: boolean;
 }
 
@@ -36,6 +37,10 @@ const initialState: AuthState = {
   token:
     typeof window !== "undefined" && localStorage.getItem("accessToken")
       ? localStorage.getItem("accessToken")
+      : null,
+  loginProvider:
+    typeof window !== "undefined" && localStorage.getItem("loginProvider")
+      ? (localStorage.getItem("loginProvider") as "google" | "credentials")
       : null,
   loading: false,
   signupData: null,
@@ -63,10 +68,26 @@ const authSlice = createSlice({
         localStorage.removeItem("accessToken");
       }
     },
+    setLoginProvider(
+      state,
+      action: PayloadAction<"google" | "credentials" | null>
+    ) {
+      state.loginProvider = action.payload;
+      if (typeof window !== "undefined" && action.payload) {
+        localStorage.setItem("loginProvider", action.payload);
+      } else if (typeof window !== "undefined") {
+        localStorage.removeItem("loginProvider");
+      }
+    },
   },
 });
 
-export const { setUser, setSignupData, setLoading, setToken } =
-  authSlice.actions;
+export const {
+  setUser,
+  setSignupData,
+  setLoading,
+  setToken,
+  setLoginProvider,
+} = authSlice.actions;
 
 export default authSlice.reducer;

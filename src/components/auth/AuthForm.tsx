@@ -22,6 +22,7 @@ import googleImg from "@/assets/images/googleImg.png";
 import facebookImg from "@/assets/images/facebookImg.png";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import PencilLoader from "../common/PencilLoader";
 import countryCode from "@/assets/data/countryCode.json";
 import {
   Select,
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { setLoginProvider } from "@/redux/slices/authSlice";
 
 export default function AuthForm({
   isSignUp,
@@ -68,18 +70,24 @@ export default function AuthForm({
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (data: any) => {
-    const finalData = {
-      ...data,
-      phone: selectedCountryCode + " " + data.phone,
-    };
-    if (isSignUp) {
-      await sendOtp(finalData.email, router);
-      localStorage.setItem("pendingUser", JSON.stringify(finalData));
-      router.push("/verify-email");
-    } else {
-      await signIn(data.email, data.password, router, dispatch);
+    setIsLoading(true);
+    try {
+      const finalData = {
+        ...data,
+        phone: selectedCountryCode + " " + data.phone,
+      };
+      if (isSignUp) {
+        await sendOtp(finalData.email, router);
+        localStorage.setItem("pendingUser", JSON.stringify(finalData));
+        router.push("/verify-email");
+      } else {
+        await signIn(data.email, data.password, router, dispatch);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -322,10 +330,19 @@ export default function AuthForm({
             {/* SUBMIT BUTTON */}
             <Button
               type="submit"
-              disabled={!form.formState.isValid}
-              className="w-full cursor-pointer disabled:cursor-no-drop bg-indigo-600 hover:bg-indigo-700 text-white h-11 disabled:opacity-40"
+              disabled={!form.formState.isValid || isLoading}
+              className="w-full cursor-pointer disabled:cursor-no-drop bg-indigo-600 hover:bg-indigo-700 text-white h-11 disabled:opacity-40 relative"
             >
-              {isSignUp ? "Register" : "Log-In"}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="scale-50">
+                    <PencilLoader />
+                  </span>
+                  <span>{isSignUp ? "Creating Account..." : "Signing In..."}</span>
+                </span>
+              ) : (
+                <span>{isSignUp ? "Register" : "Log-In"}</span>
+              )}
             </Button>
           </form>
         </Form>
@@ -342,7 +359,10 @@ export default function AuthForm({
           <Button
             variant="outline"
             className="w-16 h-14 rounded-xl p-2 cursor-pointer"
-            onClick={() => nextAuthSignIn("google", { callbackUrl: "/" })}
+            onClick={() => {
+              dispatch(setLoginProvider("google"));
+              nextAuthSignIn("google", { callbackUrl: "/" });
+            }}
           >
             <Image src={googleImg} alt="google" />
           </Button>

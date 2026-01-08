@@ -19,7 +19,10 @@ export async function GET(req: NextRequest, { params }: ParamsPromise) {
 
     const auth = verifyUser(req);
     if (!auth) {
-      return NextResponse.json({ message: "Unauthorized access" });
+      return NextResponse.json(
+        { success: false, message: "Unauthorized access. Please login." },
+        { status: 401 }
+      );
     }
 
     const { id } = await params;
