@@ -23,7 +23,7 @@ const roleAccess: Record<string, string[]> = {
   ],
 };
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --- STEP 1: IGNORE STATIC ASSETS ---

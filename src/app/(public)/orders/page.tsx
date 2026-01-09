@@ -37,6 +37,7 @@ export default function OrderPage() {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteAddressId, setDeleteAddressId] = useState<string | null>("");
   const [openCODModal, setOpenCODModal] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
 
   const { items, totalPrice, totalQuantity, totalOriginalPrice } = useSelector(
     (state: RootState) => state.cart
@@ -112,6 +113,7 @@ export default function OrderPage() {
         addressId: addressId,
         subTotalAmt: totalOriginalPrice,
         totalAmt: totalPrice,
+        deliveryDate: deliveryDate, // Add delivery date to order data
       };
 
       // 2. Call the Service
@@ -146,6 +148,24 @@ export default function OrderPage() {
     fetchCartItem();
     fetchAddress();
     fetchOrder();
+
+    // Get delivery date from localStorage
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("preferredDeliveryDate");
+      console.log("Orders page - Retrieved from localStorage:", stored);
+      if (stored) {
+        // Parse YYYY-MM-DD format back to local date
+        const [year, month, day] = stored.split('-').map(Number);
+        const parsed = new Date(year, month - 1, day); // month-1 because JS months are 0-indexed
+        
+        console.log("Orders page - Parsed date (local):", parsed);
+        console.log("Orders page - Parsed date string:", parsed.toDateString());
+        
+        if (!isNaN(parsed.getTime())) {
+          setDeliveryDate(parsed);
+        }
+      }
+    }
   }, []);
 
   return (
@@ -160,6 +180,28 @@ export default function OrderPage() {
                 <h2 className="text-lg font-semibold mb-4">
                   Choose your address
                 </h2>
+
+                {/* Display selected delivery date */}
+                {deliveryDate && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800">
+                      📅 {(() => {
+                        console.log("Displaying deliveryDate:", deliveryDate);
+                        console.log("Displaying toDateString:", deliveryDate.toDateString());
+                        console.log("Displaying toLocaleDateString:", deliveryDate.toLocaleDateString('en-IN', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric'
+                        }));
+                        return deliveryDate.toLocaleDateString('en-IN', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      })()}
+                    </p>
+                  </div>
+                )}
 
                 {addressList.map((address, index: number) =>
                   address.status ? (

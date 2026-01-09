@@ -50,6 +50,10 @@ const OrderSchema = new Schema<IOrder>(
       ref: "Address",
       required: true,
     },
+    deliveryDate: {
+      type: Date,
+      required: false,
+    },
     subTotalAmt: {
       type: Number,
       default: 0,

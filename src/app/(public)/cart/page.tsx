@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import LayoutV2 from "../layout/layoutV2";
 import { getAllCartItems } from "@/services/operations/cartItem";
 import { handleAddItemCart } from "@/redux/slices/cartSlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import CheckoutDateDialog from "@/components/common/cart/CheckoutDateDialog";
 
 export default function CartPage() {
   const router = useRouter();
@@ -25,6 +26,8 @@ export default function CartPage() {
   const { items, totalPrice, totalQuantity, totalOriginalPrice } = useSelector(
     (state: RootState) => state.cart
   );
+  const [dateDialogOpen, setDateDialogOpen] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
 
   const fetchCartItem = async () => {
     if (!token) {
@@ -44,12 +47,44 @@ export default function CartPage() {
     fetchCartItem();
   }, [token]);
 
+    useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem("preferredDeliveryDate");
+    if (!stored) return;
+
+    let parsed: Date;
+    if (stored.includes("T")) {
+      parsed = new Date(stored);
+    } else {
+      const [year, month, day] = stored.split("-").map(Number);
+      parsed = new Date(year, (month || 1) - 1, day || 1);
+    }
+
+    if (!isNaN(parsed.getTime())) {
+      setDeliveryDate(parsed);
+    }
+  }, []);
+
   const redirectToCheckoutPage = () => {
     if (!token) {
       toast.error("Please Login First");
       router.push("/auth/sign-in");
       return;
     }
+    setDateDialogOpen(true);
+  };
+
+  const handleConfirmDate = (selected: Date) => {
+    if (typeof window !== "undefined") {
+      const year = selected.getFullYear();
+      const month = String(selected.getMonth() + 1).padStart(2, "0");
+      const day = String(selected.getDate()).padStart(2, "0");
+      const dateToStore = `${year}-${month}-${day}`;
+      localStorage.setItem("preferredDeliveryDate", dateToStore);
+    }
+
+    setDeliveryDate(selected);
+    setDateDialogOpen(false);
     router.push("/orders");
   };
 
@@ -230,6 +265,14 @@ export default function CartPage() {
           )}
         </main>
       </LayoutV2>
+
+      <CheckoutDateDialog
+        open={dateDialogOpen}
+        onOpenChange={setDateDialogOpen}
+        selectedDate={deliveryDate}
+        onSelectDate={setDeliveryDate}
+        onConfirm={handleConfirmDate}
+      />
     </div>
   );
 }

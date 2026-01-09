@@ -13,6 +13,12 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "alpha-arts-v2.s3.eu-north-1.amazonaws.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "api.dicebear.com",
         port: "",
         pathname: "/**",

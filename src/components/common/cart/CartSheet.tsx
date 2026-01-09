@@ -3,6 +3,7 @@
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -17,6 +18,8 @@ import { pricewithDiscount } from "@/utils/PriceWithDiscount";
 import { RootState } from "@/redux/store/store";
 import { useRouter } from "next/navigation";
 import AddToCartButton from "./AddToCartButton";
+import { useEffect, useState } from "react";
+import CheckoutDateDialog from "./CheckoutDateDialog";
 
 interface CartSheetProps {
   openCart: boolean;
@@ -29,25 +32,56 @@ export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
   const { items, totalPrice, totalQuantity, totalOriginalPrice } = useSelector(
     (state: RootState) => state.cart
   );
+  const [dateDialogOpen, setDateDialogOpen] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
 
-  const redirectToCheckoutPage = () => {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem("preferredDeliveryDate");
+    if (stored) {
+      const parsed = new Date(stored);
+      if (!isNaN(parsed.getTime())) {
+        setDeliveryDate(parsed);
+      }
+    }
+  }, []);
+
+  const handleProceedClick = () => {
     if (!token) {
-      toast.error("Please Login First"); // Correct: Prompts user to log in
+      toast.error("Please Login First");
       router.push("/auth/sign-in");
       return;
-    } // If token exists, proceed to orders
+    }
+    setDateDialogOpen(true);
+  };
+
+  const handleConfirmDate = () => {
+    if (!deliveryDate) {
+      toast.error("Please select a date first");
+      return;
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("preferredDeliveryDate", deliveryDate.toISOString());
+    }
+    setDateDialogOpen(false);
+    setOpenCart(false);
     router.push("/orders");
   };
 
   return (
-    <Sheet open={openCart} onOpenChange={setOpenCart}>
-      <SheetContent
-        side="right"
-        className="p-0 w-80 md:w-md flex flex-col bg-white"
-      >
+    <>
+      <Sheet open={openCart} onOpenChange={setOpenCart}>
+        <SheetContent
+          side="right"
+          className="p-0 w-80 md:w-md flex flex-col bg-white"
+        >
         {/* HEADER */}
         <SheetHeader>
           <SheetTitle>My Cart</SheetTitle>
+          <SheetDescription className="sr-only">
+            Review the items and totals in your cart before proceeding to
+            checkout.
+          </SheetDescription>
         </SheetHeader>
 
         {/* BODY */}
@@ -170,7 +204,7 @@ export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
               <div>{DisplayPriceInRupees(totalPrice)}</div>
 
               <button
-                onClick={redirectToCheckoutPage}
+                onClick={handleProceedClick}
                 className="flex items-center gap-1"
               >
                 Proceed <FaCaretRight />
@@ -180,5 +214,14 @@ export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
         )}
       </SheetContent>
     </Sheet>
+
+      <CheckoutDateDialog
+        open={dateDialogOpen}
+        onOpenChange={setDateDialogOpen}
+        selectedDate={deliveryDate}
+        onSelectDate={setDeliveryDate}
+        onConfirm={handleConfirmDate}
+      />
+    </>
   );
 }

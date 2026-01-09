@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = auth.userId;
-    const { list_items, addressId, subTotalAmt, totalAmt } = await req.json();
+    const { list_items, addressId, subTotalAmt, totalAmt, deliveryDate } = await req.json();
 
     // Validation
     if (!list_items || !list_items.length) {
@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       paymentId: "",
       payment_status: "COD",
       delivery_address: addressId,
+      deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
       subTotalAmt,
       totalAmt,
       order_status: "Processing",

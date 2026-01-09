@@ -23,6 +23,7 @@ export interface IOrder extends Document {
   paymentId?: string;
   payment_status: (typeof PaymentStatus)[keyof typeof PaymentStatus]; // Type for enum string
   delivery_address: Types.ObjectId | IAddress; // Can be just an ID or a populated Address document
+  deliveryDate?: Date; // Preferred delivery date selected by user
   subTotalAmt: number;
   totalAmt: number;
   invoice_receipt?: string;
@@ -95,6 +96,7 @@ export interface DetailedOrderData {
   order_status: string;
   payment_status: string;
   delivery_address: DeliveryAddress;
+  deliveryDate?: Date; // Preferred delivery date selected by user
   subTotalAmt: number;
   invoice_receipt: string;
   createdAt: Date;

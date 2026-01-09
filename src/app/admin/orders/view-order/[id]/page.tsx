@@ -11,6 +11,7 @@ import {
   Loader2,
   Save,
   RotateCcw,
+  CalendarDays,
 } from "lucide-react";
 // Assuming standard component imports
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -520,7 +521,33 @@ export default function ViewOrderPage() {
             </CardContent>
           </Card>
 
-          {/* 6. Timeline (Adjusted Title size and padding) */}
+          {/* 6. Delivery Date */}
+          <Card className="gap-2 shadow-lg transition-shadow border-r-4 border-purple-400">
+            <CardHeader className="bg-purple-50/50 border-b">
+              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />{" "}
+                Preferred Delivery Date
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              {order.deliveryDate ? (
+                <div className="text-base font-semibold text-gray-800">
+                  {new Date(order.deliveryDate).toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </div>
+              ) : (
+                <div className="text-base text-gray-500 italic">
+                  No delivery date specified
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 7. Timeline (Adjusted Title size and padding) */}
           <Card className="gap-2 shadow-lg transition-shadow border-r-4 border-gray-400">
             <CardHeader className="bg-gray-100/50 border-b">
               <CardTitle className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
