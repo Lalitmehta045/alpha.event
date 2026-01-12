@@ -11,7 +11,7 @@ export const ourteam = [
   {
     id: 2,
     name: "Pankaj Nagar",
-    designation: "Co-Founder & Managing Director",
+    designation: "Managing Director",
     image: pankaj,
   },
   // {
