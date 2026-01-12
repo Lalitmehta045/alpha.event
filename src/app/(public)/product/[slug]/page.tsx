@@ -175,6 +175,19 @@ const ProductDisplayPage = () => {
           <div className="p-0 md:p-4 text-base lg:text-lg text-(--secondaryParagraph)">
             {/* <p className="bg-green-300 w-fit px-2 rounded-full">10 Min</p> */}
 
+            <div className="my-4 grid gap-3">
+              <h3 className="font-bold">Description:</h3>
+              <p className="font-semibold">{data.description}</p>
+
+              {data.more_details &&
+                Object.keys(data.more_details).map((key) => (
+                  <div key={key}>
+                    <p className="font-semibold">{key}</p>
+                    <p>{data.more_details![key]}</p> {/* ✅ Safe now */}
+                  </div>
+                ))}
+            </div>
+
             <h2 className="font-semibold text-3xl lg:text-5xl mb-3">
               {data.name}
             </h2>
@@ -228,38 +241,6 @@ const ProductDisplayPage = () => {
                 />
               </div>
             )}
-
-            <div className="my-4 grid gap-3">
-              <h3 className="font-bold">Description:</h3>
-              <p className="font-semibold">{data.description}</p>
-
-              {data.more_details &&
-                Object.keys(data.more_details).map((key) => (
-                  <div key={key}>
-                    <p className="font-semibold">{key}</p>
-                    <p>{data.more_details![key]}</p> {/* ✅ Safe now */}
-                  </div>
-                ))}
-            </div>
-
-            {/* Why Choose Us */}
-            <h2 className="font-semibold mt-6 text-xl">
-              Why Choose Our Event Services?
-            </h2>
-            <div className="space-y-6">
-              <div className="flex gap-4 p-4 shadow-md rounded-xl hover:shadow-lg transition">
-                <ul className="pl-5 text-gray-200">
-                  {services.map((i, index) => (
-                    <div key={index} className="mb-2">
-                      <li className="list-disc font-semibold text-lg">
-                        {i.heading}
-                      </li>
-                      <li className="font-medium">{i.paragraph}</li>
-                    </div>
-                  ))}
-                </ul>
-              </div>
-            </div>
           </div>
         </section>
 
