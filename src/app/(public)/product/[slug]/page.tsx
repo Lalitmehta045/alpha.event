@@ -6,7 +6,8 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { DisplayPriceInRupees } from "@/utils/DisplayPriceInRupees";
 import { pricewithDiscount } from "@/utils/PriceWithDiscount";
 import LayoutV2 from "../../layout/layoutV2";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 import { getProductDetail } from "@/services/operations/product";
 import { Product } from "@/@types/product";
 import CTAButtonV1 from "@/components/common/ctaButton/ctaButtonV1";
@@ -37,6 +38,7 @@ const ProductDisplayPage = () => {
   const slug = params?.slug as string;
   const productId = slug?.split("-")?.slice(-1)[0];
   const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.auth.token);
   const [data, setData] = useState<Product>({
     _id: "",
     name: "",
@@ -72,8 +74,11 @@ const ProductDisplayPage = () => {
   };
 
   const fetchCartItem = async () => {
+    // Only fetch cart if user is authenticated
+    if (!token) return;
+    
     try {
-      const mappedCartData = await getAllCartItems();
+      const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
     } catch (error) {
       console.log(error);
@@ -83,7 +88,7 @@ const ProductDisplayPage = () => {
   useEffect(() => {
     fetchProductDetails();
     fetchCartItem();
-  }, [productId]);
+  }, [productId, token]);
 
   return (
     <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">

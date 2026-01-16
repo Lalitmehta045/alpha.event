@@ -23,6 +23,7 @@ export default function CategoryResolverPage() {
   const { slugParts } = useParams<{ slugParts: string[] }>();
   const router = useRouter();
   const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.auth.token);
 
   const categories = useSelector(
     (state: RootState) => state.product.allCategory
@@ -42,7 +43,7 @@ export default function CategoryResolverPage() {
         getAllCategory(dispatch),
         getAllSubCategory(dispatch),
         getAllProduct(dispatch),
-        getAllCartItems(),
+        getAllCartItems(token), // Pass token if available
       ]);
       setIsLoaded(true);
     } catch (error) {

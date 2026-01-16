@@ -16,6 +16,7 @@ import { handleAddItemCart } from "@/redux/slices/cartSlice";
 
 export default function Home() {
   const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.auth.token);
 
   const productData = useSelector(
     (state: RootState) => state.product.allProducts
@@ -41,8 +42,11 @@ export default function Home() {
   };
 
   const fetchCartItem = async () => {
+    // Only fetch cart if user is authenticated
+    if (!token) return;
+    
     try {
-      const mappedCartData = await getAllCartItems();
+      const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
     } catch (error) {
       console.log(error);
@@ -51,7 +55,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchCartItem();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (

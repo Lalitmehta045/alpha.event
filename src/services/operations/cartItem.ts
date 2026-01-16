@@ -14,8 +14,14 @@ const {
 } = cartEndpoints;
 
 export const getAllCartItems = async (token?: string) => {
+  // If no token provided, return empty array without making API call
+  // This prevents Unauthorized errors in console for unauthenticated users
+  if (!token) {
+    return [];
+  }
+
   try {
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const headers = { Authorization: `Bearer ${token}` };
     const res = await apiConnector("GET", GETALLCART_ITEM_API, null, headers);
 
     if (!res?.data?.success) {
@@ -45,7 +51,11 @@ export const getAllCartItems = async (token?: string) => {
 
     return mappedCartItems;
   } catch (error: any) {
-    console.log("GET CART ERROR:", error);
+    // Only log error if it's not an authentication error (401)
+    // For 401 errors, silently return empty array as user is not authenticated
+    if (error?.response?.status !== 401) {
+      console.log("GET CART ERROR:", error);
+    }
     return [];
   }
 };

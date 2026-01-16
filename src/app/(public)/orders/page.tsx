@@ -46,8 +46,11 @@ export default function OrderPage() {
   const [openEditModal, setOpenEditModal] = useState(false);
 
   const fetchCartItem = async () => {
+    // Only fetch cart if user is authenticated
+    if (!token) return;
+    
     try {
-      const mappedCartData = await getAllCartItems();
+      const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
     } catch (error) {
       console.log(error);
