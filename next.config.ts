@@ -32,6 +32,9 @@ const nextConfig = {
     ],
     // ❌ REMOVED: The 'domains' property is deprecated and caused the warning.
     // domains: ["alpha-arts.s3.eu-north-1.amazonaws.com"],
+    // 🔧 Disable image optimization for S3 signed URLs to prevent 502 errors
+    // Signed URLs with query parameters don't work well with Next.js optimization
+    unoptimized: false, // Keep false, but add unoptimized prop to Image components using signed URLs
   },
 
   async headers() {

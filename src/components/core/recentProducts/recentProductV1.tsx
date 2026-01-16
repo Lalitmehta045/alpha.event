@@ -11,7 +11,7 @@ import recent1 from "@/assets/images/recent1.jpg";
 import recent2 from "@/assets/images/recent2.jpg";
 import recent3 from "@/assets/images/recent3.jpg";
 import recent4 from "@/assets/images/recent4.jpg";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
 interface RecentItem {
@@ -22,38 +22,67 @@ interface RecentItem {
 }
 
 const fallbackRecents: RecentItem[] = [
-  { _id: "1", title: "Top 5 Wedding Backdrop Ideas for 2025", image: recent1 as unknown as string, order: 1 },
-  { _id: "2", title: "Photo Booth Props That Guests Will Love", image: recent2 as unknown as string, order: 2 },
-  { _id: "3", title: "Lighting Tips to Transform Any Venue", image: recent3 as unknown as string, order: 3 },
-  { _id: "4", title: "Luxury Decor on a Budget", image: recent4 as unknown as string, order: 4 },
+  {
+    _id: "1",
+    title: "Top 5 Wedding Backdrop Ideas for 2025",
+    image: recent1 as unknown as string,
+    order: 1,
+  },
+  {
+    _id: "2",
+    title: "Photo Booth Props That Guests Will Love",
+    image: recent2 as unknown as string,
+    order: 2,
+  },
+  {
+    _id: "3",
+    title: "Lighting Tips to Transform Any Venue",
+    image: recent3 as unknown as string,
+    order: 3,
+  },
+  {
+    _id: "4",
+    title: "Luxury Decor on a Budget",
+    image: recent4 as unknown as string,
+    order: 4,
+  },
 ];
 
 const RecentProductV1 = () => {
   const router = useRouter();
   const [recentProducts, setRecentProducts] = useState<RecentItem[]>(fallbackRecents);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchRecentProducts = async () => {
       try {
         const res = await axios.get("/api/recent");
         if (res.data?.success && Array.isArray(res.data.data)) {
-          // Start with fallback images
-          const mergedProducts = [...fallbackRecents];
-          
-          // Replace fallback images with API data where available
+          const mergedProducts = fallbackRecents.map((item) => ({ ...item }));
+
           res.data.data.forEach((apiItem: any) => {
-            const order = apiItem.order ?? 0;
-            if (order >= 1 && order <= 4) {
-              // Replace fallback at position (order - 1) with API item
-              mergedProducts[order - 1] = {
-                _id: apiItem._id,
-                image: apiItem.image,
-                title: apiItem.title || fallbackRecents[order - 1].title,
+            const order = Number(apiItem.order) || 0;
+            const slotIndex = order - 1;
+            if (slotIndex >= 0 && slotIndex < mergedProducts.length) {
+              const hasValidImage =
+                typeof apiItem.image === "string" &&
+                apiItem.image.trim().length > 0;
+
+              mergedProducts[slotIndex] = {
+                ...mergedProducts[slotIndex],
+                _id: apiItem._id || mergedProducts[slotIndex]._id,
+                image: hasValidImage
+                  ? apiItem.image
+                  : mergedProducts[slotIndex].image,
+                title:
+                  apiItem.title?.trim().length > 0
+                    ? apiItem.title
+                    : mergedProducts[slotIndex].title,
                 order: order,
               };
             }
           });
-          
+
           setRecentProducts(mergedProducts);
         } else {
           // Use fallback if API returns empty array or no success
@@ -100,24 +129,34 @@ const RecentProductV1 = () => {
 
       {/* Recent Cards */}
       <div className="w-11/12 mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {recentProducts.map((recent) => (
+        {recentProducts.map((recent, index) => {
+          const key = recent._id || recent.title || `recent-${index}`;
+          const isLoaded = loadedImages[key];
+          return (
           <Card
-            key={recent._id || recent.title}
-            className="group w-full h-68 sm:h-72 max-w-sm md:max-w-md lg:max-w-4xl mx-auto sm:mx-0 hover:shadow-xl transition-all duration-300 cursor-pointer"
+            key={key}
+            className="group w-full h-68 sm:h-72 max-w-sm md:max-w-md lg:max-w-4xl mx-auto sm:mx-0 rounded-3xl border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
           >
-            <div className="relative w-full h-56 sm:h-64 md:h-60 lg:78 overflow-hidden">
+            <div className="relative w-full h-56 sm:h-64 md:h-60 lg:78 overflow-hidden bg-gradient-to-b from-slate-100 via-white to-slate-100">
+              {!isLoaded && (
+                <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200" />
+              )}
               <Image
                 src={recent.image}
                 alt={recent.title || "Recent product"}
-                // fill
-                // className="object-contain transition-transform duration-500 group-hover:scale-105"
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+                unoptimized
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                onLoadingComplete={() =>
+                  setLoadedImages((prev) => ({ ...prev, [key]: true }))
+                }
               />
             </div>
           </Card>
-        ))}
+        )})}
       </div>
     </section>
   );
