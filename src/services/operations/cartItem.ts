@@ -13,7 +13,7 @@ const {
   DELETECART_ITEM_API,
 } = cartEndpoints;
 
-export const getAllCartItems = async (token?: string) => {
+export const getAllCartItems = async (token?: string | null) => {
   // If no token provided, return empty array without making API call
   // This prevents Unauthorized errors in console for unauthenticated users
   if (!token) {
