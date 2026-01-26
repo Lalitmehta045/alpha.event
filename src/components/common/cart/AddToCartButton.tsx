@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaMinus, FaPlus } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import {
@@ -13,6 +12,7 @@ import Loading from "./Loading";
 import { Product } from "@/@types/product";
 import { cn } from "@/lib/utils";
 import { IoCartOutline } from "react-icons/io5";
+import QuantitySelector from "../QuantitySelector";
 import {
   addCartItem,
   deleteCartItem,
@@ -34,7 +34,7 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
   const router = useRouter();
   const { data: session } = useSession();
   const reduxToken = useSelector((state: RootState) => state.auth.token);
-  
+
   // Use NextAuth session OR Redux token
   const token = reduxToken || (session?.user ? "google-auth-session" : null);
   const isLoggedIn = !!token || !!session?.user;
@@ -69,10 +69,10 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
     try {
       setLoading(true);
       const productId = data._id;
-      
+
       // Always get a fresh token if available
       const currentToken = localStorage.getItem("accessToken") || token;
-      
+
       if (!currentToken) {
         toast.error("Session expired. Please log in again.");
         const currentPath = window.location.pathname;
@@ -86,11 +86,11 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
         });
-        
+
         if (!res.ok) {
           throw new Error("Token generation failed");
         }
-        
+
         const tokenResponse = await res.json();
         if (!tokenResponse.success || !tokenResponse.data) {
           throw new Error("Invalid token response");
@@ -105,7 +105,7 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
 
         // Use the new token for add to cart
         const response = await addCartItem(productId, router, tokenResponse.data.accessToken);
-        
+
         if (!response) {
           // Error is already handled in addCartItem
           return;
@@ -122,7 +122,7 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
       } else {
         // Regular flow for users with existing tokens
         const response = await addCartItem(productId, router, currentToken as string);
-        
+
         if (!response) {
           // Error is already handled in addCartItem
           return;
@@ -321,31 +321,116 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
       )}
     >
       {qty > 0 ? (
-        <div className="flex w-full items-center gap-3">
-          <button
-            onClick={decreaseQty}
-            style={{
-              backgroundColor: "var(--cta-Bg)",
-            }}
-            disabled={loading}
-            className="cursor-pointer hover:bg-(--cta-Bg-hover) text-white font-bold rounded-l-lg px-3 py-2 text-xs"
-          >
-            <FaMinus />
-          </button>
+        <QuantitySelector
+          value={qty}
+          onChange={async (newQty) => {
+            // This handles direct input changes (when user types a quantity)
+            if (!isLoggedIn) {
+              toast.error("Please Login First");
+              const currentPath = window.location.pathname;
+              router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+              return;
+            }
 
-          <p className="flex-1 text-center font-semibold">{qty}</p>
+            // Ensure token exists for Google users
+            let finalToken = reduxToken || localStorage.getItem("accessToken");
+            if (session?.user && !finalToken) {
+              try {
+                const res = await fetch("/api/auth/google-token", {
+                  method: "POST",
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.success) {
+                    dispatch(setToken(data.data.accessToken));
+                    dispatch(setUser(data.data.user));
+                    localStorage.setItem("accessToken", data.data.accessToken);
+                    localStorage.setItem("refreshToken", data.data.refreshToken);
+                    localStorage.setItem("user", JSON.stringify(data.data.user));
+                    finalToken = data.data.accessToken;
+                  }
+                }
+              } catch (error) {
+                console.error("Token generation failed:", error);
+                toast.error("Session expired. Please log in again.");
+                const currentPath = window.location.pathname;
+                router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+                return;
+              }
+            }
 
-          <button
-            onClick={increaseQty}
-            style={{
-              backgroundColor: "var(--cta-Bg)",
-            }}
-            disabled={loading}
-            className="cursor-pointer hover:bg-(--cta-Bg-hover) text-white font-bold rounded-r-lg px-3 py-2 text-xs"
-          >
-            <FaPlus />
-          </button>
-        </div>
+            if (!finalToken) {
+              toast.error("Please Login First");
+              return;
+            }
+
+            if (!data._id) return;
+
+            const cartId = cartItem?._id;
+            if (!cartId) return;
+
+            // If quantity is 0, remove the item from cart
+            if (newQty === 0) {
+              try {
+                setLoading(true);
+                await deleteCartItem(cartId as string, finalToken);
+                dispatch(removeFromCart(cartId));
+                toast.success("Item removed from cart");
+              } catch (error) {
+                toast.error("Failed to remove item from cart.");
+              } finally {
+                setLoading(false);
+              }
+            } else {
+              // Update the quantity
+              try {
+                setLoading(true);
+                const response = await updateCartItem(
+                  cartId as string,
+                  newQty,
+                  finalToken
+                );
+
+                if (!response) {
+                  throw new Error("No response from server");
+                }
+
+                const updatePayload = {
+                  _id: response._id,
+                  quantity: response.quantity,
+                  product: response.productId || response.product,
+                };
+
+                dispatch(updateQuantity(updatePayload));
+                toast.success("Quantity updated");
+              } catch (error: any) {
+                console.error("Update quantity error:", error);
+                toast.error(error.message || "Failed to update quantity");
+              } finally {
+                setLoading(false);
+              }
+            }
+          }}
+          onIncrement={() => {
+            const mockEvent = {
+              preventDefault: () => { },
+              stopPropagation: () => { },
+            } as React.MouseEvent;
+            increaseQty(mockEvent);
+          }}
+          onDecrement={() => {
+            const mockEvent = {
+              preventDefault: () => { },
+              stopPropagation: () => { },
+            } as React.MouseEvent;
+            decreaseQty(mockEvent);
+          }}
+          min={0}
+          disabled={loading}
+          loading={loading}
+          className="w-full"
+          size="md"
+        />
       ) : (
         <button
           onClick={handleAddToCart}
