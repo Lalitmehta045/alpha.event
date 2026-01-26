@@ -34,7 +34,7 @@ export default function CartPage() {
       console.log("No token found, skipping cart fetch");
       return;
     }
-    
+
     try {
       const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
@@ -47,7 +47,7 @@ export default function CartPage() {
     fetchCartItem();
   }, [token]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = localStorage.getItem("preferredDeliveryDate");
     if (!stored) return;
@@ -167,10 +167,10 @@ export default function CartPage() {
                                     (Saved:{" "}
                                     {DisplayPriceInRupees(
                                       item.product.price -
-                                        pricewithDiscount(
-                                          item.product.price,
-                                          item.product.discount
-                                        )
+                                      pricewithDiscount(
+                                        item.product.price,
+                                        item.product.discount
+                                      )
                                     )}
                                     )
                                   </p>
@@ -239,7 +239,7 @@ export default function CartPage() {
                       className="w-full mt-4 bg-blue-600 hover:bg-blue-800 cursor-pointer text-white text-md py-5 rounded-lg shadow-md flex items-center gap-2 justify-center"
                       onClick={redirectToCheckoutPage}
                     >
-                      Proceed to Checkout <FaCaretRight />
+                      Select Date <FaCaretRight />
                     </Button>
                   </CardContent>
                 </Card>
