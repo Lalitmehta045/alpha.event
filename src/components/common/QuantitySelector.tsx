@@ -114,6 +114,15 @@ const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         setIsFocused(true);
     };
 
+    // Handle Enter key press to trigger update
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            // Trigger blur to validate and call onChange
+            e.currentTarget.blur();
+        }
+    };
+
     // Handle increment
     const handleIncrement = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -211,6 +220,7 @@ const QuantitySelector: React.FC<QuantitySelectorProps> = ({
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     onFocus={handleFocus}
+                    onKeyDown={handleKeyDown}
                     disabled={disabled || loading}
                     className={cn(
                         "text-center font-semibold border-y border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all overflow-hidden",
