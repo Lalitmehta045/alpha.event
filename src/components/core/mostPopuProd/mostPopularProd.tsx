@@ -102,6 +102,7 @@ const MostPopularProd = () => {
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="w-full object-contain hover:scale-110 transition-transform duration-300"
+                        unoptimized
                       />
                     </div>
 

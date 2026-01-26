@@ -98,6 +98,7 @@ const FeaturedProd = ({ productId }: featureprops) => {
                         alt={product.name}
                         fill
                         className="w-full object-contain hover:scale-110 transition-transform duration-300"
+                        unoptimized
                       />
                     </div>
 
