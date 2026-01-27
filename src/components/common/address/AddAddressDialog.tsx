@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import cityStateData from "@/assets/data/cities.json";
 import { addAddress } from "@/services/operations/address";
 import { RootState } from "@/redux/store/store";
@@ -24,8 +25,23 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import countryCode from "@/assets/data/countryCode.json";
 import FreeLocationComponent from "@/components/common/FreeLocationComponent";
-import MapLocationPicker from "@/components/common/address/MapLocationPicker";
-import { MapPin } from "lucide-react";
+import { MapPin, Loader2 } from "lucide-react";
+
+// Dynamic import to avoid SSR issues with Leaflet
+const MapLocationPicker = dynamic(
+  () => import("@/components/common/address/MapLocationPicker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[300px] bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
+          <p className="text-gray-500 text-sm">Loading map...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 interface AddressProps {
   open: boolean;
