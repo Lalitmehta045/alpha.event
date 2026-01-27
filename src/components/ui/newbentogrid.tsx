@@ -59,7 +59,7 @@ const BentoCard = ({
         alt={title}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        className="absolute inset-0 h-full w-full object-fill sm:object-cover transition-transform duration-500 group-hover:scale-110"
+        className="absolute inset-0 h-full w-full object-fill transition-transform duration-500 group-hover:scale-110"
       />
 
       {/* Gradient Overlay */}
