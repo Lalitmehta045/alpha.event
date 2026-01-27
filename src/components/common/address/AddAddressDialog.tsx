@@ -141,7 +141,7 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
       }
 
       const addr = data.address;
-      const addressParts = [];
+      const addressParts: string[] = [];
       if (addr.road) addressParts.push(addr.road);
       if (addr.suburb) addressParts.push(addr.suburb);
 
