@@ -48,7 +48,7 @@ export default function OrderPage() {
   const fetchCartItem = async () => {
     // Only fetch cart if user is authenticated
     if (!token) return;
-    
+
     try {
       const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
@@ -160,10 +160,10 @@ export default function OrderPage() {
         // Parse YYYY-MM-DD format back to local date
         const [year, month, day] = stored.split('-').map(Number);
         const parsed = new Date(year, month - 1, day); // month-1 because JS months are 0-indexed
-        
+
         console.log("Orders page - Parsed date (local):", parsed);
         console.log("Orders page - Parsed date string:", parsed.toDateString());
-        
+
         if (!isNaN(parsed.getTime())) {
           setDeliveryDate(parsed);
         }
@@ -311,7 +311,7 @@ export default function OrderPage() {
 
               {/* Buttons */}
               <Button className="w-full p-5 bg-green-600 hover:bg-green-900 cursor-pointer">
-                <Link href="tel:+917440287174">Call Now</Link>
+                <Link href="tel:+918966066299">Call Now</Link>
                 <IoCall style={{ width: 20, height: 20 }} />
               </Button>
 

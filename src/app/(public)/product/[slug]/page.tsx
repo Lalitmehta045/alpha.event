@@ -76,7 +76,7 @@ const ProductDisplayPage = () => {
   const fetchCartItem = async () => {
     // Only fetch cart if user is authenticated
     if (!token) return;
-    
+
     try {
       const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));
@@ -117,9 +117,8 @@ const ProductDisplayPage = () => {
               {data.image.map((img, index) => (
                 <div
                   key={img + index + "point"}
-                  className={`bg-slate-200 w-3 h-3 lg:w-5 lg:h-5 rounded-full ${
-                    index === imageIndex && "bg-slate-300"
-                  }`}
+                  className={`bg-slate-200 w-3 h-3 lg:w-5 lg:h-5 rounded-full ${index === imageIndex && "bg-slate-300"
+                    }`}
                 ></div>
               ))}
             </div>
@@ -134,11 +133,10 @@ const ProductDisplayPage = () => {
                   <div
                     key={img + index}
                     onClick={() => setImageIndex(index)}
-                    className={`w-28 h-28 cursor-pointer shadow-md rounded-md border-2 ${
-                      imageIndex === index
+                    className={`w-28 h-28 cursor-pointer shadow-md rounded-md border-2 ${imageIndex === index
                         ? "border-gray-300"
                         : "border-transparent"
-                    }`}
+                      }`}
                   >
                     <img
                       src={img}
@@ -241,7 +239,7 @@ const ProductDisplayPage = () => {
                   text="Call Now"
                   icon={<IoCall style={{ width: 20, height: 20 }} />}
                   // onClick={() => router.push("/recent")}
-                  href="tel:+917440287174"
+                  href="tel:+918966066299"
                   className="px-4 md:px-8 py-5 md:py-6 w-full text-lg bg-black border border-gray-300 text-white"
                 />
               </div>
