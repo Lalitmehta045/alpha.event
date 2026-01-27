@@ -25,10 +25,10 @@ const HeaderV2 = () => {
   const dispatch = useDispatch();
   const reduxUser = useSelector((state: RootState) => state.auth.user);
   const { data: session } = useSession();
-  
+
   // Check both Redux user and NextAuth session
   const user = reduxUser || session?.user;
-  
+
   const [isOpen, setIsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
@@ -69,7 +69,7 @@ const HeaderV2 = () => {
       if (session?.user) {
         // For Google Auth users: Clear NextAuth session + Redux + localStorage
         await signOut({ callbackUrl: "/" });
-        
+
         // Also clear Redux state and localStorage that were set during token generation
         dispatch(setUser(null));
         dispatch(setToken(null));

@@ -24,6 +24,8 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import countryCode from "@/assets/data/countryCode.json";
 import FreeLocationComponent from "@/components/common/FreeLocationComponent";
+import MapLocationPicker from "@/components/common/address/MapLocationPicker";
+import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 
 interface AddressProps {
   open: boolean;
@@ -50,6 +52,14 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
     status: false,
     mobile: "", // Local mobile number part
   });
+
+  // Map-related state
+  const [showMap, setShowMap] = useState(false);
+  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number, lng: number }>({
+    lat: 28.6139, // Default: New Delhi
+    lng: 77.2090
+  });
+  const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
 
   const citiesForSelectedState =
     cityStateData.find((item) => item.state === address.state)?.cities || [];
@@ -106,9 +116,68 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
     }
   };
 
+  // Reverse geocode coordinates from map to address
+  const getAddressFromCoordinates = async (lat: number, lng: number) => {
+    setIsReverseGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18&countrycodes=in`,
+        {
+          headers: {
+            'User-Agent': 'AlphaEventApp/1.0 (contact@alphaevent.com)'
+          },
+          signal: AbortSignal.timeout(10000)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Geocoding error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data || data.error || !data.address) {
+        throw new Error("No address found for this location");
+      }
+
+      const addr = data.address;
+      const addressParts = [];
+      if (addr.road) addressParts.push(addr.road);
+      if (addr.suburb) addressParts.push(addr.suburb);
+
+      const detectedCity = addr.city || addr.town || addr.village || addr.county || "";
+      const detectedState = addr.state || "";
+      const detectedPincode = addr.postcode || "";
+
+      // Auto-select state if found and matches our data
+      const matchingState = cityStateData.find(item =>
+        item.state.toLowerCase() === detectedState.toLowerCase()
+      );
+
+      const finalCity = detectedCity;
+      const finalState = matchingState?.state || detectedState;
+
+      setAddress(prev => ({
+        ...prev,
+        address_line: addressParts.join(", ") || data.display_name.split(",")[0],
+        city: finalCity,
+        state: finalState,
+        pincode: detectedPincode,
+        country: addr.country || "India"
+      }));
+
+      toast.success("Location selected on map!");
+    } catch (error: any) {
+      console.error("Reverse geocoding error:", error);
+      toast.error("Failed to get address from map. Please enter manually.");
+    } finally {
+      setIsReverseGeocoding(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-92 md:max-w-lg rounded-xl">
+      <DialogContent className="max-w-92 md:max-w-lg rounded-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Address</DialogTitle>
         </DialogHeader>
@@ -118,11 +187,11 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
           <FreeLocationComponent
             onLocationSelect={(locationData) => {
               // Auto-select state if found and matches our data
-              const matchingState = cityStateData.find(item => 
+              const matchingState = cityStateData.find(item =>
                 item.state.toLowerCase() === locationData.state.toLowerCase()
               );
-              
-              const matchingCity = matchingState ? matchingState.cities.find(city => 
+
+              const matchingCity = matchingState ? matchingState.cities.find(city =>
                 city.toLowerCase() === locationData.city.toLowerCase()
               ) : null;
 
@@ -147,9 +216,55 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
                 pincode: locationData.pincode,
                 country: locationData.country
               }));
+
+              // Update map coordinates if available
+              if (locationData.latitude && locationData.longitude) {
+                setMapCoordinates({
+                  lat: locationData.latitude,
+                  lng: locationData.longitude
+                });
+              }
             }}
             placeholder="Enter your complete address"
           />
+
+          {/* Map Toggle Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowMap(!showMap)}
+            className="w-full border-green-500 text-green-600 hover:bg-green-50 flex items-center justify-center gap-2"
+          >
+            <MapPin className="w-4 h-4" />
+            {showMap ? "Hide Map" : "Select on Map"}
+            {showMap ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </Button>
+
+          {/* Map Component */}
+          {showMap && (
+            <div className="border-2 border-green-200 rounded-lg p-3 bg-green-50/30">
+              <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
+                <MapPin className="w-4 h-4 text-green-600" />
+                Click or drag the marker to select your location
+              </p>
+              {isReverseGeocoding && (
+                <p className="text-xs text-blue-600 mb-2">
+                  Getting address from map...
+                </p>
+              )}
+              <MapLocationPicker
+                initialLat={mapCoordinates.lat}
+                initialLng={mapCoordinates.lng}
+                onLocationSelect={(lat, lng) => {
+                  setMapCoordinates({ lat, lng });
+                  getAddressFromCoordinates(lat, lng);
+                }}
+                height="300px"
+                className="w-full"
+              />
+            </div>
+          )}
+
 
           {/* Address Line */}
           <div>
