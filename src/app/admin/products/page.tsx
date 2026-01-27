@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -42,6 +44,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [deleteData, setDeleteData] = useState<Product | null>(null);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const allProducts = useSelector(
     (state: RootState) => state.product.allProducts
@@ -123,21 +126,35 @@ export default function ProductsPage() {
         </Link>
       </div>
 
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 max-w-sm"
+        />
+      </div>
+
       {loading ? (
         <ProductsLoading />
       ) : !products || products.length === 0 ? (
         <p>No products found.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 place-content-center gap-2 md:gap-4 scroll-smooth">
-          {allProducts.map((p: any) => (
-            <AdminProductCard
-              key={p._id}
-              item={p}
-              setDeleteData={setDeleteData}
-              setSelectedProduct={() => setSelectedProduct(p._id!)}
-              setOpenDeleteConfirm={setOpenDeleteConfirm} // ⬅ FIXED
-            />
-          ))}
+          {allProducts
+            .filter((p: Product) =>
+              p.name.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map((p: any) => (
+              <AdminProductCard
+                key={p._id}
+                item={p}
+                setDeleteData={setDeleteData}
+                setSelectedProduct={() => setSelectedProduct(p._id!)}
+                setOpenDeleteConfirm={setOpenDeleteConfirm} // ⬅ FIXED
+              />
+            ))}
         </div>
       )}
 
