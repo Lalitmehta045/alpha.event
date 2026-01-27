@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     }
 
     const products = await ProductModel.find(filter)
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 }) // ✅ -1 = descending (newest first)
       .lean();
 
     return NextResponse.json({

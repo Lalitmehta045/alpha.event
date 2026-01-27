@@ -19,7 +19,7 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import { ClipLoader } from "react-spinners";
-import { uploadToS3 } from "@/services/operations/upload";
+import axios from "axios";
 import ViewImage from "@/components/admin/ViewImage";
 import AddFieldComponent from "@/components/admin/AddFieldComponent";
 import {
@@ -45,6 +45,14 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useRouter } from "next/navigation";
+import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const UploadProduct: React.FC = () => {
   const form = useForm<ProductFormValues>({
@@ -78,46 +86,168 @@ const UploadProduct: React.FC = () => {
   const [openAddField, setOpenAddField] = useState(false);
   const [fieldName, setFieldName] = useState("");
 
-  // ✅ Image Upload
+  // Crop-related states
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [currentCropImageFile, setCurrentCropImageFile] = useState<File | null>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const imgRef = React.useRef<HTMLImageElement | null>(null);
+
+  // Cleanup preview URL on unmount
+  React.useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  // Center square crop utility
+  const centerSquareCrop = (mediaWidth: number, mediaHeight: number): Crop => {
+    const size = Math.min(mediaWidth, mediaHeight) * 0.8;
+    const x = (mediaWidth - size) / 2;
+    const y = (mediaHeight - size) / 2;
+    return {
+      unit: "px",
+      width: size,
+      height: size,
+      x,
+      y,
+    };
+  };
+
+  // ✅ Image Upload - Modified to open crop dialog
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Open crop dialog instead of direct upload
+    setCurrentCropImageFile(file);
+    setCompletedCrop(null);
+    const url = URL.createObjectURL(file);
+    setImagePreviewUrl(url);
+    setCropDialogOpen(true);
+  };
+
+  // Apply crop and upload
+  const applyCrop = async () => {
+    if (!currentCropImageFile || !completedCrop || !imgRef.current) {
+      toast.error("Please select an image and crop area first");
+      return;
+    }
+
     try {
       setImageLoading(true);
-      const url = await uploadToS3(file);
-      if (url) {
-        const currentImages = form.getValues("image") || [];
-        form.setValue("image", [...currentImages, url]);
-        toast.success("Image uploaded successfully!");
-      }
-    } catch (err) {
-      console.error("Image upload error:", err);
-      toast.error("Image upload failed");
+      toast.loading("Processing cropped image...");
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+
+      const imageBitmap = await createImageBitmap(currentCropImageFile);
+      img.src = URL.createObjectURL(currentCropImageFile);
+
+      await new Promise((resolve, reject) => {
+        img.onload = async () => {
+          try {
+            const scaleX = imageBitmap.width / (imgRef.current?.width || imageBitmap.width);
+            const scaleY = imageBitmap.height / (imgRef.current?.height || imageBitmap.height);
+            const cropWidth = completedCrop.width * scaleX;
+            const cropHeight = completedCrop.height * scaleY;
+
+            canvas.width = cropWidth;
+            canvas.height = cropHeight;
+
+            ctx?.drawImage(
+              imageBitmap,
+              completedCrop.x * scaleX,
+              completedCrop.y * scaleY,
+              cropWidth,
+              cropHeight,
+              0,
+              0,
+              cropWidth,
+              cropHeight
+            );
+
+            canvas.toBlob(async (blob) => {
+              if (blob) {
+                const croppedFile = new File([blob], currentCropImageFile!.name, { type: blob.type });
+
+                try {
+                  // Upload using the same endpoint as Recent Products
+                  const formData = new FormData();
+                  formData.append("my_file", croppedFile);
+
+                  const response = await axios.post("/api/admin/product/upload-image", formData, {
+                    timeout: 30000,
+                  });
+
+                  if (response.data.success) {
+                    const url = response.data.result.url;
+                    const currentImages = form.getValues("image") || [];
+                    form.setValue("image", [...currentImages, url]);
+                    setCropDialogOpen(false);
+                    setCurrentCropImageFile(null);
+                    setImagePreviewUrl(null);
+                    setCrop(undefined);
+                    setCompletedCrop(null);
+                    toast.dismiss();
+                    toast.success("Image cropped and uploaded successfully!");
+                  } else {
+                    toast.dismiss();
+                    toast.error(response.data.message || "Failed to upload image");
+                  }
+                } catch (error: any) {
+                  console.error("Upload error:", error);
+                  console.error("Error response:", error.response?.data);
+                  toast.dismiss();
+                  toast.error(error.response?.data?.message || "Failed to upload image");
+                } finally {
+                  setImageLoading(false); // ✅ Always reset loading state
+                }
+              } else {
+                toast.dismiss();
+                toast.error("Failed to process cropped image");
+                setImageLoading(false); // ✅ Reset loading state
+              }
+            }, 'image/jpeg', 0.9);
+          } catch (error) {
+            console.error("Canvas processing error:", error);
+            reject(error);
+          }
+        };
+
+        img.onerror = () => {
+          toast.dismiss();
+          toast.error("Failed to load image for cropping");
+          reject(new Error("Image load failed"));
+        };
+      });
+
+    } catch (error) {
+      console.error("Crop processing error:", error);
+      toast.dismiss();
+      toast.error("Failed to process image");
     } finally {
       setImageLoading(false);
     }
   };
 
-  // ✅ Drag & Drop Upload
+  // ✅ Drag & Drop Upload - Modified to open crop dialog
   const handleDragOver = (e: DragEvent<HTMLLabelElement>) => e.preventDefault();
   const handleDrop = async (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
 
-    try {
-      setImageLoading(true);
-      // const url = await uploadToS3(file);
-      // if (url) {
-      //   const currentImages = form.getValues("image") || [];
-      //   form.setValue("image", [...currentImages, url]);
-      //   toast.success("Image uploaded successfully!");
-      // }
-    } catch (err) {
-      toast.error("Image upload failed");
-    } finally {
-      setImageLoading(false);
-    }
+    // Open crop dialog instead of direct upload
+    setCurrentCropImageFile(file);
+    setCompletedCrop(null);
+    const url = URL.createObjectURL(file);
+    setImagePreviewUrl(url);
+    setCropDialogOpen(true);
   };
 
   // ✅ Remove selected category
@@ -160,6 +290,29 @@ const UploadProduct: React.FC = () => {
       return;
     }
 
+    // ✅ Validate required fields
+    console.log("Form values before validation:", {
+      image: values.image,
+      category: values.category,
+      subCategory: values.subCategory,
+    });
+
+    if (!values.image || values.image.length === 0) {
+      toast.error("Please upload at least one image");
+      return;
+    }
+
+    if (!values.category || values.category.length === 0) {
+      toast.error("Please select at least one category");
+      return;
+    }
+
+    if (!values.subCategory || values.subCategory.length === 0) {
+      toast.error("Please select at least one subcategory");
+      console.log("SubCategory validation failed:", values.subCategory);
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -172,6 +325,7 @@ const UploadProduct: React.FC = () => {
         discount: Number(values.discount),
       };
 
+      console.log("Submitting product data:", formattedData);
       const result = await addProduct(formattedData, token);
 
       if (result) {
@@ -551,6 +705,39 @@ const UploadProduct: React.FC = () => {
           onSubmit={handleAddField}
         />
       )}
+
+      {/* Crop Dialog */}
+      <Dialog open={cropDialogOpen} onOpenChange={setCropDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crop Image</DialogTitle>
+          </DialogHeader>
+          {currentCropImageFile && imagePreviewUrl && (
+            <div className="relative h-72">
+              <ReactCrop
+                crop={crop}
+                onChange={(c) => setCrop(c)}
+                onComplete={(c) => setCompletedCrop(c as PixelCrop)}
+                className="max-h-72"
+              >
+                <img
+                  ref={imgRef}
+                  src={imagePreviewUrl}
+                  alt="Crop preview"
+                  className="max-h-72 object-contain"
+                  onLoad={(e) => {
+                    const { width, height } = e.currentTarget;
+                    setCrop(centerSquareCrop(width, height));
+                  }}
+                />
+              </ReactCrop>
+            </div>
+          )}
+          <Button onClick={applyCrop} disabled={imageLoading}>
+            {imageLoading ? "Processing..." : "Apply Crop"}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

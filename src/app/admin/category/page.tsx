@@ -30,7 +30,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import CategoryTableSkeleton from "./loading";
+import CategoryTableSkeleton, { CategoryTableRowsSkeleton } from "./loading";
 import { useRouter } from "next/navigation";
 import { setAllCategory } from "@/redux/slices/product";
 
@@ -150,7 +150,7 @@ export default function CategoryPage() {
 
           <TableBody>
             {loading ? (
-              <CategoryTableSkeleton />
+              <CategoryTableRowsSkeleton />
             ) : allCategory.length === 0 ? (
               <TableRow>
                 <TableCell
