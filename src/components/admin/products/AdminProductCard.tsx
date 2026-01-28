@@ -6,6 +6,8 @@ import { DisplayPriceInRupees } from "@/utils/DisplayPriceInRupees";
 import { pricewithDiscount } from "@/utils/PriceWithDiscount";
 import { Pencil } from "lucide-react";
 import { MdDelete } from "react-icons/md";
+import Image from "next/image";
+import { useState } from "react";
 
 interface AdminProductCardProps {
   item: Product;
@@ -20,6 +22,8 @@ export default function AdminProductCard({
   setOpenDeleteConfirm,
   setSelectedProduct,
 }: AdminProductCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <Card className="relative w-full max-w-md h-66 md:h-72 lg:h-78 p-3 gap-0 sm:gap-1 shadow-sm hover:shadow-md transition rounded-xl border border-gray-200">
       {/* Action Buttons */}
@@ -51,12 +55,36 @@ export default function AdminProductCard({
       )}
 
       {/* Product Image */}
-      <div className="w-full h-30 md:h-34 lg:h-38  bg-gray-50 rounded-xl">
-        <img
-          src={item.image?.[0]}
-          alt={item.name}
-          className="w-full h-full object-contain"
-        />
+      <div className="relative w-full h-30 md:h-34 lg:h-38 bg-gray-50 rounded-xl overflow-hidden">
+        {imageError || !item.image?.[0] ? (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <div className="text-center text-gray-400">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <p className="text-xs mt-1">No Image</p>
+            </div>
+          </div>
+        ) : (
+          <Image
+            src={item.image[0]}
+            alt={item.name}
+            fill
+            className="object-contain"
+            onError={() => setImageError(true)}
+            unoptimized
+          />
+        )}
       </div>
 
       <CardHeader className="px-0 mt-2">

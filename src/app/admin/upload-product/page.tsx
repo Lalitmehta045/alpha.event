@@ -94,6 +94,9 @@ const UploadProduct: React.FC = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const imgRef = React.useRef<HTMLImageElement | null>(null);
 
+  // ✅ Store preview URLs separately from S3 keys
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<Record<number, string>>({});
+
   // Cleanup preview URL on unmount
   React.useEffect(() => {
     return () => {
@@ -185,9 +188,32 @@ const UploadProduct: React.FC = () => {
                   });
 
                   if (response.data.success) {
-                    const url = response.data.result.url;
-                    const currentImages = form.getValues("image") || [];
-                    form.setValue("image", [...currentImages, url]);
+                    const s3Key = response.data.result.url; // This is the S3 key
+
+                    // ✅ Generate signed URL for preview
+                    try {
+                      const signedUrlResponse = await axios.get(`/api/admin/product/preview-image?key=${encodeURIComponent(s3Key)}`);
+                      const previewUrl = signedUrlResponse.data.url || s3Key;
+
+                      const currentImages = form.getValues("image") || [];
+                      // Store S3 key in form data (for database)
+                      form.setValue("image", [...currentImages, s3Key]);
+
+                      // ✅ Store preview URL in state for display
+                      setImagePreviewUrls(prev => ({
+                        ...prev,
+                        [currentImages.length]: previewUrl
+                      }));
+
+                      // Store preview URL separately if needed
+                      // For now, we'll just use the S3 key and handle preview in the component
+                    } catch (previewError) {
+                      console.error("Failed to generate preview URL:", previewError);
+                      // Still add the S3 key even if preview fails
+                      const currentImages = form.getValues("image") || [];
+                      form.setValue("image", [...currentImages, s3Key]);
+                    }
+
                     setCropDialogOpen(false);
                     setCurrentCropImageFile(null);
                     setImagePreviewUrl(null);
@@ -448,10 +474,10 @@ const UploadProduct: React.FC = () => {
                   className="relative group w-24 h-24 border border-gray-300 rounded-lg  bg-gray-100 shadow-sm"
                 >
                   <img
-                    src={img}
-                    alt={`${img}`}
+                    src={imagePreviewUrls[index] || img}
+                    alt={`Product ${index + 1}`}
                     className="w-full h-full object-cover rounded-lg cursor-pointer group-hover:opacity-90"
-                    onClick={() => setViewImageURL(img)}
+                    onClick={() => setViewImageURL(imagePreviewUrls[index] || img)}
                   />
                   <button
                     type="button"

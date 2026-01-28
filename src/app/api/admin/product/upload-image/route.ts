@@ -38,35 +38,32 @@ export async function POST(request: NextRequest) {
     };
 
     const command = new PutObjectCommand(uploadParams);
-    
+
     // Add timeout for S3 upload
     const uploadPromise = s3Client.send(command);
-    const timeoutPromise = new Promise((_, reject) => 
+    const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Upload timeout')), 25000) // 25 second timeout
     );
-    
+
     await Promise.race([uploadPromise, timeoutPromise]);
 
-    // Generate presigned URL for viewing with shorter expiry for better performance
-    const getObjectCommand = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET!,
-      Key: fileName,
-    });
-    const url = await getSignedUrl(s3Client, getObjectCommand, { expiresIn: 1800 }); // 30 minutes expiry
-    console.log("Generated presigned URL:", url);
+    // ✅ Return S3 key instead of signed URL
+    // The frontend will store this key in the database
+    // Fresh signed URLs will be generated when fetching products
+    console.log("Uploaded to S3 with key:", fileName);
 
     return NextResponse.json({
       success: true,
       result: {
-        url: url,
+        url: fileName, // ✅ Return S3 key, not signed URL
         public_id: fileName,
       },
     });
   } catch (error) {
     console.error("Upload error:", error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : "Upload failed." 
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : "Upload failed."
     });
   }
 }

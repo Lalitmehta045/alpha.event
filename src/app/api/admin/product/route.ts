@@ -3,6 +3,47 @@ import { ensureAdmin } from "@/lib/adminGuard";
 import { connectDB } from "@/lib/db";
 import ProductModel from "@/lib/models/Product.model";
 import { Category, SubCategory } from "@/@types/catregory";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// Initialize S3 client
+const s3Client = new S3Client({
+  region: process.env.AWS_S3_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+/**
+ * Helper function to generate fresh signed URLs for product images
+ * Replaces S3 keys with temporary signed URLs (1 hour expiry)
+ */
+async function generateSignedUrls(products: any[]) {
+  for (const product of products) {
+    if (product.image && Array.isArray(product.image)) {
+      const signedUrls = await Promise.all(
+        product.image.map(async (key: string) => {
+          // If already a full URL (starts with http), return as-is
+          if (key.startsWith('http')) return key;
+
+          try {
+            const command = new GetObjectCommand({
+              Bucket: process.env.AWS_S3_BUCKET!,
+              Key: key,
+            });
+            return await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+          } catch (error) {
+            console.error(`Failed to generate signed URL for key: ${key}`, error);
+            return key; // Return original key if signing fails
+          }
+        })
+      );
+      product.image = signedUrls;
+    }
+  }
+  return products;
+}
 
 interface ProductPayload {
   name: string;
@@ -31,10 +72,13 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 })
       .lean();
 
+    // ✅ Generate fresh signed URLs for all product images
+    const productsWithSignedUrls = await generateSignedUrls(products);
+
     return NextResponse.json({
       success: true,
       message: "Successfully fetched all products",
-      data: products,
+      data: productsWithSignedUrls,
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -115,12 +159,21 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: any) {
     console.error("CREATE PRODUCT ERROR:", error);
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+
+    // Log validation errors specifically
+    if (error.name === 'ValidationError') {
+      console.error("Validation errors:", error.errors);
+    }
 
     return NextResponse.json(
       {
         success: false,
         error: true,
         message: error.message || "Internal server error",
+        details: error.errors || error.toString(),
       },
       { status: 500 }
     );
