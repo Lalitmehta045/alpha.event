@@ -12,25 +12,46 @@ const s3Client = new S3Client({
   },
 });
 
+// ✅ In-memory cache for signed URLs (avoids regenerating on every request)
+const urlCache = new Map<string, { url: string; expiry: number }>();
+const CACHE_DURATION = 50 * 60 * 1000; // 50 minutes (URLs expire in 1 hour)
+
+function getCachedSignedUrl(key: string): string | null {
+  const cached = urlCache.get(key);
+  if (cached && Date.now() < cached.expiry) {
+    return cached.url;
+  }
+  return null;
+}
+
 export async function GET() {
   try {
     await connectDB();
     const recents = await RecentModel.find({ order: { $exists: true } }).sort({ order: 1 });
 
-    // Generate presigned URLs for images
+    // Generate presigned URLs with caching
     const recentsWithUrls = await Promise.all(
       recents.map(async (recent: any) => {
         try {
-          // Extract key from S3 URL
-          const url = new URL(recent.image);
-          const key = url.pathname.substring(1); // Remove leading slash
+          // Handle both full S3 URLs (old data) and plain S3 keys (new data)
+          let key = recent.image;
+          try {
+            const url = new URL(recent.image);
+            key = url.pathname.substring(1);
+          } catch {
+            // Plain S3 key
+          }
 
-          const command = new GetObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
-            Key: key,
-          });
-
-          const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+          // Check cache first
+          let signedUrl = getCachedSignedUrl(key);
+          if (!signedUrl) {
+            const command = new GetObjectCommand({
+              Bucket: process.env.AWS_S3_BUCKET!,
+              Key: key,
+            });
+            signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            urlCache.set(key, { url: signedUrl, expiry: Date.now() + CACHE_DURATION });
+          }
 
           return {
             ...recent.toObject(),
@@ -83,6 +104,10 @@ export async function POST(req: NextRequest) {
     } else {
       recent = await RecentModel.create({ image, title, description, order });
     }
+
+    // Clear cache for this image so fresh URL is generated
+    urlCache.delete(image);
+
     return NextResponse.json({
       success: true,
       data: recent,

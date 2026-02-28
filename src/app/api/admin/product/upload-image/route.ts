@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+// For App Router
+export const runtime = "nodejs";
+export const maxDuration = 30;
+
 const s3Client = new S3Client({
   region: process.env.AWS_S3_REGION!,
   credentials: {

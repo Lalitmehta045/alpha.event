@@ -24,6 +24,7 @@ import "react-image-crop/dist/ReactCrop.css";
 interface RecentSlot {
   imageFile: File | null;
   uploadedImageUrl: string;
+  previewUrl: string; // ✅ Local blob URL for preview display
   title: string;
   description: string;
   crop: { x: number; y: number };
@@ -35,10 +36,10 @@ interface RecentSlot {
 export default function RecentPage() {
   const [uploadedImages, setUploadedImages] = useState<any[]>([]);
   const [slots, setSlots] = useState<RecentSlot[]>([
-    { imageFile: null, uploadedImageUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
-    { imageFile: null, uploadedImageUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
-    { imageFile: null, uploadedImageUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
-    { imageFile: null, uploadedImageUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
+    { imageFile: null, uploadedImageUrl: "", previewUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
+    { imageFile: null, uploadedImageUrl: "", previewUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
+    { imageFile: null, uploadedImageUrl: "", previewUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
+    { imageFile: null, uploadedImageUrl: "", previewUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false },
   ]);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [currentCropIndex, setCurrentCropIndex] = useState<number | null>(null);
@@ -132,7 +133,7 @@ export default function RecentPage() {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const img = new Image();
-      
+
       // Use createImageBitmap for better performance
       const imageBitmap = await createImageBitmap(slot.imageFile);
       img.src = URL.createObjectURL(slot.imageFile);
@@ -161,16 +162,32 @@ export default function RecentPage() {
               cropHeight
             );
 
-            // Use higher quality for blob creation
-            canvas.toBlob(async (blob) => {
+            // ✅ Resize to max 800px to reduce file size for faster uploads
+            const MAX_DIMENSION = 800;
+            let finalCanvas = canvas;
+            if (cropWidth > MAX_DIMENSION || cropHeight > MAX_DIMENSION) {
+              const scale = MAX_DIMENSION / Math.max(cropWidth, cropHeight);
+              const finalWidth = Math.round(cropWidth * scale);
+              const finalHeight = Math.round(cropHeight * scale);
+              const resizedCanvas = document.createElement("canvas");
+              resizedCanvas.width = finalWidth;
+              resizedCanvas.height = finalHeight;
+              const resizedCtx = resizedCanvas.getContext("2d");
+              resizedCtx?.drawImage(canvas, 0, 0, finalWidth, finalHeight);
+              finalCanvas = resizedCanvas;
+            }
+
+            // Use compressed JPEG (0.7 quality) to keep file size small
+            finalCanvas.toBlob(async (blob) => {
               if (blob) {
                 console.log("Blob created, size:", blob.size);
+                const localPreviewUrl = URL.createObjectURL(blob); // ✅ Create local preview URL
                 const croppedFile = new File([blob], slot.imageFile!.name, { type: blob.type });
-                
+
                 // Upload to AWS S3
                 const formData = new FormData();
                 formData.append("my_file", croppedFile);
-                
+
                 try {
                   console.log("Uploading to:", "/api/admin/product/upload-image");
                   const response = await axios.post("/api/admin/product/upload-image", formData, {
@@ -180,12 +197,13 @@ export default function RecentPage() {
                       console.log("Upload progress:", progress + "%");
                     }
                   });
-                  
+
                   console.log("Upload response:", response.data);
                   if (response.data.success) {
                     console.log("Setting uploadedImageUrl to:", response.data.result.url);
                     const updatedSlots = [...slots];
                     updatedSlots[index].uploadedImageUrl = response.data.result.url;
+                    updatedSlots[index].previewUrl = localPreviewUrl; // ✅ Store local preview
                     updatedSlots[index].isCropping = false;
                     setSlots(updatedSlots);
                     setCropDialogOpen(false);
@@ -215,7 +233,7 @@ export default function RecentPage() {
                 errorSlots[index].isCropping = false;
                 setSlots(errorSlots);
               }
-            }, 'image/jpeg', 0.9); // Specify quality and format
+            }, 'image/jpeg', 0.7); // ✅ Reduced quality from 0.9 to 0.7 for smaller file size
           } catch (error) {
             console.error("Canvas processing error:", error);
             reject(error);
@@ -269,7 +287,7 @@ export default function RecentPage() {
         toast.success("Recent product uploaded!");
         loadRecentImages(); // Reload to get updated list
         const newSlots = [...slots];
-        newSlots[index] = { imageFile: null, uploadedImageUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false };
+        newSlots[index] = { imageFile: null, uploadedImageUrl: "", previewUrl: "", title: "", description: "", crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, isCropping: false };
         setSlots(newSlots);
       }
     } catch (error: any) {
@@ -315,7 +333,7 @@ export default function RecentPage() {
         {slots.map((slot, index) => (
           <div key={index} className="border p-4 rounded-lg space-y-4">
             <h3 className="text-lg font-semibold">Slot {index + 1}</h3>
-            
+
             {/* Step 1: Select Image */}
             <div>
               <label className="block text-sm font-medium mb-2">Step 1: Select Image</label>
@@ -326,7 +344,7 @@ export default function RecentPage() {
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
             </div>
-            
+
             {/* Step 2: Crop Image (Auto-opens) */}
             {slot.imageFile && !slot.uploadedImageUrl && (
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -336,7 +354,7 @@ export default function RecentPage() {
                 <p className="text-xs text-blue-600 mt-1">Crop dialog opened automatically</p>
               </div>
             )}
-            
+
             {/* Step 3: Preview and Title */}
             {slot.uploadedImageUrl && (
               <div className="bg-green-50 p-3 rounded-lg border border-green-200">
@@ -344,9 +362,9 @@ export default function RecentPage() {
                   <strong>Step 3:</strong> Image cropped and uploaded successfully!
                 </p>
                 <p className="text-xs text-gray-600 mb-2">URL: {slot.uploadedImageUrl.substring(0, 50)}...</p>
-                <img 
-                  src={slot.uploadedImageUrl} 
-                  alt="Preview" 
+                <img
+                  src={slot.previewUrl || slot.uploadedImageUrl}
+                  alt="Preview"
                   className="w-full h-32 object-cover rounded mb-2"
                   onError={(e) => console.error("Image failed to load:", slot.uploadedImageUrl, e)}
                   onLoad={() => console.log("Image loaded successfully:", slot.uploadedImageUrl)}
@@ -375,7 +393,7 @@ export default function RecentPage() {
                 />
               </div>
             )}
-            
+
             {/* Step 4: Upload to Database */}
             <div>
               <Button
@@ -384,8 +402,8 @@ export default function RecentPage() {
                 className="w-full"
                 variant={slot.uploadedImageUrl ? "default" : "secondary"}
               >
-                {slot.uploadedImageUrl 
-                  ? `✅ Upload Slot ${index + 1}` 
+                {slot.uploadedImageUrl
+                  ? `✅ Upload Slot ${index + 1}`
                   : `Upload Slot ${index + 1} (Complete steps 1-3 first)`}
               </Button>
               {(!slot.uploadedImageUrl) && (
@@ -421,7 +439,7 @@ export default function RecentPage() {
           </div>
         </div>
       )}
-      
+
       {/* Crop Dialog */}
       <Dialog open={cropDialogOpen} onOpenChange={setCropDialogOpen}>
         <DialogContent className="max-w-md">

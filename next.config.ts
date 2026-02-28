@@ -2,6 +2,14 @@
 const nextConfig = {
   // 🎯 CRITICAL FOR VPS DEPLOYMENT
   output: "standalone",
+
+  // ✅ Increase body size limit for API routes (fixes 413 Request Entity Too Large)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
+
   images: {
     // ✅ Keep: remotePatterns is the correct, modern, and secure way to define external image sources.
     remotePatterns: [
