@@ -5,6 +5,7 @@ import { useRef, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import axios from "axios";
+import { convertHeicToJpeg } from "@/utils/convertHeic";
 
 // Remove trailing slash and handle empty case
 const getBaseUrl = (): string => {
@@ -37,21 +38,27 @@ const ProductImageUpload: React.FC<ProductImageUploadProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // File select
-  const handleImageFileChange = (
+  // File select (with HEIC support)
+  const handleImageFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const selectedFile = event.target.files?.[0];
-    if (selectedFile) setImageFile(selectedFile);
+    if (selectedFile) {
+      const convertedFile = await convertHeicToJpeg(selectedFile);
+      setImageFile(convertedFile);
+    }
   };
 
-  // Drag & drop
+  // Drag & drop (with HEIC support)
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) =>
     event.preventDefault();
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const droppedFile = event.dataTransfer.files?.[0];
-    if (droppedFile) setImageFile(droppedFile);
+    if (droppedFile) {
+      const convertedFile = await convertHeicToJpeg(droppedFile);
+      setImageFile(convertedFile);
+    }
   };
 
   // Remove image
@@ -94,9 +101,8 @@ const ProductImageUpload: React.FC<ProductImageUploadProps> = ({
       <div
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={`${
-          isEditMode ? "opacity-60" : ""
-        } border-2 border-dashed rounded-lg p-4`}
+        className={`${isEditMode ? "opacity-60" : ""
+          } border-2 border-dashed rounded-lg p-4`}
       >
         <Input
           id="image-upload"
@@ -109,9 +115,8 @@ const ProductImageUpload: React.FC<ProductImageUploadProps> = ({
         {!imageFile ? (
           <Label
             htmlFor="image-upload"
-            className={`${
-              isEditMode ? "cursor-not-allowed" : ""
-            } flex flex-col items-center justify-center h-32 cursor-pointer`}
+            className={`${isEditMode ? "cursor-not-allowed" : ""
+              } flex flex-col items-center justify-center h-32 cursor-pointer`}
           >
             <UploadCloudIcon className="w-10 h-10 text-muted-foreground mb-2" />
             <span>Drag & drop or click to upload image</span>

@@ -38,7 +38,7 @@ export const RecentProductV2 = () => {
         if (res.data?.success && Array.isArray(res.data.data)) {
           // Start with fallback images
           const mergedProducts = [...fallbackRecents];
-          
+
           // Replace fallback images with API data where available
           res.data.data.forEach((apiItem: any) => {
             const order = apiItem.order ?? 0;
@@ -53,7 +53,7 @@ export const RecentProductV2 = () => {
               };
             }
           });
-          
+
           setRecentProducts(mergedProducts);
         } else {
           // Use fallback if API returns empty array or no success

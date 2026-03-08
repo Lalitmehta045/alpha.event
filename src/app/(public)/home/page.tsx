@@ -44,7 +44,7 @@ export default function Home() {
   const fetchCartItem = async () => {
     // Only fetch cart if user is authenticated
     if (!token) return;
-    
+
     try {
       const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));

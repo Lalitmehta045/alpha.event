@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
+import { convertHeicToJpeg } from "@/utils/convertHeic";
 
 interface RecentSlot {
   imageFile: File | null;
@@ -99,15 +100,19 @@ export default function RecentPage() {
     }
   };
 
-  const handleImageSelect = (index: number, file: File) => {
+  const handleImageSelect = async (index: number, file: File) => {
     console.log("Image selected for slot", index, "file:", file.name);
+
+    // Convert HEIC/HEIF (iPhone) images to JPEG before cropping
+    const convertedFile = await convertHeicToJpeg(file);
+
     const newSlots = [...slots];
-    newSlots[index].imageFile = file;
+    newSlots[index].imageFile = convertedFile;
     newSlots[index].isCropping = false; // Reset cropping state
     setSlots(newSlots);
     setCurrentCropIndex(index);
     setCompletedCrop(null);
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(convertedFile);
     setImagePreviewUrl(url);
     setCropDialogOpen(true); // Auto-open crop dialog
     console.log("Crop dialog opened automatically for slot", index);

@@ -72,7 +72,7 @@ export default function FreeLocationComponent({
   // Parse Nominatim response to LocationData
   const parseNominatimData = (data: NominatimSuggestion): LocationData => {
     const addr = data.address;
-    
+
     // Debug: Log what we're extracting
     console.log("Extracting from Nominatim:", {
       city: addr.city || addr.town || addr.village || addr.county || "",
@@ -81,12 +81,12 @@ export default function FreeLocationComponent({
       postcode: addr.postcode || "",
       country: addr.country || ""
     });
-    
+
     // Build address line
     const addressParts = [];
     if (addr.road) addressParts.push(addr.road);
     if (addr.suburb) addressParts.push(addr.suburb);
-    
+
     return {
       address: addressParts.join(", ") || data.display_name.split(",")[0],
       city: addr.city || addr.town || addr.village || addr.county || "",
@@ -215,19 +215,19 @@ export default function FreeLocationComponent({
 
       const { latitude, longitude, accuracy } = position.coords;
       console.log('Geolocation successful:', { latitude, longitude, accuracy });
-      
+
       // Get address from coordinates
       const locationData = await getAddressFromCoordinates(latitude, longitude);
       setAddress(locationData.address);
       onLocationSelect(locationData);
       setShowSuggestions(false);
-      
+
       toast.success("Location detected successfully!");
     } catch (error: any) {
       console.error("Location detection error:", error);
-      
+
       let errorMessage = "Failed to detect location. Please enter address manually.";
-      
+
       if (error.code === 1) {
         errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
       } else if (error.code === 2) {
@@ -235,7 +235,7 @@ export default function FreeLocationComponent({
       } else if (error.code === 3) {
         errorMessage = "Location request timed out. Please check your internet connection and try again.";
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsDetecting(false);

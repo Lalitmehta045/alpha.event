@@ -47,6 +47,7 @@ import {
 import { useRouter } from "next/navigation";
 import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
+import { convertHeicToJpeg } from "@/utils/convertHeic";
 import {
   Dialog,
   DialogContent,
@@ -120,15 +121,18 @@ const UploadProduct: React.FC = () => {
     };
   };
 
-  // ✅ Image Upload - Modified to open crop dialog
+  // ✅ Image Upload - Modified to open crop dialog (with HEIC support)
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Open crop dialog instead of direct upload
-    setCurrentCropImageFile(file);
+    // Convert HEIC/HEIF (iPhone) images to JPEG before cropping
+    const convertedFile = await convertHeicToJpeg(file);
+
+    // Open crop dialog
+    setCurrentCropImageFile(convertedFile);
     setCompletedCrop(null);
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(convertedFile);
     setImagePreviewUrl(url);
     setCropDialogOpen(true);
   };
@@ -261,17 +265,20 @@ const UploadProduct: React.FC = () => {
     }
   };
 
-  // ✅ Drag & Drop Upload - Modified to open crop dialog
+  // ✅ Drag & Drop Upload - Modified to open crop dialog (with HEIC support)
   const handleDragOver = (e: DragEvent<HTMLLabelElement>) => e.preventDefault();
   const handleDrop = async (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
 
-    // Open crop dialog instead of direct upload
-    setCurrentCropImageFile(file);
+    // Convert HEIC/HEIF (iPhone) images to JPEG before cropping
+    const convertedFile = await convertHeicToJpeg(file);
+
+    // Open crop dialog
+    setCurrentCropImageFile(convertedFile);
     setCompletedCrop(null);
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(convertedFile);
     setImagePreviewUrl(url);
     setCropDialogOpen(true);
   };

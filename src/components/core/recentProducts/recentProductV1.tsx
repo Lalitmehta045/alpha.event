@@ -133,30 +133,31 @@ const RecentProductV1 = () => {
           const key = recent._id || recent.title || `recent-${index}`;
           const isLoaded = loadedImages[key];
           return (
-          <Card
-            key={key}
-            className="group w-full h-68 sm:h-72 max-w-sm md:max-w-md lg:max-w-4xl mx-auto sm:mx-0 rounded-3xl border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-          >
-            <div className="relative w-full h-56 sm:h-64 md:h-60 lg:78 overflow-hidden bg-gradient-to-b from-slate-100 via-white to-slate-100">
-              {!isLoaded && (
-                <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200" />
-              )}
-              <Image
-                src={recent.image}
-                alt={recent.title || "Recent product"}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 ${isLoaded ? "opacity-100" : "opacity-0"}`}
-                unoptimized
-                loading={index === 0 ? "eager" : "lazy"}
-                decoding="async"
-                onLoadingComplete={() =>
-                  setLoadedImages((prev) => ({ ...prev, [key]: true }))
-                }
-              />
-            </div>
-          </Card>
-        )})}
+            <Card
+              key={key}
+              className="group w-full h-68 sm:h-72 max-w-sm md:max-w-md lg:max-w-4xl mx-auto sm:mx-0 rounded-3xl border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+            >
+              <div className="relative w-full h-56 sm:h-64 md:h-60 lg:78 overflow-hidden bg-gradient-to-b from-slate-100 via-white to-slate-100">
+                {!isLoaded && (
+                  <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200" />
+                )}
+                <Image
+                  src={recent.image}
+                  alt={recent.title || "Recent product"}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+                  unoptimized
+                  loading={index === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  onLoadingComplete={() =>
+                    setLoadedImages((prev) => ({ ...prev, [key]: true }))
+                  }
+                />
+              </div>
+            </Card>
+          )
+        })}
       </div>
     </section>
   );
