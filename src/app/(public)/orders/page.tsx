@@ -311,7 +311,7 @@ export default function OrderPage() {
 
               {/* Buttons */}
               <Button className="w-full p-5 bg-green-600 hover:bg-green-900 cursor-pointer">
-                <Link href="tel:+918966066299">Call Now</Link>
+                <Link href="tel:+918966066299">Contact Now</Link>
                 <IoCall style={{ width: 20, height: 20 }} />
               </Button>
 

@@ -134,8 +134,8 @@ const ProductDisplayPage = () => {
                     key={img + index}
                     onClick={() => setImageIndex(index)}
                     className={`w-28 h-28 cursor-pointer shadow-md rounded-md border-2 ${imageIndex === index
-                        ? "border-gray-300"
-                        : "border-transparent"
+                      ? "border-gray-300"
+                      : "border-transparent"
                       }`}
                   >
                     <img
@@ -236,7 +236,7 @@ const ProductDisplayPage = () => {
 
                 <CTAButtonV1
                   variant="outline"
-                  text="Call Now"
+                  text="Contact Now"
                   icon={<IoCall style={{ width: 20, height: 20 }} />}
                   // onClick={() => router.push("/recent")}
                   href="tel:+918966066299"
