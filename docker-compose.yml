@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: 123buildview/alpha-ae-web:latest
+    container_name: alpha-ae-web
     ports:
       - "3000:3000"
     env_file:
@@ -10,4 +12,18 @@ services:
     environment:
       - NODE_ENV=production
       - HOSTNAME=0.0.0.0
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_LABEL_ENABLE=true
+      - DOCKER_API_VERSION=1.44
     restart: unless-stopped
