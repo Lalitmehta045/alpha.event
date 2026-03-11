@@ -66,6 +66,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# HEIC conversion modules (dynamically imported, need explicit copy)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/heic-convert ./node_modules/heic-convert
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/heic-decode ./node_modules/heic-decode
+
 # Non-root user se run karo
 USER nextjs
 

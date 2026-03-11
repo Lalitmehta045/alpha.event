@@ -3,6 +3,10 @@ const nextConfig = {
   // 🎯 CRITICAL FOR VPS DEPLOYMENT
   output: "standalone",
 
+  // Include native/dynamic modules in standalone output
+  // heic-convert & heic-decode are dynamically imported and won't be traced automatically
+  serverExternalPackages: ["heic-convert", "heic-decode", "sharp"],
+
   // ✅ Increase body size limit for API routes (fixes 413 Request Entity Too Large)
   experimental: {
     serverActions: {
