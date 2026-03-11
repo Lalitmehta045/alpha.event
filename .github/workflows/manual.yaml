@@ -1,0 +1,40 @@
+name: Deploy Next.js App (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd /home/github/alphaweb
+            git pull origin main
+            
+            # Copy environment variables from secrets to .env file
+            cat > .env.local << EOF
+            ${{ secrets.ENV_FILE_CONTENT }}
+            EOF
+            
+            npm install
+            npm run build
+            pm2 restart all
