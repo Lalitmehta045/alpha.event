@@ -99,15 +99,20 @@ export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
                 {items.map((item: any) => (
                   <div key={item._id} className="flex gap-4 w-full">
                     {/* IMAGE */}
-                    <div className="w-16 h-16 border rounded ">
+                    <div className="relative w-16 h-16 border rounded">
                       <Image
-                        src={item.product.image[0] || imageEmpty}
-                        alt={item.name || "empty.jpg"}
-                        width={64}
-                        height={64}
+                        src={
+                          item.product?.image?.[0]
+                            ? item.product.image[0]
+                            : imageEmpty
+                        }
+                        alt={item.product?.name || "Product"}
                         fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        sizes="64px"
                         className="object-contain"
+                        unoptimized={
+                          !!item.product?.image?.[0]?.includes("X-Amz")
+                        }
                       />
                     </div>
 
@@ -182,8 +187,6 @@ export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
                 alt="empty"
                 width={200}
                 height={200}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="rounded-lg"
               />
               <Link

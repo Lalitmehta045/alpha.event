@@ -136,6 +136,9 @@ export default function CartPage() {
                               width={56}
                               height={56}
                               className="object-cover w-full h-full"
+                              unoptimized={
+                                !!item.product?.image?.[0]?.includes("X-Amz")
+                              }
                             />
                           </div>
 
