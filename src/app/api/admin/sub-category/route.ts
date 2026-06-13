@@ -77,18 +77,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!Array.isArray(category) || category.length === 0) {
+    if (!category || (Array.isArray(category) && category.length === 0)) {
       return NextResponse.json(
         { success: false, message: "At least one category is required" },
         { status: 400 }
       );
     }
 
+    const categoryId = Array.isArray(category) ? category[0] : category;
+
     // ✅ Save SubCategory to DB
     const subCategory = await SubCategoryModel.create({
       name,
       image,
-      category, // store category IDs as array
+      category: categoryId, // store category ID as single ObjectId
     });
 
     return NextResponse.json({

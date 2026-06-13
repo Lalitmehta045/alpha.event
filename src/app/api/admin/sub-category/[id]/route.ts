@@ -46,6 +46,11 @@ export async function PUT(req: NextRequest, { params }: ParamsPromise) {
       );
     }
 
+    if (data.category && Array.isArray(data.category)) {
+      data.category = data.category.length > 0 ? data.category[0] : undefined;
+      if (!data.category) delete data.category;
+    }
+
     // ✅ Run the update
     const updatedSubCategory = await SubCategoryModel.findByIdAndUpdate(
       id,
