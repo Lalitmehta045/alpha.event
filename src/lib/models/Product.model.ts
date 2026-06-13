@@ -61,6 +61,9 @@ const ProductSchema = new Schema<IProduct>(
 );
 
 ProductSchema.index({ name: "text", description: "text" });
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ subCategory: 1 });
+ProductSchema.index({ publish: 1 });
 
 export default (mongoose.models as any).Product ||
   mongoose.model<IProduct>("Product", ProductSchema);

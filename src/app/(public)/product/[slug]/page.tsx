@@ -38,7 +38,8 @@ const ProductDisplayPage = () => {
   const slug = params?.slug as string;
   const productId = slug?.split("-")?.slice(-1)[0];
   const dispatch = useDispatch();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token) as string;
   const [data, setData] = useState<Product>({
     _id: "",
     name: "",
@@ -75,7 +76,7 @@ const ProductDisplayPage = () => {
 
   const fetchCartItem = async () => {
     // Only fetch cart if user is authenticated
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     try {
       const mappedCartData = await getAllCartItems(token);

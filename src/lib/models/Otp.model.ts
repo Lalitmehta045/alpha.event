@@ -7,8 +7,11 @@ const otpSchema = new Schema(
   },
   {
     timestamps: true,
-    expires: 300, // ✅ Auto-delete in 5 minutes
   }
 );
+
+otpSchema.index({ email: 1 });
+// ✅ Auto-delete in 5 minutes using a proper TTL index
+otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: 300 });
 
 export default mongoose.models.OTP || mongoose.model("OTP", otpSchema);

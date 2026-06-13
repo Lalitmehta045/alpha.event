@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     if (!session?.user) {
       return NextResponse.json(
-        { error: "Not authenticated" },
+        { success: false, error: "Not authenticated", message: "Not authenticated" },
         { status: 401 }
       );
     }
@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
 
     const user = await UserModel.findOne({ email: session.user.email });
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "User not found", message: "User not found" },
+        { status: 404 }
+      );
     }
 
     const userId = user._id.toString();
@@ -35,14 +38,6 @@ export async function POST(req: NextRequest) {
       user.email,
       user.role
     );
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict" as const,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    };
 
     const response = NextResponse.json({
       success: true,
@@ -61,27 +56,28 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    response.cookies.set("accessToken", accessToken, cookieOptions);
-    response.cookies.set("refreshToken", refreshToken, cookieOptions);
-    response.cookies.set(
-      "user",
-      JSON.stringify({
-        id: userId,
-        fname: user.fname,
-        lname: user.lname,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-        phone: user.phone,
-      }),
-      cookieOptions
-    );
+    // ✅ Set httpOnly cookies with proper expiry (aligned with email login)
+    response.cookies.set("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 15 * 60, // 15 minutes
+    });
+
+    response.cookies.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+    });
 
     return response;
   } catch (error: any) {
     console.error("Google token generation error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to generate token" },
+      { success: false, error: "Failed to generate Google token. Please try again.", message: "Failed to generate Google token. Please try again." },
       { status: 500 }
     );
   }

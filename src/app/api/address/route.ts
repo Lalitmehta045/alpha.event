@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
     const userId = auth.userId;
 
-    const { address_line, city, state, pincode, mobile, country } = data;
+    const { address_line, city, state, pincode, mobile, country, location } = data;
 
     // 📝 Required field validation
     if (!address_line || !city || !state || !pincode) {
@@ -86,6 +86,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 📌 Validate location coordinates (optional)
+    const locationData = location && typeof location.lat === 'number' && typeof location.lng === 'number'
+      ? { lat: location.lat, lng: location.lng }
+      : { lat: null, lng: null };
+
     // Create address — saving mobileStr exactly as provided (trimmed)
     const newAddress = await AddressModel.create({
       address_line,
@@ -94,6 +99,7 @@ export async function POST(req: NextRequest) {
       pincode,
       mobile: mobileStr,
       country: country || "India",
+      location: locationData,
       userId,
     });
 

@@ -34,6 +34,10 @@ const AddressSchema = new Schema<IAddress>(
       match: [/^[+\d][\d\s\-()]*$/, "Invalid mobile number format"],
     },
 
+    location: {
+      lat: { type: Number, default: null },
+      lng: { type: Number, default: null },
+    },
     status: {
       type: Boolean,
       default: true,
@@ -46,6 +50,8 @@ const AddressSchema = new Schema<IAddress>(
   },
   { timestamps: true }
 );
+
+AddressSchema.index({ userId: 1 });
 
 export default (mongoose.models as any).Address ||
   mongoose.model<IAddress>("Address", AddressSchema);

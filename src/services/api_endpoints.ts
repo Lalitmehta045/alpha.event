@@ -97,6 +97,12 @@ export const adminEndpoints = {
   ADMIN_ORDER_GET_API: (id: string) => `${BASE_URL}/api/admin/orders/${id}`,
   ADMIN_ORDER_PUT_API: (id: string) => `${BASE_URL}/api/admin/orders/${id}`,
   ADMIN_ORDER_DELETE_API: (id: string) => `${BASE_URL}/api/admin/orders/${id}`,
+
+  // ============================================
+  // ✅ WHATSAPP
+  // ============================================
+  WHATSAPP_RESEND_API: `${BASE_URL}/api/admin/whatsapp/resend`,
+  WHATSAPP_LOGS_API: `${BASE_URL}/api/admin/whatsapp/logs`,
 };
 
 export const endpoints = {
@@ -104,6 +110,7 @@ export const endpoints = {
   SENDOTP_API: `${BASE_URL}/api/auth/send-otp`,
   SIGNUP_API: `${BASE_URL}/api/auth/sign-up`,
   SIGNIN_API: `${BASE_URL}/api/auth/sign-in`,
+  MSG91_LOGIN_API: `${BASE_URL}/api/auth/msg91-login`,
   RESETPASSWORD_API: `${BASE_URL}/api/auth/reset-password`,
   FORGETPASSTOKEN_API: `${BASE_URL}/api/auth/reset-password-token`,
 };

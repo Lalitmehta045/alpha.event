@@ -22,7 +22,8 @@ import CheckoutDateDialog from "@/components/common/cart/CheckoutDateDialog";
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token) as string;
   const { items, totalPrice, totalQuantity, totalOriginalPrice } = useSelector(
     (state: RootState) => state.cart
   );
@@ -30,7 +31,7 @@ export default function CartPage() {
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
 
   const fetchCartItem = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       console.log("No token found, skipping cart fetch");
       return;
     }
@@ -66,7 +67,7 @@ export default function CartPage() {
   }, []);
 
   const redirectToCheckoutPage = () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please Login First");
       router.push("/auth/sign-in");
       return;

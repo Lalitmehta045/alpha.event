@@ -31,13 +31,17 @@ const getStoredUser = () => {
   return null;
 };
 
+const getStoredToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("accessToken") || null;
+  }
+  return null;
+};
+
 const initialState: AuthState = {
   user: getStoredUser(), // load from storage
   isAuthenticated: !!getStoredUser(),
-  token:
-    typeof window !== "undefined" && localStorage.getItem("accessToken")
-      ? localStorage.getItem("accessToken")
-      : null,
+  token: getStoredToken(), // ✅ Restore token from localStorage for page refresh persistence
   loginProvider:
     typeof window !== "undefined" && localStorage.getItem("loginProvider")
       ? (localStorage.getItem("loginProvider") as "google" | "credentials")
@@ -53,6 +57,15 @@ const authSlice = createSlice({
     setUser(state, action: PayloadAction<User | null>) {
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
+
+      // Sync to localStorage for page reload persistence
+      if (typeof window !== "undefined") {
+        if (action.payload) {
+          localStorage.setItem("user", JSON.stringify(action.payload));
+        } else {
+          localStorage.removeItem("user");
+        }
+      }
     },
     setSignupData(state, action: PayloadAction<any[] | null>) {
       state.signupData = action.payload;
@@ -61,11 +74,14 @@ const authSlice = createSlice({
       state.loading = action.payload;
     },
     setToken(state, action: PayloadAction<string | null>) {
+      // ✅ Keep token in Redux + localStorage for page refresh persistence
       state.token = action.payload;
-      if (typeof window !== "undefined" && action.payload) {
-        localStorage.setItem("accessToken", action.payload);
-      } else if (typeof window !== "undefined") {
-        localStorage.removeItem("accessToken");
+      if (typeof window !== "undefined") {
+        if (action.payload) {
+          localStorage.setItem("accessToken", action.payload);
+        } else {
+          localStorage.removeItem("accessToken");
+        }
       }
     },
     setLoginProvider(

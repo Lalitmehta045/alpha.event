@@ -23,7 +23,8 @@ interface ProfilePageProps {
 export default function ProfilePage({ params }: ProfilePageProps) {
   const { id } = use(params); // ✔ Correct usage
   const dispatch = useDispatch();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token) as string;
   const profile: any = useSelector((state: RootState) => state.profile.profile);
   const [open, setOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
@@ -77,7 +78,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   };
 
   const handleDeleteAddress = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login first.");
       return;
     }
@@ -95,7 +96,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   };
 
   const fetchProfileDetails = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login first.");
       return;
     }
@@ -181,7 +182,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
   // Handlers (kept as is, logging to console)
   const handleUpdateUser = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login first.");
       return;
     }
@@ -347,7 +348,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                       started.
                     </p>
                   ) : (
-                    addressList.map((address, index: number) =>
+                    addressList?.map((address, index: number) =>
                       address.status ? (
                         <label
                           key={address._id || index}

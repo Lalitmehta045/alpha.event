@@ -75,5 +75,9 @@ const OrderSchema = new Schema<IOrder>(
   { timestamps: true }
 );
 
+OrderSchema.index({ userId: 1 });
+OrderSchema.index({ order_status: 1 });
+OrderSchema.index({ payment_status: 1 });
+
 export default (mongoose.models as any).Order ||
   mongoose.model<IOrder>("Order", OrderSchema);

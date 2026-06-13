@@ -22,6 +22,8 @@ const subCategorySchema = new Schema(
 
 // Compound index for uniqueness per category
 subCategorySchema.index({ name: 1, category: 1 }, { unique: true });
+// Index on category to quickly load subcategories for a given category
+subCategorySchema.index({ category: 1 });
 
 export default (mongoose.models as any).SubCategory ||
   mongoose.model("SubCategory", subCategorySchema);

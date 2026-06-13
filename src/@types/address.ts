@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types, Document } from "mongoose";
 import { IUserProfile } from "./user";
 
 export interface AddressType {
@@ -10,6 +10,7 @@ export interface AddressType {
   pincode: string;
   mobile?: string | number;
   status: boolean; // ✔ MUST be boolean
+  location?: { lat: number; lng: number };
 }
 export interface AddressState {
   addressList: AddressType[];
@@ -23,6 +24,7 @@ export interface IAddress extends Document {
   pincode: string;
   country: string;
   mobile?: string; // Optional as per schema default
+  location?: { lat: number; lng: number };
   status: boolean;
   userId: Types.ObjectId | IUserProfile; // Can be just an ID or a populated User document
 }

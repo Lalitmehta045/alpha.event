@@ -9,27 +9,28 @@ import { RootState } from "@/redux/store/store";
 export default function GoogleAuthHandler() {
   const { data: session, status } = useSession();
   const dispatch = useDispatch();
-  const reduxToken = useSelector((state: RootState) => state.auth.token);
+  const reduxUser = useSelector((state: RootState) => state.auth.user);
 
   useEffect(() => {
     const generateTokenForGoogleUser = async () => {
       // Only run if:
       // 1. Session exists (user is logged in with Google)
-      // 2. No token in Redux yet
+      // 2. No user in Redux yet
       // 3. Session is ready (not loading)
-      if (session?.user && !reduxToken && status === "authenticated") {
+      if (session?.user && !reduxUser && status === "authenticated") {
         try {
           const res = await fetch("/api/auth/google-token", {
             method: "POST",
+            credentials: "include", // Send cookies
           });
 
           if (res.ok) {
             const data = await res.json();
             if (data.success) {
+              // ✅ Tokens are now in httpOnly cookies (set by server)
+              // Store token in Redux for service files using Authorization header
               dispatch(setToken(data.data.accessToken));
               dispatch(setUser(data.data.user));
-              localStorage.setItem("accessToken", data.data.accessToken);
-              localStorage.setItem("refreshToken", data.data.refreshToken);
               localStorage.setItem("user", JSON.stringify(data.data.user));
             }
           }
@@ -40,7 +41,7 @@ export default function GoogleAuthHandler() {
     };
 
     generateTokenForGoogleUser();
-  }, [session, status, reduxToken, dispatch]);
+  }, [session, status, reduxUser, dispatch]);
 
   return null;
 }

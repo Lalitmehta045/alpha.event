@@ -11,7 +11,8 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -45,6 +46,12 @@ export default function ProductsPage() {
   const [deleteData, setDeleteData] = useState<Product | null>(null);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const allProducts = useSelector(
     (state: RootState) => state.product.allProducts
@@ -141,21 +148,60 @@ export default function ProductsPage() {
       ) : !products || products.length === 0 ? (
         <p>No products found.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 place-content-center gap-2 md:gap-4 scroll-smooth">
-          {allProducts
-            .filter((p: Product) =>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 place-content-center gap-2 md:gap-4 scroll-smooth">
+            {(() => {
+              const filteredProducts = allProducts.filter((p: Product) =>
+                p.name.toLowerCase().includes(searchQuery.toLowerCase())
+              );
+              const paginatedProducts = filteredProducts.slice(
+                (currentPage - 1) * itemsPerPage,
+                currentPage * itemsPerPage
+              );
+              return paginatedProducts.map((p: any) => (
+                <AdminProductCard
+                  key={p._id}
+                  item={p}
+                  setDeleteData={setDeleteData}
+                  setSelectedProduct={() => setSelectedProduct(p._id!)}
+                  setOpenDeleteConfirm={setOpenDeleteConfirm}
+                />
+              ));
+            })()}
+          </div>
+          {(() => {
+            const filteredProducts = allProducts.filter((p: Product) =>
               p.name.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            .map((p: any) => (
-              <AdminProductCard
-                key={p._id}
-                item={p}
-                setDeleteData={setDeleteData}
-                setSelectedProduct={() => setSelectedProduct(p._id!)}
-                setOpenDeleteConfirm={setOpenDeleteConfirm} // ⬅ FIXED
-              />
-            ))}
-        </div>
+            );
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            
+            if (totalPages <= 1) return null;
+
+            return (
+              <div className="flex justify-center items-center mt-8 space-x-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <span className="text-sm font-medium text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            );
+          })()}
+        </>
       )}
 
       {selectedProduct && (

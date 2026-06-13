@@ -42,7 +42,7 @@ const SubCategorySlug: React.FC<Props> = ({ data, category, subCategory }) => {
 
   const fetchCartItem = async () => {
     if (!token) return;
-    
+
     try {
       const mappedCartData = await getAllCartItems(token);
       dispatch(handleAddItemCart(mappedCartData));

@@ -8,8 +8,22 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { fname, lname, email, phone, password, confirmPassword, otp } =
-      await req.json();
+    let fname, lname, email, phone, password, confirmPassword, otp;
+    try {
+      const body = await req.json();
+      fname = body.fname;
+      lname = body.lname;
+      email = body.email;
+      phone = body.phone;
+      password = body.password;
+      confirmPassword = body.confirmPassword;
+      otp = body.otp;
+    } catch (jsonError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON request body", message: "Invalid JSON request body" },
+        { status: 400 }
+      );
+    }
 
     // ✅ Validate fields
     if (
@@ -22,14 +36,14 @@ export async function POST(req: NextRequest) {
       !otp
     ) {
       return NextResponse.json(
-        { error: "All fields are required" },
+        { success: false, error: "All fields are required", message: "All fields are required" },
         { status: 400 }
       );
     }
 
     if (password !== confirmPassword) {
       return NextResponse.json(
-        { error: "Passwords do not match" },
+        { success: false, error: "Passwords do not match", message: "Passwords do not match" },
         { status: 400 }
       );
     }
@@ -42,7 +56,7 @@ export async function POST(req: NextRequest) {
       // Allowed characters: +, digits, spaces, hyphens, parentheses
       if (!/^[+\d][\d\s\-()]*$/.test(mobileStr)) {
         return NextResponse.json(
-          { success: false, message: "Invalid mobile number characters." },
+          { success: false, error: "Invalid mobile number characters.", message: "Invalid mobile number characters." },
           { status: 400 }
         );
       }
@@ -53,6 +67,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             success: false,
+            error: "Invalid mobile number length (should have 10–15 digits).",
             message: "Invalid mobile number length (should have 10–15 digits).",
           },
           { status: 400 }
@@ -64,7 +79,7 @@ export async function POST(req: NextRequest) {
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { success: false, error: "User already exists", message: "User already exists" },
         { status: 400 }
       );
     }
@@ -73,19 +88,28 @@ export async function POST(req: NextRequest) {
     const latestOtp = await OTP.findOne({ email }).sort({ createdAt: -1 });
 
     if (!latestOtp) {
-      return NextResponse.json({ error: "OTP not found" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "OTP not found", message: "OTP not found" },
+        { status: 400 }
+      );
     }
 
     // ✅ Check OTP expiration (2 minutes)
     const otpExpiry = latestOtp.createdAt.getTime() + 2 * 60 * 1000;
 
     if (Date.now() > otpExpiry) {
-      return NextResponse.json({ error: "OTP expired" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "OTP expired", message: "OTP expired" },
+        { status: 400 }
+      );
     }
 
     // ✅ Validate OTP
     if (latestOtp.otp !== otp) {
-      return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Invalid OTP", message: "Invalid OTP" },
+        { status: 400 }
+      );
     }
 
     // ✅ Hash password
@@ -114,8 +138,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
+    console.error("Sign-up error:", error);
     return NextResponse.json(
-      { error: error.message || "Registration failed" },
+      { success: false, error: "An unexpected error occurred during registration. Please try again.", message: "An unexpected error occurred during registration. Please try again." },
       { status: 500 }
     );
   }

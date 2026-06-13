@@ -5,6 +5,7 @@ import OrderModel from "@/lib/models/Order.model";
 import CartModel from "@/lib/models/Cart.model";
 import UserModel from "@/lib/models/User.model";
 import { verifyUser } from "@/lib/verifyUser";
+import { sendAdminNewOrder, sendCustomerOrderReceived } from "@/services/whatsapp.service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,6 +81,28 @@ export async function POST(req: NextRequest) {
     await UserModel.findByIdAndUpdate(userId, {
       $push: { orderHistory: createdOrder._id },
     });
+
+    // 🔔 Send WhatsApp notifications (fire-and-forget, never fails the order)
+    try {
+      const populatedOrder = await OrderModel.findById(createdOrder._id)
+        .populate("userId", "fname lname phone email")
+        .populate("delivery_address", "address_line city state pincode country mobile")
+        .lean();
+
+      if (populatedOrder) {
+        // Send to ADMIN
+        sendAdminNewOrder(populatedOrder, list_items).catch((err) =>
+          console.error("WhatsApp admin notification failed:", err)
+        );
+
+        // Send to CUSTOMER
+        sendCustomerOrderReceived(populatedOrder, list_items).catch((err) =>
+          console.error("WhatsApp customer notification failed:", err)
+        );
+      }
+    } catch (waError) {
+      console.error("WhatsApp notification setup failed (order still OK):", waError);
+    }
 
     return NextResponse.json(
       {

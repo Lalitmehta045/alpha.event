@@ -11,6 +11,7 @@ import { logout } from "@/services/operations/auth";
 import { useDispatch, useSelector } from "react-redux";
 import {
   FolderKanban,
+  Globe,
   History,
   Layers3,
   LayoutDashboard,
@@ -92,8 +93,15 @@ export default function AdminSidebar({
         </nav>
       </ScrollArea>
 
-      {/* ✅ Logout Button */}
-      <div className="p-4 border-t bg-white">
+      {/* ✅ Website Link & Logout Button */}
+      <div className="p-4 border-t bg-white flex flex-col gap-3">
+        <Link
+          href="/"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-lg font-semibold text-gray-700 hover:bg-gray-100 transition"
+        >
+          <Globe className="w-5 h-5" />
+          Go to Website
+        </Link>
         <button
           onClick={() => logout(router, dispatch)}
           className="w-full cursor-pointer flex items-center justify-center gap-2 px-3 py-2 border bg-red-200 rounded-lg text-xl font-bold text-red-600 hover:bg-red-50 transition"

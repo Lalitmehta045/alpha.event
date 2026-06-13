@@ -6,11 +6,20 @@ const COUNTRY_CODE = "+91";
 
 export async function POST(req: NextRequest) {
   try {
-    const { phone: rawPhone } = await req.json(); // Get the raw number
+    let rawPhone;
+    try {
+      const body = await req.json();
+      rawPhone = body.phone;
+    } catch (jsonError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON request body", message: "Invalid JSON request body" },
+        { status: 400 }
+      );
+    }
 
     if (!rawPhone) {
       return NextResponse.json(
-        { error: "Phone number required" },
+        { success: false, error: "Phone number required", message: "Phone number required" },
         { status: 400 }
       );
     }
@@ -35,6 +44,7 @@ export async function POST(req: NextRequest) {
 
     // ... rest of your code
     const response = NextResponse.json({
+      success: true,
       message: "OTP sent successfully",
       otpId: msg.sid, // optional
     });
@@ -55,6 +65,9 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (err: any) {
     console.error("OTP Error:", err);
-    return NextResponse.json({ error: "Failed to send OTP" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to send OTP SMS. Please try again.", message: "Failed to send OTP SMS. Please try again." },
+      { status: 500 }
+    );
   }
 }

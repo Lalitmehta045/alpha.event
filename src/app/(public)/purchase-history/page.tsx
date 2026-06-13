@@ -41,7 +41,8 @@ interface Order {
 
 export default function PurchaseHistoryPage() {
   const dispatch = useDispatch();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token) as string;
 
   // ⭐ 1. Use Redux state for the list of orders
   const reduxOrders = useSelector((state: RootState) => state.order.allOrders);
@@ -79,7 +80,7 @@ export default function PurchaseHistoryPage() {
   };
 
   const fetchOrders = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login first.");
       return;
     }

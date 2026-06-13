@@ -6,13 +6,23 @@ import { verifyUser } from "./verifyUser";
 
 export async function ensureAdmin(req: NextRequest) {
   try {
+    // Try Authorization header first, then fall back to httpOnly cookie
     const authHeader = req.headers.get("authorization");
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    // Fall back to httpOnly cookie (handles page refresh when Redux token is lost)
+    if (!token || token === "null" || token === "undefined") {
+      token = req.cookies.get("accessToken")?.value;
+    }
+
+    if (!token) {
       throw new Error("No token provided");
     }
 
-    const token = authHeader.split(" ")[1];
     const secret = process.env.SECRET_KEY_ACCESS_TOKEN;
 
     if (!secret) {
@@ -40,13 +50,25 @@ export async function ensureAdmin(req: NextRequest) {
 
 export async function getCurrentAdmin(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) throw new Error("Unauthorized");
+  let token: string | undefined;
 
-  const token = authHeader.split(" ")[1];
+  if (authHeader) {
+    token = authHeader.split(" ")[1];
+  }
+
+  // Fall back to httpOnly cookie
+  if (!token || token === "null" || token === "undefined") {
+    token = req.cookies.get("accessToken")?.value;
+  }
+
+  if (!token) throw new Error("Unauthorized");
+
   const secret = process.env.SECRET_KEY_ACCESS_TOKEN!;
   const decoded: any = jwt.verify(token, secret);
 
-  if (decoded.role !== "ADMIN") throw new Error("Unauthorized");
+  if (decoded.role !== "ADMIN" && decoded.role !== "SUPER-ADMIN") {
+    throw new Error("Unauthorized");
+  }
   return decoded.id; // Return admin_id
 }
 

@@ -19,6 +19,8 @@ const {
   ADMIN_ORDER_GET_API,
   ADMIN_ORDER_PUT_API,
   ADMIN_ORDER_DELETE_API,
+  WHATSAPP_RESEND_API,
+  WHATSAPP_LOGS_API,
 } = adminEndpoints;
 
 export const getAllOrders = async (token: string, dispatch: any) => {
@@ -216,5 +218,76 @@ export const updateAdminOrderStatus = async (
     console.error("UPDATE_ORDER_STATUS_API ERROR:", error);
     // Throw an error or return a failure object for the component to handle
     return { success: false, error: (error as Error).message };
+  }
+};
+
+// ============================================
+// ✅ WHATSAPP OPERATIONS
+// ============================================
+
+export interface WhatsAppLogEntry {
+  _id: string;
+  orderId: string;
+  recipient: string;
+  messageType: "admin_notification" | "customer_order_received" | "customer_confirmation";
+  message: string;
+  status: "sent" | "failed" | "pending";
+  response: any;
+  retryCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const getWhatsAppLogs = async (
+  orderId: string,
+  token: string
+): Promise<WhatsAppLogEntry[]> => {
+  try {
+    const url = `${WHATSAPP_LOGS_API}?orderId=${encodeURIComponent(orderId)}`;
+
+    const response = await apiConnector("GET", url, null, {
+      Authorization: `Bearer ${token}`,
+    });
+
+    if (!response?.data?.success) {
+      throw new Error(
+        response?.data?.message || "Failed to fetch WhatsApp logs"
+      );
+    }
+
+    return response.data.data || [];
+  } catch (error: any) {
+    console.error("GET_WHATSAPP_LOGS ERROR:", error);
+    return [];
+  }
+};
+
+export const resendWhatsAppNotification = async (
+  logId: string,
+  token: string
+): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const response = await apiConnector(
+      "POST",
+      WHATSAPP_RESEND_API,
+      { logId },
+      {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+    );
+
+    if (!response?.data?.success) {
+      throw new Error(
+        response?.data?.message || "Failed to resend WhatsApp message"
+      );
+    }
+
+    toast.success("WhatsApp message resent successfully!");
+    return { success: true };
+  } catch (error: any) {
+    console.error("RESEND_WHATSAPP ERROR:", error);
+    toast.error(error.message || "Failed to resend WhatsApp message");
+    return { success: false, message: error.message };
   }
 };

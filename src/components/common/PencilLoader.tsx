@@ -2,131 +2,55 @@ import React from 'react';
 
 const PencilLoader = () => {
   return (
-    <div className="loader-wrapper">
-      <div className="dot-spinner">
-        <div className="dot-spinner__dot" />
-        <div className="dot-spinner__dot" />
-        <div className="dot-spinner__dot" />
-        <div className="dot-spinner__dot" />
-        <div className="dot-spinner__dot" />
-        <div className="dot-spinner__dot" />
-        <div className="dot-spinner__dot" />
-        <div className="dot-spinner__dot" />
-      </div>
-
+    <div className="modern-loader">
+      <div className="spinner-ring"></div>
+      <div className="spinner-ring-inner"></div>
       <style jsx>{`
-        .loader-wrapper {
+        .modern-loader {
+          position: relative;
           display: flex;
           justify-content: center;
           align-items: center;
+          width: 60px;
+          height: 60px;
         }
 
-        .dot-spinner {
-          --uib-size: 2.8rem;
-          --uib-speed: .9s;
-          --uib-color: #183153;
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          height: var(--uib-size);
-          width: var(--uib-size);
-        }
-
-        .dot-spinner__dot {
+        .spinner-ring {
           position: absolute;
-          top: 0;
-          left: 0;
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          height: 100%;
           width: 100%;
-        }
-
-        .dot-spinner__dot::before {
-          content: '';
-          height: 20%;
-          width: 20%;
+          height: 100%;
           border-radius: 50%;
-          background-color: var(--uib-color);
-          transform: scale(0);
-          opacity: 0.5;
-          animation: pulse0112 calc(var(--uib-speed) * 1.111) ease-in-out infinite;
-          box-shadow: 0 0 20px rgba(18, 31, 53, 0.3);
+          border: 4px solid transparent;
+          border-top-color: #2563eb; /* Blue 600 */
+          border-right-color: #7c3aed; /* Violet 600 */
+          animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+          box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
         }
 
-        .dot-spinner__dot:nth-child(2) {
-          transform: rotate(45deg);
+        .spinner-ring-inner {
+          position: absolute;
+          width: 65%;
+          height: 65%;
+          border-radius: 50%;
+          border: 4px solid transparent;
+          border-bottom-color: #e11d48; /* Rose 600 */
+          border-left-color: #be123c; /* Rose 700 */
+          animation: spin-reverse 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
         }
 
-        .dot-spinner__dot:nth-child(2)::before {
-          animation-delay: calc(var(--uib-speed) * -0.875);
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
-        .dot-spinner__dot:nth-child(3) {
-          transform: rotate(90deg);
-        }
-
-        .dot-spinner__dot:nth-child(3)::before {
-          animation-delay: calc(var(--uib-speed) * -0.75);
-        }
-
-        .dot-spinner__dot:nth-child(4) {
-          transform: rotate(135deg);
-        }
-
-        .dot-spinner__dot:nth-child(4)::before {
-          animation-delay: calc(var(--uib-speed) * -0.625);
-        }
-
-        .dot-spinner__dot:nth-child(5) {
-          transform: rotate(180deg);
-        }
-
-        .dot-spinner__dot:nth-child(5)::before {
-          animation-delay: calc(var(--uib-speed) * -0.5);
-        }
-
-        .dot-spinner__dot:nth-child(6) {
-          transform: rotate(225deg);
-        }
-
-        .dot-spinner__dot:nth-child(6)::before {
-          animation-delay: calc(var(--uib-speed) * -0.375);
-        }
-
-        .dot-spinner__dot:nth-child(7) {
-          transform: rotate(270deg);
-        }
-
-        .dot-spinner__dot:nth-child(7)::before {
-          animation-delay: calc(var(--uib-speed) * -0.25);
-        }
-
-        .dot-spinner__dot:nth-child(8) {
-          transform: rotate(315deg);
-        }
-
-        .dot-spinner__dot:nth-child(8)::before {
-          animation-delay: calc(var(--uib-speed) * -0.125);
-        }
-
-        @keyframes pulse0112 {
-          0%,
-          100% {
-            transform: scale(0);
-            opacity: 0.5;
-          }
-
-          50% {
-            transform: scale(1);
-            opacity: 1;
-          }
+        @keyframes spin-reverse {
+          0% { transform: rotate(360deg); }
+          100% { transform: rotate(0deg); }
         }
       `}</style>
     </div>
   );
-}
+};
 
 export default PencilLoader;
+

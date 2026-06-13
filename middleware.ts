@@ -1,37 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
 // 1. Define Public Routes (No login required)
 const authRoutes = ["/auth/sign-in", "/auth/sign-up", "/verify-email"];
 
-// 2. Define Role Access
-// Note: We do not use [slug] here. We just check the folder prefix.
-const roleAccess: Record<string, string[]> = {
-  "SUPER-ADMIN": ["/admin"],
-  ADMIN: ["/admin"],
-  USER: [
-    "/about",
-    "/recent",
-    "/contact",
-    "/category",
-    "/product",
-    "/profile",
-    "/orders",
-    "/purchase-history",
-    "/cart",
-    // We handle "/" (home) separately in logic
-  ],
-};
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --- STEP 1: IGNORE STATIC ASSETS ---
-  // Allow Next.js internals and static files to pass through immediately
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.includes(".") // checking for files like images, favicon.ico
+    pathname.includes(".")
   ) {
     return NextResponse.next();
   }
@@ -41,54 +22,61 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- STEP 3: GET USER & TOKEN ---
+  // --- STEP 3: VERIFY JWT FROM COOKIE ---
   const accessToken = request.cookies.get("accessToken")?.value;
-  const userData = request.cookies.get("user")?.value;
+  const refreshToken = request.cookies.get("refreshToken")?.value;
 
-  // Safety check: If token exists but user data is corrupted
-  let user = null;
-  try {
-    user = userData ? JSON.parse(userData) : null;
-  } catch (e) {
-    // If JSON parse fails, force logout
-    const response = NextResponse.redirect(
-      new URL("/auth/sign-in", request.url)
-    );
-    response.cookies.delete("accessToken");
-    response.cookies.delete("user");
-    return response;
+  let role: string | null = null;
+
+  if (accessToken) {
+    try {
+      const secret = new TextEncoder().encode(
+        process.env.SECRET_KEY_ACCESS_TOKEN
+      );
+      const { payload } = await jwtVerify(accessToken, secret);
+      role = payload.role as string;
+    } catch (err: any) {
+      // Token expired or invalid
+      // If refresh token exists, let the request through — client-side
+      // Axios interceptor will handle refresh automatically
+      if (refreshToken) {
+        // Allow the page to load — the client will refresh the token
+        // For protected routes, we still need to check if refresh token is valid
+        try {
+          const refreshSecret = new TextEncoder().encode(
+            process.env.SECRET_KEY_REFRESH_TOKEN
+          );
+          const { payload } = await jwtVerify(refreshToken, refreshSecret);
+          role = payload.role as string;
+          // Access token expired but refresh token valid — let request through
+          // Client-side interceptor will refresh on first API call
+        } catch {
+          // Both tokens invalid — force login
+          role = null;
+        }
+      }
+    }
   }
 
-  const role = user?.role;
-
   // --- STEP 4: GUEST HANDLING (Not Logged In) ---
-  if (!accessToken || !role) {
-    // If trying to access Admin or Profile protected routes -> Redirect to Login
+  if (!role) {
+    // If trying to access protected routes → Redirect to Login
     if (
       pathname.startsWith("/admin") ||
       pathname.startsWith("/profile") ||
-      pathname.startsWith("/orders")
+      pathname.startsWith("/orders") ||
+      pathname.startsWith("/purchase-history")
     ) {
       return NextResponse.redirect(new URL("/auth/sign-in", request.url));
     }
-    // Otherwise, allow guests to view public pages (Home, About, Products)
+    // Otherwise, allow guests to view public pages
     return NextResponse.next();
   }
 
   // --- STEP 5: ROLE BASED ACCESS CONTROL ---
 
-  // === SCENARIO A: ADMIN USER ===
-  // if (role === "ADMIN" || role === "SUPER-ADMIN") {
-  //   // Requirement: Admin can ONLY navigate paths starting with /admin
-  //   if (!pathname.startsWith("/admin")) {
-  //     return NextResponse.redirect(new URL("/admin", request.url));
-  //   }
-  //   return NextResponse.next();
-  // }
-
   // === SCENARIO A: FOR SUPER ADMIN ===
   if (role === "SUPER-ADMIN") {
-    // SUPER ADMIN can access all /admin routes
     if (!pathname.startsWith("/admin")) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
@@ -112,11 +100,9 @@ export function middleware(request: NextRequest) {
 
   // === SCENARIO C: FOR STANDARD USER ===
   if (role === "USER") {
-    // Requirement: User CANNOT go to /admin
     if (pathname.startsWith("/admin")) {
       return NextResponse.redirect(new URL("/", request.url));
     }
-    // Allow everything else (because your (public) folder handles the rest)
     return NextResponse.next();
   }
 
@@ -126,8 +112,6 @@ export function middleware(request: NextRequest) {
 
 // --- CONFIGURATION ---
 export const config = {
-  // CRITICAL FIX: Matcher must catch ALL routes to protect them.
-  // We exclude static files using negative lookahead in regex.
   matcher: [
     /*
      * Match all request paths except for the ones starting with:

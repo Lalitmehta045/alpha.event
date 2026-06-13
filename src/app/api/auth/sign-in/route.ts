@@ -9,11 +9,21 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { email, password } = await req.json();
+    let email, password;
+    try {
+      const body = await req.json();
+      email = body.email;
+      password = body.password;
+    } catch (jsonError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON request body", message: "Invalid JSON request body" },
+        { status: 400 }
+      );
+    }
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email & Password required" },
+        { success: false, error: "Email & Password required", message: "Email & Password required" },
         { status: 400 }
       );
     }
@@ -21,7 +31,7 @@ export async function POST(req: NextRequest) {
     const user = await UserModel.findOne({ email });
     if (!user) {
       return NextResponse.json(
-        { error: "User does not exist" },
+        { success: false, error: "User does not exist", message: "User does not exist" },
         { status: 404 }
       );
     }
@@ -29,8 +39,16 @@ export async function POST(req: NextRequest) {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return NextResponse.json(
-        { error: "Invalid credentials" },
+        { success: false, error: "Invalid credentials", message: "Invalid credentials" },
         { status: 401 }
+      );
+    }
+
+    // Check user status
+    if (user.status !== "Active") {
+      return NextResponse.json(
+        { success: false, error: "Account is suspended or inactive", message: "Account is suspended or inactive" },
+        { status: 403 }
       );
     }
 
@@ -48,13 +66,8 @@ export async function POST(req: NextRequest) {
       user.role
     );
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict" as const,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365, // keep cookies for 1 year
-    };
+    // ✅ Update last login date
+    await UserModel.updateOne({ _id: user._id }, { last_login_date: new Date() });
 
     const payload = {
       id: user._id.toString(),
@@ -63,10 +76,12 @@ export async function POST(req: NextRequest) {
       email: user.email,
       role: user.role,
       avatar: user.avatar,
+      phone: user.phone,
     };
 
     const response = NextResponse.json({
-      message: "Login successfull",
+      success: true,
+      message: "Login successful",
       data: {
         accessToken,
         refreshToken,
@@ -74,17 +89,30 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // ✅ Set secure cookies
-    response.cookies.set("accessToken", accessToken, cookieOptions);
-    response.cookies.set("refreshToken", refreshToken, cookieOptions);
-    // 🔥 FIX: MUST stringify user object
-    response.cookies.set("user", JSON.stringify(payload), cookieOptions);
+    // ✅ Set httpOnly cookies with proper expiry
+    response.cookies.set("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 15 * 60, // 15 minutes — matches JWT expiry
+    });
+
+    response.cookies.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days — matches JWT expiry
+    });
 
     return response;
   } catch (error: any) {
+    console.error("Sign-in error:", error);
     return NextResponse.json(
-      { error: error.message || "Login failed" },
+      { success: false, error: "An unexpected error occurred during login. Please try again.", message: "An unexpected error occurred during login. Please try again." },
       { status: 500 }
     );
   }
 }
+

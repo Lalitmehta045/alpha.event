@@ -1,143 +1,139 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-// Fix for default marker icons in Next.js
-if (typeof window !== "undefined") {
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "/leaflet/marker-icon-2x.png",
-        iconUrl: "/leaflet/marker-icon.png",
-        shadowUrl: "/leaflet/marker-shadow.png",
-    });
-}
+import { useCallback, useEffect, useState, useRef } from "react";
+import {
+  GoogleMap,
+  Marker,
+  useJsApiLoader,
+} from "@react-google-maps/api";
+import { Loader2 } from "lucide-react";
 
 interface MapLocationPickerProps {
-    initialLat?: number;
-    initialLng?: number;
-    onLocationSelect: (lat: number, lng: number) => void;
-    height?: string;
-    className?: string;
+  initialLat?: number;
+  initialLng?: number;
+  onLocationSelect: (lat: number, lng: number) => void;
+  height?: string;
+  className?: string;
 }
 
-// Component to handle map clicks and marker dragging
-function LocationMarker({
-    initialLat,
-    initialLng,
-    onLocationSelect
-}: {
-    initialLat: number;
-    initialLng: number;
-    onLocationSelect: (lat: number, lng: number) => void;
-}) {
-    const [position, setPosition] = useState<L.LatLng>(
-        new L.LatLng(initialLat, initialLng)
-    );
-    const markerRef = useRef<L.Marker>(null);
+const mapContainerStyle = {
+  width: "100%",
+  height: "100%",
+  borderRadius: "0.5rem",
+};
 
-    const map = useMapEvents({
-        click(e) {
-            setPosition(e.latlng);
-            onLocationSelect(e.latlng.lat, e.latlng.lng);
-            map.flyTo(e.latlng, map.getZoom());
-        },
-    });
-
-    // Update position when initial coordinates change
-    useEffect(() => {
-        const newPos = new L.LatLng(initialLat, initialLng);
-        setPosition(newPos);
-        map.flyTo(newPos, map.getZoom());
-    }, [initialLat, initialLng, map]);
-
-    return (
-        <Marker
-            position={position}
-            draggable={true}
-            ref={markerRef}
-            eventHandlers={{
-                dragend() {
-                    const marker = markerRef.current;
-                    if (marker != null) {
-                        const newPos = marker.getLatLng();
-                        setPosition(newPos);
-                        onLocationSelect(newPos.lat, newPos.lng);
-                    }
-                },
-            }}
-        />
-    );
-}
-
-// Component to set initial view
-function SetViewOnChange({ center, zoom }: { center: [number, number]; zoom: number }) {
-    const map = useMap();
-
-    useEffect(() => {
-        map.setView(center, zoom);
-    }, [center, zoom, map]);
-
-    return null;
-}
+const options = {
+  disableDefaultUI: false,
+  zoomControl: true,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
+};
 
 export default function MapLocationPicker({
-    initialLat = 28.6139, // Default: New Delhi
-    initialLng = 77.2090,
-    onLocationSelect,
-    height = "400px",
-    className = "",
+  initialLat = 28.6139, // Default: New Delhi
+  initialLng = 77.2090,
+  onLocationSelect,
+  height = "400px",
+  className = "",
 }: MapLocationPickerProps) {
-    const [isMounted, setIsMounted] = useState(false);
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+  });
 
-    // Only render map on client side (avoid SSR issues)
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+  const [markerPosition, setMarkerPosition] = useState({
+    lat: initialLat,
+    lng: initialLng,
+  });
 
-    if (!isMounted) {
-        return (
-            <div
-                className={`bg-gray-100 rounded-lg flex items-center justify-center ${className}`}
-                style={{ height }}
-            >
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    <p className="text-gray-500 text-sm">Loading map...</p>
-                </div>
-            </div>
-        );
+  const mapRef = useRef<any>(null);
+
+  // Update marker position and pan map when initial props change
+  useEffect(() => {
+    setMarkerPosition({ lat: initialLat, lng: initialLng });
+    if (mapRef.current) {
+      mapRef.current.panTo({ lat: initialLat, lng: initialLng });
     }
+  }, [initialLat, initialLng]);
 
+  const onMapLoad = useCallback((map: any) => {
+    mapRef.current = map;
+  }, []);
+
+  const onMapUnmount = useCallback(() => {
+    mapRef.current = null;
+  }, []);
+
+  const handleMapClick = useCallback(
+    (e: any) => {
+      if (e.latLng) {
+        const newLat = e.latLng.lat();
+        const newLng = e.latLng.lng();
+        setMarkerPosition({ lat: newLat, lng: newLng });
+        onLocationSelect(newLat, newLng);
+      }
+    },
+    [onLocationSelect]
+  );
+
+  const handleMarkerDragEnd = useCallback(
+    (e: any) => {
+      if (e.latLng) {
+        const newLat = e.latLng.lat();
+        const newLng = e.latLng.lng();
+        setMarkerPosition({ lat: newLat, lng: newLng });
+        onLocationSelect(newLat, newLng);
+      }
+    },
+    [onLocationSelect]
+  );
+
+  if (loadError) {
     return (
-        <div className={className} style={{ height }}>
-            <MapContainer
-                center={[initialLat, initialLng]}
-                zoom={13}
-                style={{
-                    height: "100%",
-                    width: "100%",
-                    borderRadius: "0.5rem",
-                    zIndex: 0
-                }}
-                scrollWheelZoom={true}
-                touchZoom={true}
-                dragging={true}
-            >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    maxZoom={19}
-                />
-                <LocationMarker
-                    initialLat={initialLat}
-                    initialLng={initialLng}
-                    onLocationSelect={onLocationSelect}
-                />
-                <SetViewOnChange center={[initialLat, initialLng]} zoom={13} />
-            </MapContainer>
+      <div
+        className={`bg-red-50 text-red-600 rounded-lg flex items-center justify-center p-4 text-center ${className}`}
+        style={{ height }}
+      >
+        <div>
+          <p className="font-semibold mb-1">Failed to load Google Maps</p>
+          <p className="text-xs text-red-500">Please check your API key and network connection.</p>
         </div>
+      </div>
     );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div
+        className={`bg-gray-100 rounded-lg flex items-center justify-center ${className}`}
+        style={{ height }}
+      >
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
+          <p className="text-gray-500 text-sm">Loading Google Maps...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={className} style={{ height }}>
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={15}
+        center={markerPosition}
+        options={options}
+        onLoad={onMapLoad}
+        onUnmount={onMapUnmount}
+        onClick={handleMapClick}
+      >
+        <Marker
+          position={markerPosition}
+          draggable={true}
+          onDragEnd={handleMarkerDragEnd}
+        />
+      </GoogleMap>
+    </div>
+  );
 }

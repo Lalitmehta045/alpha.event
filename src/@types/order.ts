@@ -84,6 +84,7 @@ export interface DeliveryAddress {
   country: string;
   pincode: string;
   mobile: string;
+  location?: { lat: number; lng: number };
   // ... other address fields
 }
 

@@ -28,6 +28,7 @@ const HeaderV1 = () => {
   const [isClient, setIsClient] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
   const [showSearchField, setShowSearchField] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { data: session } = useSession();
 
   const user = reduxUser || session?.user;
@@ -38,10 +39,19 @@ const HeaderV1 = () => {
 
   useEffect(() => setIsClient(true), []);
   useEffect(() => setShowSearchField(false), [pathname]);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 150);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   if (!isClient) return null;
 
   const showSearchBar =
-    pathname?.startsWith("/product") || pathname?.startsWith("/category");
+    pathname?.startsWith("/product") || pathname?.startsWith("/category") || (pathname === "/" && isScrolled);
 
   const scrollToSearch = () => {
     if (typeof document === "undefined") return;

@@ -13,10 +13,12 @@ import { getAllProduct } from "@/services/operations/product";
 import RecentProductV1 from "@/components/core/recentProducts/recentProductV1";
 import { getAllCartItems } from "@/services/operations/cartItem";
 import { handleAddItemCart } from "@/redux/slices/cartSlice";
+import AIPlannerModal from "@/components/common/aiPlanner/AIPlannerModal";
 
 export default function Home() {
   const dispatch = useDispatch();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token) as string;
 
   const productData = useSelector(
     (state: RootState) => state.product.allProducts
@@ -43,7 +45,7 @@ export default function Home() {
 
   const fetchCartItem = async () => {
     // Only fetch cart if user is authenticated
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     try {
       const mappedCartData = await getAllCartItems(token);
@@ -81,6 +83,7 @@ export default function Home() {
           <AboutV2 /> */}
         <ContactV1 />
       </LayoutV1>
+      <AIPlannerModal />
     </div>
   );
 }

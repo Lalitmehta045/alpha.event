@@ -5,20 +5,32 @@ import { connectDB } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { otp: userOtp } = await req.json();
+    let userOtp;
+    try {
+      const body = await req.json();
+      userOtp = body.otp;
+    } catch (jsonError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON request body", message: "Invalid JSON request body" },
+        { status: 400 }
+      );
+    }
 
     const otpCookie = req.cookies.get("otp_code")?.value;
     const phone = req.cookies.get("otp_phone")?.value;
 
     if (!otpCookie || !phone) {
       return NextResponse.json(
-        { error: "OTP expired or missing" },
+        { success: false, error: "OTP expired or missing", message: "OTP expired or missing" },
         { status: 400 }
       );
     }
 
     if (otpCookie !== userOtp) {
-      return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Invalid OTP", message: "Invalid OTP" },
+        { status: 400 }
+      );
     }
 
     await connectDB();
@@ -42,6 +54,7 @@ export async function POST(req: NextRequest) {
     );
 
     const response = NextResponse.json({
+      success: true,
       message: "OTP verified",
       user,
       token,
@@ -60,8 +73,9 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err: any) {
+    console.error("Verify-otp error:", err);
     return NextResponse.json(
-      { error: err.message || "Something went wrong" },
+      { success: false, error: "Verification failed. Please try again.", message: "Verification failed. Please try again." },
       { status: 500 }
     );
   }

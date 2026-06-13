@@ -16,7 +16,7 @@ import { handleAddItemCart } from "@/redux/slices/cartSlice";
 import AddAddressDialog from "@/components/common/address/AddAddressDialog";
 import EditAddressDialog from "@/components/common/address/EditAddressDialog";
 import { MdDelete } from "react-icons/md";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaPlus } from "react-icons/fa";
 import { TbFileInvoice, TbTruckDelivery } from "react-icons/tb";
 import { FaTruckArrowRight } from "react-icons/fa6";
 import ConfirmDeleteDialog from "@/components/common/Dialogs/ConfirmDialog";
@@ -26,7 +26,8 @@ import { getAllOrders, placeCODOrder } from "@/services/operations/orders";
 export default function OrderPage() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token) as string;
 
   const addressList = useSelector(
     (state: RootState) => state.address.addresses
@@ -47,7 +48,7 @@ export default function OrderPage() {
 
   const fetchCartItem = async () => {
     // Only fetch cart if user is authenticated
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     try {
       const mappedCartData = await getAllCartItems(token);
@@ -68,7 +69,7 @@ export default function OrderPage() {
   };
 
   const handleDeleteAddress = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login first.");
       return;
     }
@@ -95,7 +96,7 @@ export default function OrderPage() {
 
   const handleCashOnDelivery = async () => {
     // 1. Validation Checks
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login first.");
       return;
     }
@@ -134,7 +135,7 @@ export default function OrderPage() {
   };
 
   const fetchOrder = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login first.");
       return;
     }
@@ -206,7 +207,7 @@ export default function OrderPage() {
                   </div>
                 )}
 
-                {addressList.map((address, index: number) =>
+                {addressList?.map((address, index: number) =>
                   address.status ? (
                     <label
                       key={address._id || index}
@@ -265,10 +266,16 @@ export default function OrderPage() {
 
                 {/* Add Address Box */}
                 <div
-                  className="mt-4 border border-gray-400 border-dashed p-4 text-center rounded-lg cursor-pointer hover:bg-gray-100 transition"
+                  className="mt-4 group border-2 border-dashed border-blue-400 bg-blue-50/30 hover:bg-blue-50 hover:border-blue-600 p-6 flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1"
                   onClick={() => setOpen(true)}
                 >
-                  Add address
+                  <div className="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-600 group-hover:text-white text-blue-600 flex items-center justify-center transition-colors duration-300 shadow-sm">
+                    <FaPlus className="w-5 h-5" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-blue-700 font-bold text-base">Add New Address</p>
+                    <p className="text-blue-500/80 text-sm font-medium">Deliver to a different location</p>
+                  </div>
                 </div>
               </div>
             </div>

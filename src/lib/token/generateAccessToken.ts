@@ -19,7 +19,7 @@ export async function generateAccessToken(
   };
 
   const token = jwt.sign(payload, secret, {
-    expiresIn: "365d", // keep user logged in unless they sign out
+    expiresIn: "15m", // short-lived access token — refresh token handles session persistence
   });
 
   return token;

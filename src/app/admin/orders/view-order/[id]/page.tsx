@@ -12,7 +12,14 @@ import {
   Save,
   RotateCcw,
   CalendarDays,
+  ExternalLink,
+  MessageCircle,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  Send,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 // Assuming standard component imports
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -37,12 +44,30 @@ import toast from "react-hot-toast";
 import {
   getAdminOrderDetail,
   updateAdminOrderStatus,
+  getWhatsAppLogs,
+  resendWhatsAppNotification,
+  WhatsAppLogEntry,
 } from "@/services/operations/orders";
-// import { updateAdminOrderStatus } from "@/services/operations/orders"; // Actual service call
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { useParams } from "next/navigation";
 import { DetailedOrderData } from "@/@types/order";
+
+// Dynamic import for map component (avoid SSR issues with Google Maps)
+const OrderLocationMap = dynamic(
+  () => import("@/components/admin/orders/OrderLocationMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[250px] bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto mb-2" />
+          <p className="text-gray-500 text-sm">Loading Google Maps...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 // Placeholder types if not available from the commented import
 type OrderData = DetailedOrderData;
@@ -53,6 +78,7 @@ interface DeliveryAddress {
   pincode: string;
   country: string;
   mobile: string;
+  location?: { lat: number; lng: number };
 }
 const ORDER_STATUSES = ["Processing", "Request", "Accepted", "Cancelled"];
 
@@ -65,6 +91,11 @@ export default function ViewOrderPage() {
   // ⭐ NEW STATE for editable status
   const [currentStatus, setCurrentStatus] = useState<string>("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // ⭐ WhatsApp Notification state
+  const [whatsappLogs, setWhatsappLogs] = useState<WhatsAppLogEntry[]>([]);
+  const [loadingWhatsapp, setLoadingWhatsapp] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const params = useParams();
   const orderId: any = params.id;
@@ -155,9 +186,45 @@ export default function ViewOrderPage() {
     }
   };
 
+  // ⭐ Fetch WhatsApp logs for this order
+  const fetchWhatsAppLogs = useCallback(async () => {
+    if (!token || !order?.orderId) return;
+    setLoadingWhatsapp(true);
+    try {
+      const logs = await getWhatsAppLogs(order.orderId, token);
+      setWhatsappLogs(logs);
+    } catch (err) {
+      console.error("Failed to load WhatsApp logs:", err);
+    } finally {
+      setLoadingWhatsapp(false);
+    }
+  }, [token, order?.orderId]);
+
+  // ⭐ Handle resend WhatsApp
+  const handleResendWhatsApp = async (logId: string) => {
+    if (!token || resendingId) return;
+    setResendingId(logId);
+    try {
+      const result = await resendWhatsAppNotification(logId, token);
+      if (result.success) {
+        // Refresh logs after resend
+        await fetchWhatsAppLogs();
+      }
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   useEffect(() => {
     fetchOrderDetail();
   }, [fetchOrderDetail]);
+
+  // Fetch WhatsApp logs when order is loaded
+  useEffect(() => {
+    if (order?.orderId) {
+      fetchWhatsAppLogs();
+    }
+  }, [order?.orderId, fetchWhatsAppLogs]);
 
   const formatAddress = (addr: DeliveryAddress) => {
     return [
@@ -518,6 +585,44 @@ export default function ViewOrderPage() {
               <p className="mt-2 text-sm text-gray-600">
                 Contact Mobile: {order.delivery_address.mobile}
               </p>
+
+              {/* Delivery Location Map */}
+              {order.delivery_address.location &&
+               order.delivery_address.location.lat &&
+               order.delivery_address.location.lng ? (
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
+                    <MapPin className="w-3 h-3" /> Exact Delivery Location
+                  </p>
+                  <OrderLocationMap
+                    lat={order.delivery_address.location.lat}
+                    lng={order.delivery_address.location.lng}
+                    height="250px"
+                    className="rounded-lg border border-gray-200 overflow-hidden shadow-sm"
+                  />
+                  <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
+                    <p className="text-xs text-gray-500 font-mono">
+                      📍 {order.delivery_address.location.lat.toFixed(6)}, {order.delivery_address.location.lng.toFixed(6)}
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${order.delivery_address.location.lat},${order.delivery_address.location.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2.5 py-1.5 rounded-md transition-colors border border-orange-200/60 shadow-sm"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      View on Google Maps
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
+                  <MapPin className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                  <p className="text-xs text-gray-500">
+                    Location coordinates not available for this address
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -569,6 +674,114 @@ export default function ViewOrderPage() {
                 <p className="text-sm font-semibold text-gray-700 text-right">
                   {new Date(order.updatedAt).toLocaleString()}
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 8. WhatsApp Notifications */}
+          <Card className="gap-2 shadow-lg transition-shadow border-l-4 border-green-500">
+            <CardHeader className="bg-green-50/50 border-b">
+              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                WhatsApp Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              {loadingWhatsapp ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-green-500 mr-2" />
+                  <span className="text-sm text-gray-500">Loading logs...</span>
+                </div>
+              ) : whatsappLogs.length === 0 ? (
+                <div className="text-center py-4">
+                  <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No WhatsApp notifications sent yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {whatsappLogs.map((log) => (
+                    <div
+                      key={log._id}
+                      className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {log.status === "sent" ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                            )}
+                            <span
+                              className={`text-xs font-bold uppercase ${
+                                log.status === "sent"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {log.status}
+                            </span>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500 capitalize">
+                              {log.messageType === "admin_notification"
+                                ? "Admin Alert"
+                                : log.messageType === "customer_order_received"
+                                ? "Customer Order"
+                                : "Customer Confirm"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 truncate">
+                            To: {log.recipient}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {new Date(log.createdAt).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                            })}
+                            {log.retryCount > 1 && (
+                              <span className="ml-1 text-orange-500">
+                                ({log.retryCount} attempts)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleResendWhatsApp(log._id)}
+                          disabled={resendingId === log._id}
+                          className="shrink-0 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700"
+                        >
+                          {resendingId === log._id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5" />
+                          )}
+                          <span className="ml-1 hidden sm:inline text-xs">
+                            Resend
+                          </span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Refresh button */}
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={fetchWhatsAppLogs}
+                  disabled={loadingWhatsapp}
+                  className="w-full text-gray-500 hover:text-green-600"
+                >
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 mr-1.5 ${
+                      loadingWhatsapp ? "animate-spin" : ""
+                    }`}
+                  />
+                  Refresh Logs
+                </Button>
               </div>
             </CardContent>
           </Card>

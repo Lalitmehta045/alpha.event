@@ -38,7 +38,8 @@ export default function EditAddressDialog({
   onUpdate,
 }: AddressProps) {
   const dispatch = useDispatch();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const token = useSelector((state: RootState) => state.auth.token) as string;
 
   // Default Indian code
   const defaultCountryCode =
@@ -92,7 +93,7 @@ export default function EditAddressDialog({
   }, [addressData]);
 
   const handleUpdateAddress = async () => {
-    if (!token) return toast.error("Please login first.");
+    if (!isAuthenticated) return toast.error("Please login first.");
 
     if (
       !address.address_line ||

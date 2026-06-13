@@ -17,8 +17,8 @@ export async function generateRefreshToken(
     role,
   };
 
-  // ✅ Create refresh token
-  const token = jwt.sign(payload, secret, { expiresIn: "365d" });
+  // ✅ Create refresh token (7-day sliding window)
+  const token = jwt.sign(payload, secret, { expiresIn: "7d" });
 
   // ✅ Store refresh token in DB
   await UserModel.updateOne({ _id: userId }, { refresh_token: token });

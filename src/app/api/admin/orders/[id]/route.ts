@@ -3,6 +3,10 @@ import { ensureAdmin } from "@/lib/adminGuard";
 import { connectDB } from "@/lib/db";
 import OrderModel from "@/lib/models/Order.model";
 import mongoose from "mongoose";
+import "@/lib/models/User.model";
+import "@/lib/models/Address.model";
+import "@/lib/models/Product.model";
+import { sendCustomerOrderConfirmed } from "@/services/whatsapp.service";
 
 interface ParamsPromise {
   params: Promise<{ id: string }>;
@@ -88,7 +92,17 @@ export async function PUT(req: NextRequest, { params }: ParamsPromise) {
       id,
       { order_status },
       { new: true }
-    );
+    )
+      .populate("userId", "fname lname phone email")
+      .populate("delivery_address")
+      .populate("products.productId", "name price image");
+
+    // 🔔 Send WhatsApp confirmation to customer when order is Accepted
+    if (order_status === "Accepted" && updatedOrder) {
+      sendCustomerOrderConfirmed(updatedOrder).catch((err) =>
+        console.error("WhatsApp customer confirmation failed:", err)
+      );
+    }
 
     return NextResponse.json({
       success: true,

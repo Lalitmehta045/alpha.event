@@ -8,14 +8,26 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { email, newPassword, confirmPassword, otp } = await req.json();
+    let email, newPassword, confirmPassword, otp;
+    try {
+      const body = await req.json();
+      email = body.email;
+      newPassword = body.newPassword;
+      confirmPassword = body.confirmPassword;
+      otp = body.otp;
+    } catch (jsonError) {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON request body", message: "Invalid JSON request body" },
+        { status: 400 }
+      );
+    }
 
     // ----------------------------------
     // 1️⃣ VALIDATE REQUIRED FIELDS
     // ----------------------------------
     if (!email || !newPassword || !confirmPassword || !otp) {
       return NextResponse.json(
-        { success: false, message: "All fields are required" },
+        { success: false, error: "All fields are required", message: "All fields are required" },
         { status: 400 }
       );
     }
@@ -25,7 +37,7 @@ export async function POST(req: NextRequest) {
     // ----------------------------------
     if (newPassword !== confirmPassword) {
       return NextResponse.json(
-        { success: false, message: "Passwords do not match" },
+        { success: false, error: "Passwords do not match", message: "Passwords do not match" },
         { status: 400 }
       );
     }
@@ -37,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "User not found" },
+        { success: false, error: "User not found", message: "User not found" },
         { status: 404 }
       );
     }
@@ -49,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     if (!latestOtp) {
       return NextResponse.json(
-        { success: false, message: "OTP not found" },
+        { success: false, error: "OTP not found", message: "OTP not found" },
         { status: 400 }
       );
     }
@@ -61,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     if (Date.now() > otpExpiry) {
       return NextResponse.json(
-        { success: false, message: "OTP expired" },
+        { success: false, error: "OTP expired", message: "OTP expired" },
         { status: 400 }
       );
     }
@@ -71,7 +83,7 @@ export async function POST(req: NextRequest) {
     // ----------------------------------
     if (latestOtp.otp !== otp) {
       return NextResponse.json(
-        { success: false, message: "Invalid OTP" },
+        { success: false, error: "Invalid OTP", message: "Invalid OTP" },
         { status: 400 }
       );
     }
@@ -98,10 +110,12 @@ export async function POST(req: NextRequest) {
       message: "Password reset successful",
     });
   } catch (error: any) {
+    console.error("Reset-password error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: error?.message || "Password reset failed",
+        error: "Password reset failed. Please try again.",
+        message: "Password reset failed. Please try again.",
       },
       { status: 500 }
     );

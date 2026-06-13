@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { 
     strategy: "jwt",
-    maxAge: 10 * 365 * 24 * 60 * 60, // 10 years
+    maxAge: 7 * 24 * 60 * 60, // 7 days — aligned with refresh token expiry
   },
   providers: [
     Credentials({
@@ -96,8 +96,6 @@ export const authOptions: NextAuthOptions = {
         token.id = (user as any).id;
         token.role = (user as any).role;
       }
-      // Set token to expire in 10 years
-      token.exp = Math.floor(Date.now() / 1000) + (10 * 365 * 24 * 60 * 60);
       return token;
     },
 
