@@ -41,6 +41,18 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "oaidalleapiprodscus.blob.core.windows.net",
+        port: "",
+        pathname: "/**",
+      },
     ],
     // ❌ REMOVED: The 'domains' property is deprecated and caused the warning.
     // domains: ["alpha-arts.s3.eu-north-1.amazonaws.com"],
