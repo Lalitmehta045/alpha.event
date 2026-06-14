@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Cake, Heart, PartyPopper, Sparkle, Baby, Briefcase,
   Compass, Users, Check, RotateCcw, Copy, ChevronRight, ChevronLeft,
-  DollarSign, TrendingUp, ListTodo, Palette, Download, Crown, LayoutTemplate
+  DollarSign, TrendingUp, ListTodo, Palette, Download, Crown, LayoutTemplate, Bot
 } from "lucide-react";
 
 const EVENT_TYPES = [
@@ -58,7 +58,7 @@ const LoadingStates = [
 
 export default function AIPlannerModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [wizardStep, setWizardStep] = useState(1); 
+  const [wizardStep, setWizardStep] = useState(1);
 
   // Form State
   const [eventType, setEventType] = useState("Wedding");
@@ -91,7 +91,7 @@ export default function AIPlannerModal() {
   const handleColorToggle = (colorName: string) => {
     setSelectedColors((prev) => {
       if (prev.includes(colorName)) {
-        if (prev.length === 1) return prev; 
+        if (prev.length === 1) return prev;
         return prev.filter((c) => c !== colorName);
       }
       if (prev.length >= 3) {
@@ -177,14 +177,14 @@ export default function AIPlannerModal() {
       if (!result.success) throw new Error(result.message);
 
       const localPlan = compileRecommendations(eventType, selectedColors, budget, guestCount, venueType);
-      
+
       setAiPlan({
         ...localPlan,
         _id: result.data._id,
         variationAUrl: result.data.variationAUrl,
         variationBUrl: result.data.variationBUrl,
       });
-      
+
       setChecklistProgress({});
       setIsGenerating(false);
       setWizardStep(5);
@@ -204,7 +204,7 @@ export default function AIPlannerModal() {
 
   return (
     <>
-      <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 pointer-events-auto">
+      <div className="fixed bottom-36 md:bottom-24 right-4 md:right-8 z-50 pointer-events-auto">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -212,23 +212,37 @@ export default function AIPlannerModal() {
           className="group relative flex items-center p-3 sm:p-4 bg-gradient-to-r from-[#4A0404] to-[#7B0B0B] text-white rounded-full shadow-2xl border border-amber-500/30 overflow-hidden"
         >
           <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="shrink-0 flex items-center justify-center">
-             <Crown className="w-6 h-6 text-amber-400" />
-          </div>
-          <div className="flex flex-col text-left overflow-hidden transition-all duration-300 ease-in-out max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100 group-hover:ml-3 group-hover:mr-2">
-            <span className="text-[10px] text-amber-400 uppercase tracking-widest font-black leading-none mb-1 whitespace-nowrap">
-              AI-Powered
+          <div className="shrink-0 flex items-center justify-center gap-2 relative z-10 px-1">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-1 bg-gradient-to-r from-amber-400/0 via-amber-400/30 to-amber-400/0 rounded-full blur-md"
+            />
+            <motion.div
+              animate={{ y: [-1.5, 1.5, -1.5] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              className="relative"
+            >
+              <Bot className="w-6 h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+            </motion.div>
+            <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-200 to-yellow-500 leading-none drop-shadow-md relative">
+              Use AI
+              <motion.span
+                animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-2 -right-3"
+              >
+                <Sparkles className="w-3 h-3 text-amber-200" />
+              </motion.span>
             </span>
-            <span className="text-sm tracking-wide font-bold leading-none whitespace-nowrap">
-              Event Architect
-            </span>
           </div>
+
         </motion.button>
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-2xl">
-          
+
           {/* Header */}
           <div className="bg-gradient-to-r from-[#2A0001] via-[#4A0404] to-[#2A0001] p-6 text-white sticky top-0 z-20 shadow-lg">
             <div className="flex justify-between items-center">
@@ -242,7 +256,7 @@ export default function AIPlannerModal() {
                 </DialogDescription>
               </div>
             </div>
-            
+
             {wizardStep <= 3 && (
               <div className="mt-6 flex items-center gap-2">
                 {[1, 2, 3].map((step) => (
@@ -256,10 +270,10 @@ export default function AIPlannerModal() {
 
           <div className="p-6 md:p-8">
             <AnimatePresence mode="wait">
-              
+
               {/* STEP 1: Event & Venue */}
               {wizardStep === 1 && (
-                <motion.div 
+                <motion.div
                   key="step1"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -332,7 +346,7 @@ export default function AIPlannerModal() {
 
               {/* STEP 2: Guests & Theme */}
               {wizardStep === 2 && (
-                <motion.div 
+                <motion.div
                   key="step2"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -376,7 +390,7 @@ export default function AIPlannerModal() {
                         );
                       })}
                     </div>
-                    
+
                     {/* Live Palette Preview */}
                     {selectedColors.length > 0 && (
                       <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
@@ -406,7 +420,7 @@ export default function AIPlannerModal() {
 
               {/* STEP 3: Budget */}
               {wizardStep === 3 && (
-                <motion.div 
+                <motion.div
                   key="step3"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -417,7 +431,7 @@ export default function AIPlannerModal() {
                     <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center justify-center gap-2">
                       <Crown className="w-6 h-6 text-amber-600" /> Target Budget
                     </h3>
-                    
+
                     <div className="flex justify-center mb-8">
                       <div className="relative inline-flex items-baseline gap-1 bg-white px-8 py-4 rounded-2xl shadow-lg border border-slate-100">
                         <span className="text-2xl font-black text-amber-600">₹</span>
@@ -459,14 +473,14 @@ export default function AIPlannerModal() {
 
               {/* STEP 4: Loading State */}
               {wizardStep === 4 && (
-                <motion.div 
+                <motion.div
                   key="step4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="py-20 flex flex-col items-center justify-center text-center space-y-8"
                 >
                   <div className="relative">
-                    <motion.div 
+                    <motion.div
                       animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
                       transition={{ duration: 2, repeat: Infinity }}
                       className="absolute inset-0 bg-amber-400/20 rounded-full blur-2xl"
@@ -475,9 +489,9 @@ export default function AIPlannerModal() {
                       {React.createElement(LoadingStates[loadingTextIndex].icon, { className: "w-10 h-10 text-amber-400 animate-pulse" })}
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2 h-16">
-                    <motion.h3 
+                    <motion.h3
                       key={loadingTextIndex}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -501,7 +515,7 @@ export default function AIPlannerModal() {
 
               {/* STEP 5: Concept Selection (A vs B) */}
               {wizardStep === 5 && aiPlan && (
-                <motion.div 
+                <motion.div
                   key="step5"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -552,17 +566,17 @@ export default function AIPlannerModal() {
 
               {/* STEP 6: Final Selected Screen */}
               {wizardStep === 6 && aiPlan && selectedVariation && (
-                <motion.div 
+                <motion.div
                   key="step6"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-8"
                 >
                   <div className="relative h-80 md:h-[400px] rounded-3xl overflow-hidden shadow-2xl">
-                    <img 
-                      src={selectedVariation === "A" ? aiPlan.variationAUrl : aiPlan.variationBUrl} 
-                      alt="Selected Concept" 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={selectedVariation === "A" ? aiPlan.variationAUrl : aiPlan.variationBUrl}
+                      alt="Selected Concept"
+                      className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     <div className="absolute bottom-0 left-0 p-8 text-white">
@@ -591,7 +605,7 @@ export default function AIPlannerModal() {
                               <span>₹{b.amount.toLocaleString()}</span>
                             </div>
                             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                              <motion.div 
+                              <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${b.percentage}%` }}
                                 transition={{ duration: 1, delay: idx * 0.1 }}
@@ -616,9 +630,9 @@ export default function AIPlannerModal() {
                         {aiPlan.checklists.map((task: string, idx: number) => {
                           const isDone = !!checklistProgress[idx];
                           return (
-                            <div 
+                            <div
                               key={idx}
-                              onClick={() => setChecklistProgress(p => ({...p, [idx]: !p[idx]}))}
+                              onClick={() => setChecklistProgress(p => ({ ...p, [idx]: !p[idx] }))}
                               className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-all cursor-pointer ${isDone ? 'bg-white border-emerald-500/30 opacity-70' : 'bg-white border-transparent shadow-sm'}`}
                             >
                               <div className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>

@@ -348,6 +348,14 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
               >
                 Confirm Location & Proceed
               </Button>
+
+              <button
+                type="button"
+                onClick={() => setStep("details")}
+                className="text-sm font-semibold text-red-600 hover:text-red-700 text-center w-full py-1 transition-colors mt-1"
+              >
+                Enter address manually instead
+              </button>
             </div>
           </div>
         ) : (
@@ -402,15 +410,16 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
                 />
               </div>
 
-              {/* Area / Road (Read-only reference) */}
+              {/* Area / Road */}
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Area / Road name
+                  Area / Road name <span className="text-red-500">*</span>
                 </label>
                 <Input
+                  placeholder="e.g. MG Road, Indiranagar"
                   value={address.address_line}
                   onChange={(e) => setAddress(prev => ({ ...prev, address_line: e.target.value }))}
-                  className="bg-white border-gray-200 mt-1 py-4 text-sm font-semibold rounded-lg"
+                  className="bg-white border-gray-200 focus:border-red-500 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0"
                 />
               </div>
 
