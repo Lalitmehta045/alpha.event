@@ -20,6 +20,7 @@ import {
   Compass, Users, Check, RotateCcw, Copy, ChevronRight, ChevronLeft,
   DollarSign, TrendingUp, ListTodo, Palette, Download, Crown, LayoutTemplate, Bot
 } from "lucide-react";
+import { IoLogoWhatsapp } from "react-icons/io";
 
 const EVENT_TYPES = [
   { name: "Birthday", icon: Cake, description: "Celebrate life milestones" },
@@ -205,39 +206,70 @@ export default function AIPlannerModal() {
   return (
     <>
       <div className="fixed bottom-36 md:bottom-24 right-4 md:right-8 z-50 pointer-events-auto">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => { setIsOpen(true); resetForm(); }}
-          className="group relative flex items-center p-3 sm:p-4 bg-gradient-to-r from-[#4A0404] to-[#7B0B0B] text-white rounded-full shadow-2xl border border-amber-500/30 overflow-hidden"
+        <motion.div
+          animate={{ y: [0, -5, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="relative"
         >
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="shrink-0 flex items-center justify-center gap-2 relative z-10 px-1">
-            <motion.div
+          {/* Outer Multicolor Spinning Aura */}
+          <div className="absolute inset-0 rounded-full z-0 pointer-events-none flex justify-center items-center">
+            <motion.div 
               animate={{ rotate: 360 }}
-              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-1 bg-gradient-to-r from-amber-400/0 via-amber-400/30 to-amber-400/0 rounded-full blur-md"
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              className="w-[150%] h-[150%] opacity-50 blur-xl"
+              style={{
+                background: "conic-gradient(from 0deg, #ff007f, #7928ca, #00d4ff, #ffdf00, #ff007f)",
+                borderRadius: "50%"
+              }}
             />
-            <motion.div
-              animate={{ y: [-1.5, 1.5, -1.5] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              className="relative"
-            >
-              <Bot className="w-6 h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-            </motion.div>
-            <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-200 to-yellow-500 leading-none drop-shadow-md relative">
-              Use AI
-              <motion.span
-                animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-2 -right-3"
-              >
-                <Sparkles className="w-3 h-3 text-amber-200" />
-              </motion.span>
-            </span>
           </div>
 
-        </motion.button>
+          <motion.button
+            whileHover="hover"
+            whileTap={{ scale: 0.95 }}
+            onClick={() => { setIsOpen(true); resetForm(); }}
+            initial="rest"
+            animate="rest"
+            className="group relative flex items-center bg-transparent rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] overflow-hidden h-14 sm:h-16"
+          >
+            {/* Inner Multicolor Spinning Border */}
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] z-0"
+              style={{
+                background: "conic-gradient(from 0deg, #ff007f, #7928ca, #00d4ff, #ffdf00, #ff007f)"
+              }}
+            />
+            
+            {/* Solid Mask Background */}
+            <div className="absolute inset-[3px] bg-[#110101] rounded-full z-10" />
+
+            {/* The circular icon part */}
+            <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 shrink-0 z-20">
+              <Bot className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)] relative z-10" />
+            </div>
+            
+            {/* Expanding Text Container */}
+            <motion.div
+              variants={{
+                rest: { width: 0, opacity: 0 },
+                hover: { width: 130, opacity: 1 }
+              }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="flex flex-col items-start whitespace-nowrap overflow-hidden z-20"
+            >
+              <div className="pl-1 pr-6">
+                <span className="block text-[10px] sm:text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 uppercase tracking-widest leading-none mb-1">
+                  Alpha Magic
+                </span>
+                <span className="block text-base sm:text-lg font-black text-white leading-none tracking-wide">
+                  Use AI
+                </span>
+              </div>
+            </motion.div>
+          </motion.button>
+        </motion.div>
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -477,38 +509,75 @@ export default function AIPlannerModal() {
                   key="step4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="py-20 flex flex-col items-center justify-center text-center space-y-8"
+                  className="py-24 flex flex-col items-center justify-center text-center space-y-10 relative overflow-hidden rounded-3xl"
                 >
-                  <div className="relative">
+                  {/* Decorative background rays */}
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 z-0 opacity-10 pointer-events-none"
+                    style={{
+                      background: "repeating-conic-gradient(from 0deg, transparent 0deg 10deg, #f59e0b 10deg 20deg)"
+                    }}
+                  />
+
+                  <div className="relative z-10 flex items-center justify-center mt-4">
+                    {/* Expanding Rings */}
                     <motion.div
-                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="absolute inset-0 bg-amber-400/20 rounded-full blur-2xl"
+                      animate={{ scale: [1, 2, 3], opacity: [0.8, 0.3, 0] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut" }}
+                      className="absolute w-28 h-28 border-[3px] border-amber-400 rounded-full"
                     />
-                    <div className="w-24 h-24 bg-gradient-to-tr from-[#4A0404] to-[#7B0B0B] rounded-full flex items-center justify-center shadow-2xl relative z-10">
-                      {React.createElement(LoadingStates[loadingTextIndex].icon, { className: "w-10 h-10 text-amber-400 animate-pulse" })}
-                    </div>
+                    <motion.div
+                      animate={{ scale: [1, 2, 3], opacity: [0.8, 0.3, 0] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut", delay: 1 }}
+                      className="absolute w-28 h-28 border-[3px] border-rose-400 rounded-full"
+                    />
+
+                    {/* Central Glowing Orb */}
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1], opacity: [0.9, 1, 0.9], rotate: [0, 360] }}
+                      transition={{ scale: { duration: 2, repeat: Infinity }, rotate: { duration: 10, repeat: Infinity, ease: "linear" } }}
+                      className="w-32 h-32 bg-gradient-to-tr from-[#4A0404] via-rose-800 to-amber-500 rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(245,158,11,0.6)] relative"
+                    >
+                      <div className="absolute inset-1 border-[3px] border-dashed border-white/30 rounded-full" />
+                      {React.createElement(LoadingStates[loadingTextIndex].icon, { className: "w-14 h-14 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] relative z-10" })}
+                    </motion.div>
+
+                    {/* Orbiting Sparkles */}
+                    <motion.div
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                      className="absolute w-48 h-48 rounded-full border border-transparent"
+                    >
+                      <Sparkles className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-6 text-amber-500" />
+                      <Sparkle className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-5 text-rose-500" />
+                    </motion.div>
                   </div>
 
-                  <div className="space-y-2 h-16">
+                  <div className="space-y-3 h-20 relative z-10">
                     <motion.h3
                       key={loadingTextIndex}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-xl font-black text-slate-800"
+                      initial={{ opacity: 0, y: 10, filter: "blur(5px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#4A0404] to-amber-600"
                     >
                       {LoadingStates[loadingTextIndex].text}
                     </motion.h3>
-                    <p className="text-slate-500 font-medium">Curating your luxury experience...</p>
+                    <p className="text-slate-500 font-bold text-sm md:text-base animate-pulse">
+                      Please wait, it will take some time to generate your premium live images...
+                    </p>
                   </div>
 
-                  <div className="w-64 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-72 h-3 bg-slate-100 rounded-full overflow-hidden relative z-10 shadow-inner">
                     <motion.div
-                      className="h-full bg-gradient-to-r from-amber-400 to-amber-600"
+                      className="h-full bg-gradient-to-r from-amber-400 via-rose-500 to-[#4A0404] relative"
                       initial={{ width: "0%" }}
                       animate={{ width: `${((loadingTextIndex + 1) / LoadingStates.length) * 100}%` }}
-                      transition={{ duration: 0.5 }}
-                    />
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
+                    >
+                      <div className="absolute inset-0 bg-white/20" />
+                    </motion.div>
                   </div>
                 </motion.div>
               )}
@@ -564,113 +633,64 @@ export default function AIPlannerModal() {
                 </motion.div>
               )}
 
-              {/* STEP 6: Final Selected Screen */}
+              {/* STEP 6: Final Selected Screen & WhatsApp Redirect */}
               {wizardStep === 6 && aiPlan && selectedVariation && (
                 <motion.div
                   key="step6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   className="space-y-8"
                 >
-                  <div className="relative h-80 md:h-[400px] rounded-3xl overflow-hidden shadow-2xl">
+                  <div className="relative h-80 md:h-[450px] rounded-3xl overflow-hidden shadow-2xl group border-4 border-white">
                     <img
                       src={selectedVariation === "A" ? aiPlan.variationAUrl : aiPlan.variationBUrl}
                       alt="Selected Concept"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 p-8 text-white">
-                      <h2 className="text-3xl font-black mb-2">{aiPlan.themeName}</h2>
-                      <div className="flex gap-3">
-                        {selectedColors.map(c => (
-                          <span key={c} className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-white/30">
-                            {c}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+                    
+                    <div className="absolute top-6 left-6 flex gap-2 z-10">
+                      <span className="bg-amber-500/90 backdrop-blur text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg flex items-center gap-2">
+                        <Check className="w-4 h-4 stroke-[3px]" /> Concept {selectedVariation} Selected
+                      </span>
                     </div>
-                  </div>
 
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* Budget Section */}
-                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-[#4A0404]" /> Budget Distribution
-                      </h3>
-                      <div className="space-y-4">
-                        {aiPlan.budgetBreakdown.map((b: any, idx: number) => (
-                          <div key={idx}>
-                            <div className="flex justify-between text-sm font-bold text-slate-700 mb-1">
-                              <span>{b.category}</span>
-                              <span>₹{b.amount.toLocaleString()}</span>
-                            </div>
-                            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${b.percentage}%` }}
-                                transition={{ duration: 1, delay: idx * 0.1 }}
-                                className={`h-full ${b.color}`}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                        <div className="pt-4 mt-4 border-t border-slate-200 flex justify-between items-center font-black text-lg text-[#4A0404]">
-                          <span>Total Budget</span>
-                          <span>₹{budget.toLocaleString()}</span>
+                    <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white w-full">
+                      <h2 className="text-3xl md:text-4xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500">{aiPlan.themeName}</h2>
+                      
+                      <div className="flex flex-wrap gap-3 items-center mb-8">
+                        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
+                          <Users className="w-4 h-4 text-amber-400" />
+                          <span className="text-sm font-bold">{guestCount} Guests</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
+                          <Crown className="w-4 h-4 text-amber-400" />
+                          <span className="text-sm font-bold">₹{budget.toLocaleString()} Budget</span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Checklist Section */}
-                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        <ListTodo className="w-5 h-5 text-[#4A0404]" /> Luxury Action Plan
-                      </h3>
-                      <div className="space-y-3">
-                        {aiPlan.checklists.map((task: string, idx: number) => {
-                          const isDone = !!checklistProgress[idx];
-                          return (
-                            <div
-                              key={idx}
-                              onClick={() => setChecklistProgress(p => ({ ...p, [idx]: !p[idx] }))}
-                              className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-all cursor-pointer ${isDone ? 'bg-white border-emerald-500/30 opacity-70' : 'bg-white border-transparent shadow-sm'}`}
-                            >
-                              <div className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
-                                {isDone && <Check className="w-3 h-3 stroke-[3px]" />}
-                              </div>
-                              <span className={`text-sm font-medium ${isDone ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                {task}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <Button 
+                        onClick={() => {
+                          const baseUrl = window.location.origin;
+                          const imageUrl = `${baseUrl}/api/concept-image/${aiPlan._id}?opt=${selectedVariation}`;
+                          
+                          const msg = `Hello Alpha Events! 👑\n\nI just used your AI Event Architect and I absolutely love this luxury concept.\n\n*Theme:* ${aiPlan.themeName}\n*Budget:* ₹${budget.toLocaleString()}\n*Guests:* ${guestCount}\n*Colors:* ${selectedColors.join(", ")}\n*Selected Option:* ${selectedVariation}\n*Concept ID:* ${aiPlan._id}\n\n*Concept Image:* ${imageUrl}\n\nPlease check the availability for this and let me know how we can proceed!`;
+                          
+                          // Redirect to WhatsApp with the correct phone number
+                          window.location.href = `https://wa.me/919302282860?text=${encodeURIComponent(msg)}`;
+                        }} 
+                        className="w-full sm:w-auto bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-7 rounded-2xl text-lg font-black shadow-[0_0_30px_rgba(37,211,102,0.4)] hover:shadow-[0_0_40px_rgba(37,211,102,0.6)] transition-all flex items-center justify-center gap-3 group"
+                      >
+                        <IoLogoWhatsapp className="w-8 h-8 group-hover:scale-110 transition-transform" /> 
+                        Check Availability on WhatsApp
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Material Suggestions */}
-                  {aiPlan.products && aiPlan.products.length > 0 && (
-                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 mt-8">
-                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        <Crown className="w-5 h-5 text-amber-600" /> Material Suggestions
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {aiPlan.products.map((prod: Product) => (
-                          <div key={prod._id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:border-amber-400 transition-all">
-                            <ProductCard data={prod} id={`${prod._id}-ai-rec`} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                    <Button onClick={resetForm} variant="outline" className="py-6 rounded-xl font-bold flex-1">
-                      <RotateCcw className="w-5 h-5 mr-2" /> Start Over
-                    </Button>
-                    <Button className="bg-[#4A0404] hover:bg-[#2A0001] text-white py-6 rounded-xl font-bold flex-[2] shadow-xl">
-                      <Download className="w-5 h-5 mr-2" /> Download Concept Deck (PDF)
+                  <div className="flex justify-center pt-2">
+                    <Button onClick={resetForm} variant="ghost" className="text-slate-500 hover:text-slate-800 font-bold">
+                      <RotateCcw className="w-4 h-4 mr-2" /> Design Another Concept
                     </Button>
                   </div>
                 </motion.div>

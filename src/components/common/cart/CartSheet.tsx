@@ -48,8 +48,8 @@ export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
 
   const handleProceedClick = () => {
     if (!token) {
-      toast.error("Please Login First");
-      router.push("/auth/sign-in");
+      toast.error("Please login to proceed with checkout");
+      router.push("/auth/sign-in?callbackUrl=/cart");
       return;
     }
     setDateDialogOpen(true);

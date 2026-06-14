@@ -22,6 +22,13 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { setToken, setUser } from "@/redux/slices/authSlice";
+import {
+  addToGuestCart,
+  updateGuestCartQuantity,
+  removeFromGuestCart,
+  saveGuestCart,
+  getGuestCart,
+} from "@/utils/guestCart";
 
 interface Props {
   data: Product;
@@ -59,10 +66,22 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // ✅ GUEST USER: Add to localStorage guest cart
     if (!isLoggedIn) {
-      // Store the current URL to redirect back after login
-      const currentPath = window.location.pathname;
-      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+      try {
+        const guestItem = addToGuestCart(data as any);
+        dispatch(
+          addToCart({
+            _id: guestItem._id,
+            quantity: 1,
+            product: data as any,
+          })
+        );
+        toast.success("Item added to cart!");
+      } catch (error) {
+        console.error("Guest add to cart error:", error);
+        toast.error("Failed to add item");
+      }
       return;
     }
 
@@ -152,10 +171,16 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // ✅ GUEST USER: Update localStorage guest cart
     if (!isLoggedIn) {
-      toast.error("Please Login First");
-      const currentPath = window.location.pathname;
-      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+      const newQty = qty + 1;
+      updateGuestCartQuantity(data._id, newQty);
+      dispatch(
+        updateQuantity({
+          _id: cartItem?._id || `guest_${data._id}`,
+          quantity: newQty,
+        })
+      );
       return;
     }
 
@@ -217,8 +242,6 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
     } catch (error: any) {
       console.error("Increase quantity error:", error);
       toast.error(error.message || "Failed to update quantity");
-      // Optionally refresh cart to sync state
-      // await getAllCartItems(finalToken);
     }
   };
 
@@ -227,10 +250,18 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // ✅ GUEST USER: Update/remove from localStorage guest cart
     if (!isLoggedIn) {
-      toast.error("Please Login First");
-      const currentPath = window.location.pathname;
-      router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+      const newQty = qty - 1;
+      const cartId = cartItem?._id || `guest_${data._id}`;
+
+      if (newQty <= 0) {
+        removeFromGuestCart(data._id);
+        dispatch(removeFromCart(cartId));
+      } else {
+        updateGuestCartQuantity(data._id, newQty);
+        dispatch(updateQuantity({ _id: cartId, quantity: newQty }));
+      }
       return;
     }
 
@@ -324,11 +355,19 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
         <QuantitySelector
           value={qty}
           onChange={async (newQty) => {
-            // This handles direct input changes (when user types a quantity)
+            // ✅ GUEST USER: Handle direct input changes locally
             if (!isLoggedIn) {
-              toast.error("Please Login First");
-              const currentPath = window.location.pathname;
-              router.push(`/auth/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
+              const cartId = cartItem?._id || `guest_${data._id}`;
+
+              if (newQty === 0) {
+                removeFromGuestCart(data._id);
+                dispatch(removeFromCart(cartId));
+                toast.success("Item removed from cart");
+              } else {
+                updateGuestCartQuantity(data._id, newQty);
+                dispatch(updateQuantity({ _id: cartId, quantity: newQty }));
+                toast.success("Quantity updated");
+              }
               return;
             }
 

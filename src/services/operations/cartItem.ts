@@ -1,7 +1,7 @@
 import toast from "react-hot-toast";
 import { apiConnector } from "../apiconnector";
 import { cartEndpoints } from "../api_endpoints";
-import { CartItem } from "@/redux/slices/cartSlice";
+import { CartItem, handleAddItemCart } from "@/redux/slices/cartSlice";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 const {
@@ -214,9 +214,9 @@ export const getCartItem = async (userId: string, dispatch: any) => {
   }
 };
 
-// NOTE: LocalCartItems should be the array of items currently in your Redux store
+// NOTE: LocalCartItems should be the array of items from guestCart (format: {_id: productId, quantity})
 export const syncCartAfterLogin = async (
-  localCartItems: any[],
+  localCartItems: { _id: string; quantity: number }[],
   dispatch: any,
   token: string
 ) => {
@@ -243,10 +243,18 @@ export const syncCartAfterLogin = async (
     }));
 
     // 2. Dispatch the final merged cart to Redux
-    // dispatch(handleAddItemCart(mappedCartItems));
+    dispatch(handleAddItemCart(mappedCartItems));
+
+    // 3. Clear guest cart from localStorage
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("guestCart");
+    }
+
     toast.success("Cart synchronized successfully!");
+    return mappedCartItems;
   } catch (error: any) {
     console.error("CART SYNC ERROR:", error);
     toast.error(error.message || "Failed to sync local cart data.");
+    return null;
   }
 };

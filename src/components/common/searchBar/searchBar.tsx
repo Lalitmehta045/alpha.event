@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaClock, FaTimes } from "react-icons/fa";
+import { FaSearch, FaClock, FaTimes, FaMapMarkerAlt } from "react-icons/fa";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { getAllProduct } from "@/services/operations/product";
 import { useDispatch } from "react-redux";
 import { ProductFormValues } from "@/@types/product";
 import { valideURLConvert } from "@/utils/valideURLConvert";
 import Link from "next/link";
+import AddAddressDialog from "@/components/common/address/AddAddressDialog";
 
 const RECENT_SEARCHES_KEY = "recent_searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -21,6 +22,7 @@ const SearchBar = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -86,7 +88,7 @@ const SearchBar = () => {
     <div className="relative w-full max-w-xl sm:max-w-2xl md:max-w-3xl">
       {/* Placeholder text animation */}
       {!inputValue && !isFocused && (
-        <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none font-medium text-gray-800 text-sm sm:text-base flex items-center gap-1">
+        <div className="absolute left-[4.5rem] sm:left-[5.5rem] top-1/2 -translate-y-1/2 pointer-events-none font-medium text-gray-500 text-sm sm:text-base flex items-center gap-1">
           <span>Search for</span>
           <TypingAnimation
             words={[
@@ -102,7 +104,17 @@ const SearchBar = () => {
       )}
 
       {/* Search Field */}
-      <div className="flex items-center bg-white border border-gray-400/40 rounded-full px-4 py-2 sm:py-3 focus-within:border-indigo-400 transition-all duration-300">
+      <div className="flex items-center bg-white border border-gray-300/80 shadow-sm hover:shadow-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#9c6567] focus-within:shadow-md focus-within:hover:shadow-md transition-all duration-300">
+        <button
+          className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#fcf4f4] text-[#9c6567] hover:bg-[#faeaea] hover:scale-105 transition-all duration-300 shrink-0"
+          onClick={() => setIsAddressDialogOpen(true)}
+          title="Select Delivery Location"
+        >
+          <FaMapMarkerAlt className="text-base sm:text-lg" />
+        </button>
+        
+        <div className="h-7 w-px bg-gray-200 mx-2 sm:mx-3 shrink-0"></div>
+
         <input
           type="text"
           value={inputValue}
@@ -129,7 +141,7 @@ const SearchBar = () => {
           className="flex-1 bg-transparent outline-none font-medium text-gray-800 text-base px-2 placeholder-transparent"
         />
         <button
-          className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#3a0103] text-white hover:bg-[#9c6567] transition-all duration-300"
+          className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#3a0103] text-white hover:bg-[#9c6567] hover:scale-105 transition-all duration-300 shrink-0"
           onClick={async () => {
             if (inputValue.trim()) {
               addToRecentSearches(inputValue);
@@ -223,6 +235,9 @@ const SearchBar = () => {
           No products found.
         </div>
       )}
+
+      {/* Address Dialog */}
+      <AddAddressDialog open={isAddressDialogOpen} setOpen={setIsAddressDialogOpen} />
     </div>
   );
 };

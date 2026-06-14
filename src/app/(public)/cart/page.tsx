@@ -68,8 +68,8 @@ export default function CartPage() {
 
   const redirectToCheckoutPage = () => {
     if (!isAuthenticated) {
-      toast.error("Please Login First");
-      router.push("/auth/sign-in");
+      toast.error("Please login to proceed with checkout");
+      router.push("/auth/sign-in?callbackUrl=/cart");
       return;
     }
     setDateDialogOpen(true);
@@ -77,11 +77,8 @@ export default function CartPage() {
 
   const handleConfirmDate = (selected: Date) => {
     if (typeof window !== "undefined") {
-      const year = selected.getFullYear();
-      const month = String(selected.getMonth() + 1).padStart(2, "0");
-      const day = String(selected.getDate()).padStart(2, "0");
-      const dateToStore = `${year}-${month}-${day}`;
-      localStorage.setItem("preferredDeliveryDate", dateToStore);
+      // Store full ISO string to preserve time info
+      localStorage.setItem("preferredDeliveryDate", selected.toISOString());
     }
 
     setDeliveryDate(selected);

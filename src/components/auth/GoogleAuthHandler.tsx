@@ -5,6 +5,9 @@ import { useSession } from "next-auth/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setToken, setUser } from "@/redux/slices/authSlice";
 import { RootState } from "@/redux/store/store";
+import { hasGuestCart, getGuestCartForSync } from "@/utils/guestCart";
+import { syncCartAfterLogin, getAllCartItems } from "@/services/operations/cartItem";
+import { handleAddItemCart } from "@/redux/slices/cartSlice";
 
 export default function GoogleAuthHandler() {
   const { data: session, status } = useSession();
@@ -32,6 +35,24 @@ export default function GoogleAuthHandler() {
               dispatch(setToken(data.data.accessToken));
               dispatch(setUser(data.data.user));
               localStorage.setItem("user", JSON.stringify(data.data.user));
+
+              // ✅ Sync guest cart to server after Google login
+              if (hasGuestCart()) {
+                const guestItems = getGuestCartForSync();
+                await syncCartAfterLogin(guestItems, dispatch, data.data.accessToken);
+              } else {
+                // No guest cart, load server cart
+                const serverCart = await getAllCartItems(data.data.accessToken);
+                dispatch(handleAddItemCart(serverCart));
+              }
+
+              // ✅ Redirect to callbackUrl if present
+              if (typeof window !== "undefined") {
+                const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
+                if (callbackUrl) {
+                  window.location.href = callbackUrl;
+                }
+              }
             }
           }
         } catch (error) {

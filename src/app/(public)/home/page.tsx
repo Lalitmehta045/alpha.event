@@ -10,7 +10,7 @@ import { RootState } from "@/redux/store/store";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { getAllProduct } from "@/services/operations/product";
-import RecentProductV1 from "@/components/core/recentProducts/recentProductV1";
+import HomeProducts from "@/components/core/homeProducts/HomeProducts";
 import { getAllCartItems } from "@/services/operations/cartItem";
 import { handleAddItemCart } from "@/redux/slices/cartSlice";
 import AIPlannerModal from "@/components/common/aiPlanner/AIPlannerModal";
@@ -73,7 +73,7 @@ export default function Home() {
     <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans">
       <LayoutV1>
         <MainHero />
-        <RecentProductV1 />
+        <HomeProducts />
         {/* <CategoryV3 />
           <FeaturedProd />
           <MostPopularProd />

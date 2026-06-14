@@ -5,6 +5,9 @@ import { endpoints } from "../api_endpoints";
 import { apiConnector } from "../apiconnector";
 import { setLoginProvider, setToken, setUser } from "@/redux/slices/authSlice";
 import { logoutAction } from "@/actions/auth";
+import { getGuestCartForSync, hasGuestCart, clearGuestCart } from "@/utils/guestCart";
+import { syncCartAfterLogin, getAllCartItems } from "./cartItem";
+import { handleAddItemCart } from "@/redux/slices/cartSlice";
 
 const { SENDOTPEMAIL_API, SIGNUP_API, SIGNIN_API, RESETPASSWORD_API, MSG91_LOGIN_API } =
   endpoints;
@@ -113,11 +116,25 @@ export async function signIn(
     dispatch(setToken(accessToken)); // Keep in Redux for service files using Authorization header
     dispatch(setLoginProvider("credentials"));
 
+    // ✅ Sync guest cart to server after login
+    if (hasGuestCart()) {
+      const guestItems = getGuestCartForSync();
+      await syncCartAfterLogin(guestItems, dispatch, accessToken);
+    } else {
+      // No guest cart, just load the server cart
+      const serverCart = await getAllCartItems(accessToken);
+      dispatch(handleAddItemCart(serverCart));
+    }
+
     toast.dismiss(toastId);
     toast.success(`🎉 Welcome back, ${user.fname}!`);
 
+    // ✅ Redirect to callbackUrl if present, otherwise default route
     const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(user.role);
-    router.push(isAdmin ? "/admin" : "/");
+    const callbackUrl = typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("callbackUrl")
+      : null;
+    router.push(callbackUrl || (isAdmin ? "/admin" : "/"));
 
     return response.data;
 
@@ -166,14 +183,28 @@ export async function msg91SignIn(
     dispatch(setToken(accessToken)); // Keep in Redux for service files using Authorization header
     dispatch(setLoginProvider("credentials"));
 
+    // ✅ Sync guest cart to server after login
+    if (hasGuestCart()) {
+      const guestItems = getGuestCartForSync();
+      await syncCartAfterLogin(guestItems, dispatch, accessToken);
+    } else {
+      // No guest cart, just load the server cart
+      const serverCart = await getAllCartItems(accessToken);
+      dispatch(handleAddItemCart(serverCart));
+    }
+
     toast.dismiss(toastId);
     toast.success(`🎉 Mobile Login successful!`);
 
     if (isNewUser) {
       router.push("/complete-profile-mobile");
     } else {
+      // ✅ Redirect to callbackUrl if present, otherwise default route
       const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(user.role);
-      router.push(isAdmin ? "/admin" : "/");
+      const callbackUrl = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("callbackUrl")
+        : null;
+      router.push(callbackUrl || (isAdmin ? "/admin" : "/"));
     }
 
     return response.data;

@@ -5,6 +5,7 @@ import ScrollToTop from "@/utils/scrollToTop";
 import ReduxProvider from "@/redux/provider";
 import { Toaster } from "react-hot-toast";
 import CartMobileBar from "@/components/common/cart/CartMobileBar";
+import GuestCartLoader from "@/components/common/cart/GuestCartLoader";
 import NextAuthProvider from "@/components/NextAuthProvider";
 import GoogleAuthHandler from "@/components/auth/GoogleAuthHandler";
 import PhoneNumberCheck from "@/components/auth/PhoneNumberCheck";
@@ -38,6 +39,7 @@ export default function RootLayout({
             <GoogleAuthHandler />
             <PhoneNumberCheck />
             <ScrollToTop />
+            <GuestCartLoader />
             {children}
             <CartMobileBar />
             <CustomToaster />

@@ -46,6 +46,6 @@ interface SocialLink {
 export const footerSocialLinks: SocialLink[] = [
   { id: 1, Icon: FaFacebookF, url: "https://facebook.com" },
   { id: 2, Icon: FaInstagram, url: "https://instagram.com" },
-  { id: 3, Icon: IoLogoWhatsapp, url: "https://wa.me/yourwhatsapplink" },
+  { id: 3, Icon: IoLogoWhatsapp, url: "https://wa.me/919302282860" },
   { id: 4, Icon: BsTwitterX, url: "https://twitter.com" },
 ];
