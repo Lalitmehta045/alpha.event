@@ -18,6 +18,8 @@ import axios from "axios";
 import { connectDB } from "@/lib/db";
 import WhatsappLogModel from "@/lib/models/WhatsappLog.model";
 import AddressModel from "@/lib/models/Address.model";
+import OrderModel from "@/lib/models/Order.model";
+import UserModel from "@/lib/models/User.model";
 
 // ─── Configuration ───────────────────────────────────────────
 const MSG91_API_URL =
@@ -479,7 +481,38 @@ export async function resendWhatsAppMessage(logId: string) {
     throw new Error("WhatsApp log entry not found");
   }
 
-  // We can't automatically resend templates because we don't save the full payload structure in the DB yet,
-  // and we can't send plain text. So we must inform the admin.
-  throw new Error("Resending is not supported with MSG91 templates yet. Please trigger the action again from the system.");
+  const orderId = log.orderId;
+  if (!orderId) {
+    throw new Error("Cannot resend this message because it is not associated with an orderId.");
+  }
+
+  const populatedOrder = await OrderModel.findOne({ orderId })
+    .populate({ path: "userId", model: UserModel, select: "fname lname phone email" })
+    .populate({ path: "delivery_address", model: AddressModel, select: "address_line city state pincode country mobile" })
+    .lean();
+
+  if (!populatedOrder) {
+    throw new Error("Order associated with this log not found");
+  }
+
+  // listItems can be reconstructed from populatedOrder.products
+  // The service uses item.product_details?.name and item.product_details?.price which are saved in the order
+  const listItems = populatedOrder.products || [];
+
+  // Send the appropriate message based on the original log type
+  switch (log.messageType) {
+    case "admin_notification":
+      await sendAdminNewOrder(populatedOrder, listItems);
+      break;
+    case "customer_order_received":
+      await sendCustomerOrderReceived(populatedOrder, listItems);
+      break;
+    case "customer_confirmation":
+      await sendCustomerOrderConfirmed(populatedOrder);
+      break;
+    default:
+      throw new Error(`Unknown messageType: ${log.messageType}`);
+  }
+
+  return { success: true, message: "WhatsApp message resend triggered successfully" };
 }
