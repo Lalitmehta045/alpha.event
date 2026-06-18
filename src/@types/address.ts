@@ -11,6 +11,8 @@ export interface AddressType {
   mobile?: string | number;
   status: boolean; // ✔ MUST be boolean
   location?: { lat: number; lng: number };
+  recipient_name?: string;
+  map_url?: string;
 }
 export interface AddressState {
   addressList: AddressType[];
@@ -27,4 +29,6 @@ export interface IAddress extends Document {
   location?: { lat: number; lng: number };
   status: boolean;
   userId: Types.ObjectId | IUserProfile; // Can be just an ID or a populated User document
+  recipient_name?: string;
+  map_url?: string;
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import ProductModel from "@/lib/models/Product.model";
 import mongoose from "mongoose";
+import { attachSignedUrlsAndThumbnails } from "@/utils/s3Signer";
 
 interface ParamsPromise {
   params: Promise<{ productId: string }>;
@@ -30,7 +31,10 @@ export async function GET(req: NextRequest, context: ParamsPromise) {
       _id: { $ne: productId }, // exclude current product
       publish: true,
       subCategory: { $in: subCategories }, // match ANY subCategory
-    }).limit(10);
+    }).limit(10).lean();
+
+    // 3. Attach signed URLs for S3 images
+    await attachSignedUrlsAndThumbnails(similarProducts);
 
     return NextResponse.json(
       {

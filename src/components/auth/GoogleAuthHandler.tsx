@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setToken, setUser } from "@/redux/slices/authSlice";
@@ -13,6 +13,7 @@ export default function GoogleAuthHandler() {
   const { data: session, status } = useSession();
   const dispatch = useDispatch();
   const reduxUser = useSelector((state: RootState) => state.auth.user);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
     const generateTokenForGoogleUser = async () => {
@@ -20,7 +21,9 @@ export default function GoogleAuthHandler() {
       // 1. Session exists (user is logged in with Google)
       // 2. No user in Redux yet
       // 3. Session is ready (not loading)
-      if (session?.user && !reduxUser && status === "authenticated") {
+      // 4. We haven't fetched it yet (prevent StrictMode double-fetch)
+      if (session?.user && !reduxUser && status === "authenticated" && !fetchedRef.current) {
+        fetchedRef.current = true;
         try {
           const res = await fetch("/api/auth/google-token", {
             method: "POST",

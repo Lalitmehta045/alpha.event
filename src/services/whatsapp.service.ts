@@ -1,5 +1,5 @@
 /**
- * WhatsApp Cloud API Service
+ * WhatsApp MSG91 API Service
  *
  * Server-side only — used inside Next.js API routes.
  * Uses axios directly (not the client-side apiConnector).
@@ -10,7 +10,7 @@
  * Exported functions:
  * - sendCustomerOrderReceived(order, listItems) — Customer notification on new order
  * - sendAdminNewOrder(order, listItems) — Admin notification on new order
- * - sendCustomerOrderConfirmed(order) — Customer notification on order confirmed
+ * - sendCustomerOrderConfirmed(order) — Customer notification on order confirmed (uses MSG91 template)
  * - resendWhatsAppMessage(logId) — Resend a previously logged message
  */
 
@@ -20,21 +20,22 @@ import WhatsappLogModel from "@/lib/models/WhatsappLog.model";
 import AddressModel from "@/lib/models/Address.model";
 
 // ─── Configuration ───────────────────────────────────────────
-const WHATSAPP_API_VERSION = "v23.0";
+const MSG91_API_URL =
+  "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/";
 
 function getConfig() {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const authKey = process.env.MSG91_AUTH_KEY;
+  const integratedNumber = process.env.MSG91_WHATSAPP_NUMBER;
   const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER;
 
-  if (!phoneNumberId || !accessToken) {
+  if (!authKey || !integratedNumber) {
     console.warn(
-      "⚠️ WhatsApp env variables missing (WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN). WhatsApp notifications disabled."
+      "⚠️ MSG91 env variables missing (MSG91_AUTH_KEY or MSG91_WHATSAPP_NUMBER). WhatsApp notifications disabled."
     );
     return null;
   }
 
-  return { phoneNumberId, accessToken, adminNumber };
+  return { authKey, integratedNumber, adminNumber };
 }
 
 // ─── Phone Number Normalizer ─────────────────────────────────
@@ -47,46 +48,70 @@ function normalizePhone(phone: string | number): string {
   return normalized;
 }
 
-// ─── Low-Level Sender with Retry (3 attempts) ───────────────
+// ─── Low-Level Sender: MSG91 Text Message (with Retry) ──────
+// REMOVED: MSG91 bulk API only supports templates. Plain text is not supported.
 const MAX_RETRIES = 3;
 
-async function sendWhatsAppMessage(
+// ─── Low-Level Sender: MSG91 Template Message (with Retry) ──
+async function sendWhatsAppTemplateMessage(
   to: string,
-  message: string,
+  templateName: string,
+  templateNamespace: string | null,
+  components: Record<string, { type: string; value: string; parameter_name?: string }>,
   orderId: string,
-  messageType: "admin_notification" | "customer_order_received" | "customer_confirmation"
+  messageType:
+    | "admin_notification"
+    | "customer_order_received"
+    | "customer_confirmation",
+  logMessage: string
 ): Promise<{ success: boolean; response?: any; error?: any }> {
   const config = getConfig();
 
   if (!config) {
-    // Log as failed due to missing config
     await connectDB();
     await WhatsappLogModel.create({
       orderId,
       recipient: to,
       messageType,
-      message,
+      message: logMessage,
       status: "failed",
-      response: { error: "WhatsApp configuration missing" },
+      response: { error: "MSG91 configuration missing" },
       retryCount: 0,
     });
-    return { success: false, error: "WhatsApp configuration missing" };
+    return { success: false, error: "MSG91 configuration missing" };
   }
 
-  const url = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${config.phoneNumberId}/messages`;
+  // Split by comma if it's a string containing multiple numbers, and normalize all
+  const toArray = (typeof to === "string" ? to.split(",") : [to])
+    .map((n) => normalizePhone(n.trim()))
+    .filter((n) => n.length > 0);
 
   const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "text",
-    text: {
-      body: message,
+    integrated_number: config.integratedNumber,
+    content_type: "template",
+    payload: {
+      messaging_product: "whatsapp",
+      type: "template",
+      template: {
+        name: templateName,
+        language: {
+          code: "en",
+          policy: "deterministic",
+        },
+        namespace: templateNamespace || null,
+        to_and_components: [
+          {
+            to: toArray,
+            components,
+          },
+        ],
+      },
     },
   };
 
   const headers = {
-    Authorization: `Bearer ${config.accessToken}`,
     "Content-Type": "application/json",
+    authkey: config.authKey,
   };
 
   let lastError: any = null;
@@ -94,7 +119,10 @@ async function sendWhatsAppMessage(
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await axios.post(url, payload, { headers, timeout: 15000 });
+      const response = await axios.post(MSG91_API_URL, payload, {
+        headers,
+        timeout: 15000,
+      });
 
       // Success — log and return
       await connectDB();
@@ -102,20 +130,22 @@ async function sendWhatsAppMessage(
         orderId,
         recipient: to,
         messageType,
-        message,
+        message: logMessage,
         status: "sent",
         response: response.data,
         retryCount: attempt,
       });
 
-      console.log(`✅ WhatsApp message sent to ${to} (attempt ${attempt})`);
+      console.log(
+        `✅ WhatsApp template "${templateName}" sent to ${to} (attempt ${attempt})`
+      );
       return { success: true, response: response.data };
     } catch (error: any) {
       lastError = error?.response?.data || error.message || error;
       retryCount = attempt;
 
       console.error(
-        `❌ WhatsApp send attempt ${attempt}/${MAX_RETRIES} failed:`,
+        `❌ WhatsApp template send attempt ${attempt}/${MAX_RETRIES} failed:`,
         lastError
       );
 
@@ -133,13 +163,15 @@ async function sendWhatsAppMessage(
     orderId,
     recipient: to,
     messageType,
-    message,
+    message: logMessage,
     status: "failed",
     response: lastError,
     retryCount,
   });
 
-  console.error(`❌ WhatsApp message to ${to} failed after ${MAX_RETRIES} attempts`);
+  console.error(
+    `❌ WhatsApp template to ${to} failed after ${MAX_RETRIES} attempts`
+  );
   return { success: false, error: lastError };
 }
 
@@ -147,11 +179,13 @@ async function sendWhatsAppMessage(
 function buildProductLines(listItems: any[]): string {
   return listItems
     .map((item: any) => {
-      const name = item.product?.name || item.product_details?.name || "Unknown Product";
+      const name =
+        item.product?.name || item.product_details?.name || "Unknown Product";
       const qty = item.quantity || 1;
-      return `• ${name} × ${qty}`;
+      const price = item.product?.price || item.product_details?.price || 0;
+      return `• ${name} × ${qty} (₹${price * qty})`;
     })
-    .join("\n");
+    .join(", ");
 }
 
 // ─── Helper: Build product lines from populated order ────────
@@ -164,8 +198,21 @@ function buildProductLinesFromOrder(products: any[]): string {
         const qty = item.quantity || 1;
         return `• ${name} × ${qty}`;
       })
-      .join("\n") || "• Your product"
+      .join(", ") || "• Your product"
   );
+}
+
+// ─── Helper: Get first product name from order ───────────────
+function getFirstProductName(products: any[]): string {
+  if (!products || products.length === 0) return "Your order";
+  const firstProduct =
+    products[0]?.productId?.name ||
+    products[0]?.product_details?.name ||
+    "Your order";
+  if (products.length > 1) {
+    return `${firstProduct} + ${products.length - 1} more`;
+  }
+  return firstProduct;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -178,11 +225,12 @@ export async function sendCustomerOrderReceived(
   try {
     // Get customer phone from populated userId or delivery_address
     const customerPhone =
-      createdOrder.userId?.phone ||
-      createdOrder.delivery_address?.mobile;
+      createdOrder.userId?.phone || createdOrder.delivery_address?.mobile;
 
     if (!customerPhone) {
-      console.warn("⚠️ Customer phone not found. Skipping customer order received WhatsApp.");
+      console.warn(
+        "⚠️ Customer phone not found. Skipping customer order received WhatsApp."
+      );
       return;
     }
 
@@ -193,33 +241,46 @@ export async function sendCustomerOrderReceived(
         ? `${createdOrder.userId.fname} ${createdOrder.userId.lname}`
         : "Customer";
 
-    const productLines = buildProductLines(listItems);
-    const paymentMethod = createdOrder.payment_status || "N/A";
+    const productName = getFirstProductName(
+      listItems.map((item: any) => ({
+        product_details: { name: item.product?.name || item.product_details?.name },
+      }))
+    );
+    const amount = `₹${createdOrder.totalAmt}`;
 
-    const message = `🛒 Order Placed Successfully!
+    const components = {
+      body_amount: {
+        type: "text",
+        value: amount,
+        parameter_name: "amount",
+      },
+      body_customer_name: {
+        type: "text",
+        value: customerName,
+        parameter_name: "customer_name",
+      },
+      body_order_id: {
+        type: "text",
+        value: createdOrder.orderId,
+        parameter_name: "order_id",
+      },
+      body_product_name: {
+        type: "text",
+        value: productName,
+        parameter_name: "product_name",
+      },
+    };
 
-Hello ${customerName},
+    const logMessage = `✅ Order Received! Hello ${customerName}, your order #${createdOrder.orderId} for ${productName} (${amount}) has been received. [Template: order_approved]`;
 
-Your order has been received and is being processed.
-
-Order ID: ${createdOrder.orderId}
-
-Products:
-${productLines}
-
-Amount: ₹${createdOrder.totalAmt}
-Payment: ${paymentMethod}
-Status: Processing
-
-We'll notify you once your order is confirmed.
-
-Thank you for choosing Alpha Art & Events! 🎉`;
-
-    await sendWhatsAppMessage(
+    await sendWhatsAppTemplateMessage(
       normalizedPhone,
-      message,
+      "order_approved",
+      "d7c7b754_9f04_41ef_a1c2_e61f103806b5",
+      components,
       createdOrder.orderId,
-      "customer_order_received"
+      "customer_order_received",
+      logMessage
     );
   } catch (error) {
     console.error("❌ sendCustomerOrderReceived error:", error);
@@ -229,6 +290,7 @@ Thank you for choosing Alpha Art & Events! 🎉`;
 
 // ═════════════════════════════════════════════════════════════
 // 2. ADMIN — New Order Notification
+//    Uses MSG91 "new_order_admin" template
 // ═════════════════════════════════════════════════════════════
 export async function sendAdminNewOrder(
   createdOrder: any,
@@ -237,7 +299,9 @@ export async function sendAdminNewOrder(
   try {
     const config = getConfig();
     if (!config?.adminNumber) {
-      console.warn("⚠️ ADMIN_WHATSAPP_NUMBER not set. Skipping admin notification.");
+      console.warn(
+        "⚠️ ADMIN_WHATSAPP_NUMBER not set. Skipping admin notification."
+      );
       return;
     }
 
@@ -246,7 +310,9 @@ export async function sendAdminNewOrder(
     // Fetch the delivery address
     let addressText = "N/A";
     try {
-      const address = await AddressModel.findById(createdOrder.delivery_address).lean();
+      const address = await AddressModel.findById(
+        createdOrder.delivery_address
+      ).lean();
       if (address) {
         const addr = address as any;
         addressText = [
@@ -270,34 +336,53 @@ export async function sendAdminNewOrder(
         : "N/A";
     const customerPhone = createdOrder.userId?.phone || "N/A";
 
-    const productLines = buildProductLines(listItems);
-    const paymentMethod = createdOrder.payment_status || "N/A";
+    // Detailed product list with prices
+    const productList = buildProductLines(listItems);
+    const amount = `${createdOrder.totalAmt}`;
 
-    const message = `🛒 New Order Received
+    // Template components for perfect Admin template (using body_1, body_2 format for numbered variables)
+    const components = {
+      body_1: {
+        type: "text",
+        value: customerName,
+      },
+      body_2: {
+        type: "text",
+        value: customerPhone,
+      },
+      body_3: {
+        type: "text",
+        value: addressText,
+      },
+      body_4: {
+        type: "text",
+        value: createdOrder.orderId,
+      },
+      body_5: {
+        type: "text",
+        value: productList,
+      },
+      body_6: {
+        type: "text",
+        value: amount,
+      },
+      body_7: {
+        type: "text",
+        value: createdOrder.payment_status || "COD",
+      },
+    };
 
-Order ID: ${createdOrder.orderId}
+    // Log message for WhatsApp logs
+    const logMessage = `🛒 New Order! Customer: ${customerName} (${customerPhone}), Order: #${createdOrder.orderId}, Amount: ₹${amount} [Template: admin_order_notification]`;
 
-Customer: ${customerName}
-Phone: ${customerPhone}
-
-Products:
-${productLines}
-
-Amount: ₹${createdOrder.totalAmt}
-Payment: ${paymentMethod}
-
-Address:
-${addressText}
-
-Date: ${new Date(createdOrder.createdAt || Date.now()).toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-    })}`;
-
-    await sendWhatsAppMessage(
+    await sendWhatsAppTemplateMessage(
       config.adminNumber,
-      message,
+      "admin_order_notification",
+      "d7c7b754_9f04_41ef_a1c2_e61f103806b5", // namespace
+      components,
       createdOrder.orderId,
-      "admin_notification"
+      "admin_notification",
+      logMessage
     );
   } catch (error) {
     console.error("❌ sendAdminNewOrder error:", error);
@@ -307,16 +392,18 @@ Date: ${new Date(createdOrder.createdAt || Date.now()).toLocaleString("en-IN", {
 
 // ═════════════════════════════════════════════════════════════
 // 3. CUSTOMER — Order Confirmed (on status → Accepted)
+//    Uses MSG91 "order_approved" template
 // ═════════════════════════════════════════════════════════════
 export async function sendCustomerOrderConfirmed(populatedOrder: any) {
   try {
     // Extract customer phone number
     const customerPhone =
-      populatedOrder.userId?.phone ||
-      populatedOrder.delivery_address?.mobile;
+      populatedOrder.userId?.phone || populatedOrder.delivery_address?.mobile;
 
     if (!customerPhone) {
-      console.warn("⚠️ Customer phone not found. Skipping order confirmed WhatsApp.");
+      console.warn(
+        "⚠️ Customer phone not found. Skipping order confirmed WhatsApp."
+      );
       return;
     }
 
@@ -327,29 +414,44 @@ export async function sendCustomerOrderConfirmed(populatedOrder: any) {
         ? `${populatedOrder.userId.fname} ${populatedOrder.userId.lname}`
         : "Customer";
 
-    const productLines = buildProductLinesFromOrder(populatedOrder.products);
+    const productName = getFirstProductName(populatedOrder.products);
+    const amount = `₹${populatedOrder.totalAmt}`;
 
-    const message = `✅ Order Confirmed!
+    // Template components matching the perfect user template (using body_1, body_2 format)
+    const components = {
+      body_1: {
+        type: "text",
+        value: customerName,
+      },
+      body_2: {
+        type: "text",
+        value: populatedOrder.orderId,
+      },
+      body_3: {
+        type: "text",
+        value: productName,
+      },
+      body_4: {
+        type: "text",
+        value: amount,
+      },
+      body_5: {
+        type: "text",
+        value: "Alpha Art & Events", // Adding a 5th variable default
+      },
+    };
 
-Hello ${customerName},
+    // Log message for WhatsApp logs (human-readable summary)
+    const logMessage = `✅ Order Confirmed! Hello ${customerName}, your order #${populatedOrder.orderId} for ${productName} (₹${amount}) has been confirmed. [Template: order_approved_new]`;
 
-Great news! Your order has been confirmed.
-
-Order ID: ${populatedOrder.orderId}
-
-Products:
-${productLines}
-
-Amount: ₹${populatedOrder.totalAmt}
-Status: Confirmed ✅
-
-Thank you for choosing Alpha Art & Events! 🎉`;
-
-    await sendWhatsAppMessage(
+    await sendWhatsAppTemplateMessage(
       normalizedPhone,
-      message,
+      "order_approved_new",
+      null, // namespace is null for this template according to snippet
+      components,
       populatedOrder.orderId,
-      "customer_confirmation"
+      "customer_confirmation",
+      logMessage
     );
   } catch (error) {
     console.error("❌ sendCustomerOrderConfirmed error:", error);
@@ -368,12 +470,7 @@ export async function resendWhatsAppMessage(logId: string) {
     throw new Error("WhatsApp log entry not found");
   }
 
-  const result = await sendWhatsAppMessage(
-    log.recipient,
-    log.message,
-    log.orderId,
-    log.messageType
-  );
-
-  return result;
+  // We can't automatically resend templates because we don't save the full payload structure in the DB yet,
+  // and we can't send plain text. So we must inform the admin.
+  throw new Error("Resending is not supported with MSG91 templates yet. Please trigger the action again from the system.");
 }

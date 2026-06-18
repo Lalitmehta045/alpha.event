@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Cake, Heart, PartyPopper, Sparkle, Baby, Briefcase,
   Compass, Users, Check, RotateCcw, Copy, ChevronRight, ChevronLeft,
-  DollarSign, TrendingUp, ListTodo, Palette, Download, Crown, LayoutTemplate, Bot
+  DollarSign, TrendingUp, ListTodo, Palette, Download, Crown, LayoutTemplate, Bot, X
 } from "lucide-react";
 import { IoLogoWhatsapp } from "react-icons/io";
 
@@ -26,7 +26,7 @@ const EVENT_TYPES = [
   { name: "Birthday", icon: Cake, description: "Celebrate life milestones" },
   { name: "Anniversary", icon: Heart, description: "Milestones of togetherness" },
   { name: "Surprise Party", icon: PartyPopper, description: "Sudden celebrations" },
-  { name: "Wedding", icon: Sparkle, description: "Grand fairytale beginnings" },
+  { name: "Balloon Decoration", icon: Sparkle, description: "Beautiful balloon setups" },
   { name: "Baby Shower", icon: Baby, description: "Welcoming new beginnings" },
   { name: "Corporate Event", icon: Briefcase, description: "Corporate elegance" },
 ];
@@ -62,7 +62,7 @@ export default function AIPlannerModal() {
   const [wizardStep, setWizardStep] = useState(1);
 
   // Form State
-  const [eventType, setEventType] = useState("Wedding");
+  const [eventType, setEventType] = useState("Balloon Decoration");
   const [selectedColors, setSelectedColors] = useState<string[]>(["Maroon", "Gold"]);
   const [budget, setBudget] = useState<number>(25000);
   const [guestCount, setGuestCount] = useState("50-100");
@@ -74,6 +74,7 @@ export default function AIPlannerModal() {
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState<"A" | "B" | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
 
   const products = useSelector((state: RootState) => state.product.allProducts) || [];
 
@@ -126,8 +127,21 @@ export default function AIPlannerModal() {
     if (products.length > 0) {
       recommendedProducts = products.filter((p) => {
         const pName = p.name.toLowerCase();
+        const typeLower = type.toLowerCase();
+        const typeWords = typeLower.split(" ").filter(w => w.length > 3);
+        
         const matchesColor = colors.some(c => pName.includes(c.toLowerCase()));
-        return matchesColor || pName.includes(type.toLowerCase());
+        const matchesOccasionName = pName.includes(typeLower) || typeWords.some(w => pName.includes(w));
+        
+        let matchesOccasionCategory = false;
+        if (p.category && Array.isArray(p.category)) {
+          matchesOccasionCategory = p.category.some((c: any) => c.name && (c.name.toLowerCase().includes(typeLower) || typeWords.some(w => c.name.toLowerCase().includes(w))));
+        }
+
+        const isRelevant = matchesColor || matchesOccasionName || matchesOccasionCategory;
+        const withinBudget = p.price <= budgetValue;
+
+        return isRelevant && withinBudget;
       }).slice(0, 4);
     }
 
@@ -159,10 +173,21 @@ export default function AIPlannerModal() {
       toast.error("Please pick a color scheme!");
       return;
     }
-    setWizardStep(4);
+    const localPlan = compileRecommendations(eventType, selectedColors, budget, guestCount, venueType);
+    setAiPlan(localPlan);
+    setWizardStep(4); // Go to Product Selection
+  };
+
+  const generateFinalConcept = async () => {
+    setWizardStep(5);
     setIsGenerating(true);
 
     try {
+      const selectedProductNames = aiPlan?.products
+        ?.filter((p: Product) => selectedProductIds.includes(p._id))
+        ?.map((p: Product) => p.name)
+        ?.join(", ");
+
       const response = await fetch("/api/ai/generate-event-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -171,28 +196,28 @@ export default function AIPlannerModal() {
           venueType,
           guestCount,
           themeColors: selectedColors,
-          budget
+          budget,
+          selectedProducts: selectedProductNames
         })
       });
       const result = await response.json();
       if (!result.success) throw new Error(result.message);
 
-      const localPlan = compileRecommendations(eventType, selectedColors, budget, guestCount, venueType);
-
-      setAiPlan({
-        ...localPlan,
+      setAiPlan((prev: any) => ({
+        ...prev,
         _id: result.data._id,
         variationAUrl: result.data.variationAUrl,
         variationBUrl: result.data.variationBUrl,
-      });
+      }));
 
       setChecklistProgress({});
       setIsGenerating(false);
-      setWizardStep(5);
+      setSelectedVariation("A");
+      setWizardStep(6);
     } catch (error: any) {
       toast.error(error.message || "Failed to generate concept.");
       setIsGenerating(false);
-      setWizardStep(3);
+      setWizardStep(4);
     }
   };
 
@@ -200,6 +225,7 @@ export default function AIPlannerModal() {
     setWizardStep(1);
     setAiPlan(null);
     setSelectedVariation(null);
+    setSelectedProductIds([]);
     setChecklistProgress({});
   };
 
@@ -213,7 +239,7 @@ export default function AIPlannerModal() {
         >
           {/* Outer Multicolor Spinning Aura */}
           <div className="absolute inset-0 rounded-full z-0 pointer-events-none flex justify-center items-center">
-            <motion.div 
+            <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
               className="w-[150%] h-[150%] opacity-50 blur-xl"
@@ -233,7 +259,7 @@ export default function AIPlannerModal() {
             className="group relative flex items-center bg-transparent rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] overflow-hidden h-14 sm:h-16"
           >
             {/* Inner Multicolor Spinning Border */}
-            <motion.div 
+            <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] z-0"
@@ -241,7 +267,7 @@ export default function AIPlannerModal() {
                 background: "conic-gradient(from 0deg, #ff007f, #7928ca, #00d4ff, #ffdf00, #ff007f)"
               }}
             />
-            
+
             {/* Solid Mask Background */}
             <div className="absolute inset-[3px] bg-[#110101] rounded-full z-10" />
 
@@ -249,7 +275,7 @@ export default function AIPlannerModal() {
             <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 shrink-0 z-20">
               <Bot className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)] relative z-10" />
             </div>
-            
+
             {/* Expanding Text Container */}
             <motion.div
               variants={{
@@ -287,6 +313,12 @@ export default function AIPlannerModal() {
                   Experience luxury planning. Let AI craft your perfect event concept.
                 </DialogDescription>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
             </div>
 
             {wizardStep <= 3 && (
@@ -339,7 +371,7 @@ export default function AIPlannerModal() {
 
                   <div>
                     <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <Compass className="w-5 h-5 text-amber-600" /> Choose Venue
+                      <Compass className="w-5 h-5 text-amber-600" /> Venue Type
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {VENUE_OPTIONS.map((v) => {
@@ -503,16 +535,76 @@ export default function AIPlannerModal() {
                 </motion.div>
               )}
 
-              {/* STEP 4: Loading State */}
-              {wizardStep === 4 && (
+              {/* STEP 4: Product Selection */}
+              {wizardStep === 4 && aiPlan && (
                 <motion.div
                   key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8"
+                >
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                      <Sparkles className="w-6 h-6 text-amber-600" /> Select Products for Your AI Concept
+                    </h3>
+                    <p className="text-slate-500 mb-6 font-medium">Select the products you like, and our AI will generate a premium concept image incorporating them.</p>
+                    
+                    {aiPlan.products && aiPlan.products.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {aiPlan.products.map((product: Product) => {
+                          const isSelected = selectedProductIds.includes(product._id);
+                          return (
+                            <div 
+                              key={product._id} 
+                              className={`relative cursor-pointer transition-all duration-300 rounded-2xl ${isSelected ? 'ring-4 ring-amber-500 shadow-xl scale-[1.02]' : 'hover:scale-[1.01]'}`}
+                              onClick={() => {
+                                setSelectedProductIds(prev => 
+                                  prev.includes(product._id) 
+                                    ? prev.filter(id => id !== product._id) 
+                                    : [...prev, product._id]
+                                );
+                              }}
+                            >
+                              <div className="pointer-events-none">
+                                <ProductCard data={product} id={product._id} />
+                              </div>
+                              {isSelected && (
+                                <div className="absolute top-4 left-4 bg-amber-500 text-white p-1 rounded-full z-20">
+                                  <Check className="w-4 h-4 stroke-[3px]" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 z-10 bg-transparent" />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-slate-500 font-bold">No exact product matches found for this budget and occasion. You can still proceed to generate an AI concept.</p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button onClick={() => setWizardStep(3)} variant="outline" className="px-6 py-6 rounded-xl text-md font-bold">
+                      <ChevronLeft className="w-5 h-5 mr-2" /> Back
+                    </Button>
+                    <Button onClick={generateFinalConcept} className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white hover:opacity-90 px-8 py-6 rounded-xl text-md font-bold shadow-xl shadow-amber-500/20 group">
+                      <Sparkles className="w-5 h-5 mr-2 group-hover:animate-spin" /> Generate AI Image <ChevronRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 5: Loading State */}
+              {wizardStep === 5 && (
+                <motion.div
+                  key="step5"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="py-24 flex flex-col items-center justify-center text-center space-y-10 relative overflow-hidden rounded-3xl"
                 >
                   {/* Decorative background rays */}
-                  <motion.div 
+                  <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
                     className="absolute inset-0 z-0 opacity-10 pointer-events-none"
@@ -582,57 +674,6 @@ export default function AIPlannerModal() {
                 </motion.div>
               )}
 
-              {/* STEP 5: Concept Selection (A vs B) */}
-              {wizardStep === 5 && aiPlan && (
-                <motion.div
-                  key="step5"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-8">
-                    <h2 className="text-2xl font-black text-slate-800">Select Your Luxury Concept</h2>
-                    <p className="text-slate-500 mt-2">Our AI has generated two distinct styles based on your preferences.</p>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* Variation A */}
-                    <div className="bg-white border-2 border-slate-100 rounded-3xl overflow-hidden hover:border-amber-400 transition-all shadow-lg group">
-                      <div className="relative h-64 bg-slate-100">
-                        <img src={aiPlan.variationAUrl} alt="Variation A" className="w-full h-full object-cover" />
-                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">
-                          Option A: Elegant Premium
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <h4 className="text-lg font-bold text-slate-800 mb-2">{aiPlan.themeName}</h4>
-                        <p className="text-sm text-slate-500 line-clamp-2 mb-6">Refined styling with emphasis on sophisticated elegance and symmetry.</p>
-                        <Button onClick={() => { setSelectedVariation("A"); setWizardStep(6); }} className="w-full bg-[#4A0404] hover:bg-[#2A0001] text-white py-6 rounded-xl font-bold">
-                          Select Concept A
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Variation B */}
-                    <div className="bg-white border-2 border-slate-100 rounded-3xl overflow-hidden hover:border-amber-400 transition-all shadow-lg group">
-                      <div className="relative h-64 bg-slate-100">
-                        <img src={aiPlan.variationBUrl} alt="Variation B" className="w-full h-full object-cover" />
-                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">
-                          Option B: Creative Luxury
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <h4 className="text-lg font-bold text-slate-800 mb-2">{aiPlan.themeName}</h4>
-                        <p className="text-sm text-slate-500 line-clamp-2 mb-6">Bold, artistic interpretation focusing on opulence and dramatic lighting.</p>
-                        <Button onClick={() => { setSelectedVariation("B"); setWizardStep(6); }} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:opacity-90 text-white py-6 rounded-xl font-bold">
-                          Select Concept B
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
               {/* STEP 6: Final Selected Screen & WhatsApp Redirect */}
               {wizardStep === 6 && aiPlan && selectedVariation && (
                 <motion.div
@@ -648,7 +689,7 @@ export default function AIPlannerModal() {
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
-                    
+
                     <div className="absolute top-6 left-6 flex gap-2 z-10">
                       <span className="bg-amber-500/90 backdrop-blur text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg flex items-center gap-2">
                         <Check className="w-4 h-4 stroke-[3px]" /> Concept {selectedVariation} Selected
@@ -657,7 +698,7 @@ export default function AIPlannerModal() {
 
                     <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white w-full">
                       <h2 className="text-3xl md:text-4xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500">{aiPlan.themeName}</h2>
-                      
+
                       <div className="flex flex-wrap gap-3 items-center mb-8">
                         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
                           <Users className="w-4 h-4 text-amber-400" />
@@ -669,23 +710,37 @@ export default function AIPlannerModal() {
                         </div>
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={() => {
                           const baseUrl = window.location.origin;
                           const imageUrl = `${baseUrl}/api/concept-image/${aiPlan._id}?opt=${selectedVariation}`;
-                          
+
                           const msg = `Hello Alpha Events! 👑\n\nI just used your AI Event Architect and I absolutely love this luxury concept.\n\n*Theme:* ${aiPlan.themeName}\n*Budget:* ₹${budget.toLocaleString()}\n*Guests:* ${guestCount}\n*Colors:* ${selectedColors.join(", ")}\n*Selected Option:* ${selectedVariation}\n*Concept ID:* ${aiPlan._id}\n\n*Concept Image:* ${imageUrl}\n\nPlease check the availability for this and let me know how we can proceed!`;
-                          
+
                           // Redirect to WhatsApp with the correct phone number
                           window.location.href = `https://wa.me/919302282860?text=${encodeURIComponent(msg)}`;
-                        }} 
+                        }}
                         className="w-full sm:w-auto bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-7 rounded-2xl text-lg font-black shadow-[0_0_30px_rgba(37,211,102,0.4)] hover:shadow-[0_0_40px_rgba(37,211,102,0.6)] transition-all flex items-center justify-center gap-3 group"
                       >
-                        <IoLogoWhatsapp className="w-8 h-8 group-hover:scale-110 transition-transform" /> 
+                        <IoLogoWhatsapp className="w-8 h-8 group-hover:scale-110 transition-transform" />
                         Check Availability on WhatsApp
                       </Button>
                     </div>
                   </div>
+
+                  {/* Selected Products Preview */}
+                  {aiPlan.products && selectedProductIds.length > 0 && (
+                    <div className="mt-8 space-y-4">
+                      <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <Sparkles className="w-6 h-6 text-amber-600" /> Featured in Concept
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {aiPlan.products.filter((p: Product) => selectedProductIds.includes(p._id)).map((product: Product) => (
+                          <ProductCard key={product._id} data={product} id={product._id} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex justify-center pt-2">

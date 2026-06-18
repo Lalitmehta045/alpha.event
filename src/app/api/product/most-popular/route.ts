@@ -1,45 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import ProductModel from "@/lib/models/Product.model";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-
-// Initialize S3 client
-const s3Client = new S3Client({
-  region: process.env.AWS_S3_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-/**
- * Helper function to generate fresh signed URLs for product images
- */
-async function generateSignedUrls(products: any[]) {
-  for (const product of products) {
-    if (product.image && Array.isArray(product.image)) {
-      const signedUrls = await Promise.all(
-        product.image.map(async (key: string) => {
-          if (key.startsWith('http')) return key;
-
-          try {
-            const command = new GetObjectCommand({
-              Bucket: process.env.AWS_S3_BUCKET!,
-              Key: key,
-            });
-            return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-          } catch (error) {
-            console.error(`Failed to generate signed URL for key: ${key}`, error);
-            return key;
-          }
-        })
-      );
-      product.image = signedUrls;
-    }
-  }
-  return products;
-}
+import { attachSignedUrlsAndThumbnails } from "@/utils/s3Signer";
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,8 +20,8 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: 1 }) // Sort newest first
       .lean();
 
-    // ✅ Generate fresh signed URLs for all product images
-    const productsWithSignedUrls = await generateSignedUrls(popularProducts);
+    // ✅ Generate fresh signed URLs and thumbnails for all product images
+    const productsWithSignedUrls = await attachSignedUrlsAndThumbnails(popularProducts);
 
     // 4. Return the response
     return NextResponse.json({

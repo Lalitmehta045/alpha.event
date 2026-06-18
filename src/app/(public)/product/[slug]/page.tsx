@@ -140,9 +140,15 @@ const ProductDisplayPage = () => {
                       }`}
                   >
                     <img
-                      src={img}
+                      src={data.thumbnails?.[index] || img}
                       alt="thumbnail"
                       className="w-full h-full object-cover rounded-md"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== img) {
+                          target.src = img;
+                        }
+                      }}
                     />
                   </div>
                 ))}

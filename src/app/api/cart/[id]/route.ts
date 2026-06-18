@@ -2,44 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import CartModel from "@/lib/models/Cart.model";
 import { verifyUser } from "@/lib/verifyUser";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-
-// Initialize S3 client for generating signed URLs
-const s3Client = new S3Client({
-  region: process.env.AWS_S3_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-/**
- * Generate signed URLs for a single cart item's product images.
- */
-async function generateSignedUrlsForCartItem(item: any) {
-  const product = item.productId || item.product;
-  if (!product || !product.image || !Array.isArray(product.image)) return item;
-
-  const signedUrls = await Promise.all(
-    product.image.map(async (key: string) => {
-      if (key.startsWith("http")) return key;
-
-      try {
-        const command = new GetObjectCommand({
-          Bucket: process.env.AWS_S3_BUCKET!,
-          Key: key,
-        });
-        return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-      } catch (error) {
-        console.error(`[Cart] Failed to sign URL for key: ${key}`, error);
-        return key;
-      }
-    })
-  );
-  product.image = signedUrls;
-  return item;
-}
+import { attachSignedUrlsAndThumbnails } from "@/utils/s3Signer";
 
 interface ParamsPromise {
   params: Promise<{ id: string }>;
@@ -74,7 +37,7 @@ export async function GET(req: NextRequest, { params }: ParamsPromise) {
     }
 
     // 🔥 Generate signed URLs for product images
-    await generateSignedUrlsForCartItem(cartItem);
+    await attachSignedUrlsAndThumbnails([cartItem]);
 
     return NextResponse.json({
       success: true,
@@ -130,7 +93,7 @@ export async function PUT(req: NextRequest, { params }: ParamsPromise) {
 
     // 🔥 Generate signed URLs for product images
     if (populatedItem) {
-      await generateSignedUrlsForCartItem(populatedItem);
+      await attachSignedUrlsAndThumbnails([populatedItem]);
     }
 
     return NextResponse.json({

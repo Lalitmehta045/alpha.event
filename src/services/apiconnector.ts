@@ -1,4 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import store from "@/redux/store/store";
+import { setToken } from "@/redux/slices/authSlice";
 type HTTPMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 // ✅ Create axios instance with credentials (auto-send httpOnly cookies)
@@ -20,11 +22,14 @@ let failedQueue: Array<{
   config: InternalAxiosRequestConfig;
 }> = [];
 
-const processQueue = (error: any | null) => {
+const processQueue = (error: any | null, token: string | null = null) => {
   failedQueue.forEach(({ resolve, reject, config }) => {
     if (error) {
       reject(error);
     } else {
+      if (token && config.headers) {
+        config.headers["Authorization"] = `Bearer ${token}`;
+      }
       resolve(axiosInstance(config));
     }
   });
@@ -77,6 +82,7 @@ axiosInstance.interceptors.response.use(
         // Persist the new token for future requests
         if (newAccessToken && typeof window !== "undefined") {
           localStorage.setItem("accessToken", newAccessToken);
+          store.dispatch(setToken(newAccessToken));
         }
 
         // Update the original request's Authorization header with the new token
@@ -85,7 +91,7 @@ axiosInstance.interceptors.response.use(
         }
 
         // Refresh succeeded — retry all queued requests
-        processQueue(null);
+        processQueue(null, newAccessToken || null);
         // Retry the original request
         return axiosInstance(originalRequest);
       } else {

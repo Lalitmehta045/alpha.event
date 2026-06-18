@@ -117,6 +117,22 @@ export async function PUT(req: NextRequest, { params }: ParamsPromise) {
     const body = await req.json();
     const { id } = await params; // ✅ FIX
 
+    // Clean up signed URLs back to original keys
+    if (body.image && Array.isArray(body.image)) {
+      body.image = body.image.map((url: string) => {
+        try {
+          if (url.includes('amazonaws.com/')) {
+            const parsedUrl = new URL(url);
+            // pathname starts with '/' so we substring(1)
+            return decodeURIComponent(parsedUrl.pathname.substring(1));
+          }
+          return url;
+        } catch (e) {
+          return url;
+        }
+      });
+    }
+
     const product = await ProductModel.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,

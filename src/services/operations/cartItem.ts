@@ -30,24 +30,26 @@ export const getAllCartItems = async (token?: string | null) => {
 
     const rawCartItems = res.data.data;
 
-    const mappedCartItems = rawCartItems.map((item: any) => ({
-      _id: item._id,
-      quantity: item.quantity,
-      product: {
-        _id: item.productId._id,
-        name: item.productId.name,
-        image: item.productId.image,
-        category: item.productId.category,
-        subCategory: item.productId.subCategory,
-        unit: item.productId.unit,
-        stock: item.productId.stock,
-        price: item.productId.price,
-        discount: item.productId.discount,
-        description: item.productId.description,
-        more_details: item.productId.more_details,
-        quantity: item.productId.quantity,
-      },
-    }));
+    const mappedCartItems = rawCartItems
+      .filter((item: any) => item.productId)
+      .map((item: any) => ({
+        _id: item._id,
+        quantity: item.quantity,
+        product: {
+          _id: item.productId._id,
+          name: item.productId.name,
+          image: item.productId.image,
+          category: item.productId.category,
+          subCategory: item.productId.subCategory,
+          unit: item.productId.unit,
+          stock: item.productId.stock,
+          price: item.productId.price,
+          discount: item.productId.discount,
+          description: item.productId.description,
+          more_details: item.productId.more_details,
+          quantity: item.productId.quantity,
+        },
+      }));
 
     return mappedCartItems;
   } catch (error: any) {
@@ -236,11 +238,13 @@ export const syncCartAfterLogin = async (
     //    expected by your Redux CartItem interface (item.product.price).
     const rawCartItems = res.data.data;
 
-    const mappedCartItems: CartItem[] = rawCartItems.map((item: any) => ({
-      _id: item._id,
-      quantity: item.quantity,
-      product: item.productId, // Map the populated document to the 'product' key
-    }));
+    const mappedCartItems: CartItem[] = rawCartItems
+      .filter((item: any) => item.productId)
+      .map((item: any) => ({
+        _id: item._id,
+        quantity: item.quantity,
+        product: item.productId, // Map the populated document to the 'product' key
+      }));
 
     // 2. Dispatch the final merged cart to Redux
     dispatch(handleAddItemCart(mappedCartItems));

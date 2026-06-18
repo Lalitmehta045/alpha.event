@@ -6,6 +6,7 @@ import { Category, SubCategory } from "./catregory";
 export interface ProductBase {
   name: string;
   image: string[];
+  thumbnails?: string[];
   // Fix: When sending data, we use the string IDs
   category: string[];
   subCategory: string[];
@@ -21,6 +22,7 @@ export interface Product {
   _id: string;
   name: string;
   image: string[];
+  thumbnails?: string[];
   category: Category[]; // Back-end returns full objects
   subCategory: SubCategory[]; // Back-end returns full objects
   unit: string;

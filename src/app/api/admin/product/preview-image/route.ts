@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
             Key: key,
         });
 
-        const signedUrl = await getSignedUrl(s3Client, command, {
+        const signedUrl = await getSignedUrl(s3Client as any, command as any, {
             expiresIn: 3600, // 1 hour
         });
 

@@ -1,11 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
-import {
-  GoogleMap,
-  Marker,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+import { useEffect, useRef, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { Loader2 } from "lucide-react";
 
 interface OrderLocationMapProps {
@@ -15,53 +12,54 @@ interface OrderLocationMapProps {
   className?: string;
 }
 
-const mapContainerStyle = {
-  width: "100%",
-  height: "100%",
-  borderRadius: "0.5rem",
-};
-
-const mapOptions = {
-  disableDefaultUI: true, // disable controls for read-only view
-  zoomControl: false,
-  mapTypeControl: false,
-  scaleControl: false,
-  streetViewControl: false,
-  rotateControl: false,
-  fullscreenControl: false,
-  gestureHandling: "none", // disable all interactions
-};
-
 export default function OrderLocationMap({
   lat,
   lng,
   height = "250px",
   className = "",
 }: OrderLocationMapProps) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-  });
-
-  const [position, setPosition] = useState({ lat, lng });
-  const mapRef = useRef<any>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    setPosition({ lat, lng });
-    if (mapRef.current) {
-      mapRef.current.panTo({ lat, lng });
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) {
+      setError(true);
+      return;
     }
+    mapboxgl.accessToken = token;
+
+    if (!mapContainerRef.current) return;
+
+    // Initialize map
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
+      center: [lng, lat],
+      zoom: 16,
+      interactive: false, // Read-only view
+      attributionControl: false,
+    });
+
+    map.on("load", () => {
+      setMapLoaded(true);
+      mapRef.current = map;
+
+      // Add marker
+      new mapboxgl.Marker({ color: "#F97316" }) // Orange marker for orders
+        .setLngLat([lng, lat])
+        .addTo(map);
+    });
+
+    // Clean up
+    return () => {
+      map.remove();
+    };
   }, [lat, lng]);
 
-  const onLoad = useCallback((map: any) => {
-    mapRef.current = map;
-  }, []);
-
-  const onUnmount = useCallback(() => {
-    mapRef.current = null;
-  }, []);
-
-  if (loadError) {
+  if (error) {
     return (
       <div
         className={`bg-red-50 text-red-600 rounded-lg flex items-center justify-center p-4 text-center ${className}`}
@@ -74,32 +72,20 @@ export default function OrderLocationMap({
     );
   }
 
-  if (!isLoaded) {
-    return (
-      <div
-        className={`bg-gray-100 rounded-lg flex items-center justify-center ${className}`}
-        style={{ height }}
-      >
-        <div className="text-center">
-          <Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto mb-2" />
-          <p className="text-gray-500 text-sm">Loading map...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={className} style={{ height }}>
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        zoom={16}
-        center={position}
-        options={mapOptions}
-        onLoad={onLoad}
-        onUnmount={onUnmount}
-      >
-        <Marker position={position} />
-      </GoogleMap>
+    <div className={`relative w-full ${className}`} style={{ height }}>
+      {!mapLoaded && (
+        <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center z-10">
+          <div className="text-center">
+            <Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Loading map...</p>
+          </div>
+        </div>
+      )}
+      <div
+        ref={mapContainerRef}
+        className="w-full h-full rounded-lg overflow-hidden pointer-events-none"
+      />
     </div>
   );
 }

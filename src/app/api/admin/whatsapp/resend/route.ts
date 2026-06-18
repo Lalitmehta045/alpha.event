@@ -17,14 +17,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await resendWhatsAppMessage(logId);
+    await resendWhatsAppMessage(logId);
 
     return NextResponse.json({
-      success: result.success,
-      message: result.success
-        ? "WhatsApp message resent successfully"
-        : "Failed to resend WhatsApp message",
-      data: result,
+      success: true,
+      message: "WhatsApp message resent successfully"
     });
   } catch (error: any) {
     console.error("WhatsApp Resend API Error:", error);

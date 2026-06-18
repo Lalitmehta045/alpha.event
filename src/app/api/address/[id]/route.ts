@@ -65,6 +65,8 @@ export async function PUT(req: NextRequest, { params }: ParamsPromise) {
       "country",
       "mobile",
       "status",
+      "recipient_name",
+      "map_url",
     ];
 
     const updates: any = {};

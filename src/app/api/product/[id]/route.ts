@@ -2,44 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import ProductModel from "@/lib/models/Product.model";
 import mongoose from "mongoose";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-
-// Initialize S3 client
-const s3Client = new S3Client({
-  region: process.env.AWS_S3_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-/**
- * Helper function to generate fresh signed URLs for a single product's images
- */
-async function generateSignedUrlsForProduct(product: any) {
-  if (product.image && Array.isArray(product.image)) {
-    const signedUrls = await Promise.all(
-      product.image.map(async (key: string) => {
-        // If already a full URL (starts with http), return as-is
-        if (key.startsWith('http')) return key;
-
-        try {
-          const command = new GetObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
-            Key: key,
-          });
-          return await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
-        } catch (error) {
-          console.error(`Failed to generate signed URL for key: ${key}`, error);
-          return key; // Return original key if signing fails
-        }
-      })
-    );
-    product.image = signedUrls;
-  }
-  return product;
-}
+import { attachSignedUrlsAndThumbnails } from "@/utils/s3Signer";
 
 interface ParamsPromise {
   params: Promise<{ id: string }>;
@@ -127,8 +90,9 @@ export async function GET(req: NextRequest, { params }: ParamsPromise) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // ✅ Generate fresh signed URLs for product images
-    const productWithSignedUrls = await generateSignedUrlsForProduct(product[0]);
+    // ✅ Generate fresh signed URLs and thumbnails for product images
+    await attachSignedUrlsAndThumbnails(product);
+    const productWithSignedUrls = product[0];
 
     return NextResponse.json(
       {

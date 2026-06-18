@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     const Key = `uploads/${filename}`;
 
-    const presigned = await createPresignedPost(client, {
+    const presigned = await createPresignedPost(client as any, {
       Bucket: process.env.AWS_S3_BUCKET!,
       Key,
       Conditions: [

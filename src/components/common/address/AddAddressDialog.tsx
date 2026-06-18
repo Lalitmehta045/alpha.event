@@ -27,7 +27,6 @@ import countryCode from "@/assets/data/countryCode.json";
 import FreeLocationComponent from "@/components/common/FreeLocationComponent";
 import { MapPin, Loader2, ArrowLeft, Crosshair } from "lucide-react";
 
-// Dynamic import to avoid SSR issues with Google Maps
 const MapLocationPicker = dynamic(
   () => import("@/components/common/address/MapLocationPicker"),
   {
@@ -36,7 +35,7 @@ const MapLocationPicker = dynamic(
       <div className="w-full h-[300px] bg-gray-100 rounded-lg flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-2" />
-          <p className="text-gray-500 text-sm">Loading Google Maps...</p>
+          <p className="text-gray-500 text-sm">Loading Map...</p>
         </div>
       </div>
     )
@@ -48,10 +47,16 @@ interface AddressProps {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+import { useLocationReverse } from "@/hooks/useLocationReverse";
+import { useMapboxLocation } from "@/hooks/useMapboxLocation";
+
 export default function AddAddressDialog({ open, setOpen }: AddressProps) {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const token = useSelector((state: RootState) => state.auth.token) as string;
+
+  const { reverseGeocode } = useLocationReverse();
+  const { detectLocation, detecting: locatingMe } = useMapboxLocation();
 
   // Find default Indian country code
   const defaultCountryCode =
@@ -81,6 +86,9 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
   const [houseDetails, setHouseDetails] = useState("");
   const [landmark, setLandmark] = useState("");
   const [geocodingLoading, setGeocodingLoading] = useState(false);
+  const [recipientName, setRecipientName] = useState("");
+  const [mapUrl, setMapUrl] = useState("");
+  const [orderingForSomeoneElse, setOrderingForSomeoneElse] = useState(false);
 
   // Reset state when dialog opens (don't auto-trigger geolocation — let user choose)
   useEffect(() => {
@@ -90,55 +98,28 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
     }
   }, [open, step]);
 
-  const [locatingMe, setLocatingMe] = useState(false);
-
-  const requestCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
-    }
-
-    setLocatingMe(true);
+  const requestCurrentLocation = async () => {
     const toastId = toast.loading("Detecting your location...");
-
-    const onSuccess = async (position: GeolocationPosition) => {
-      try {
-        const { latitude, longitude } = position.coords;
-        setMapCoordinates({ lat: latitude, lng: longitude });
-        await handleMapLocationSelect(latitude, longitude);
-        toast.success("Location detected!", { id: toastId });
-      } catch {
-        toast.dismiss(toastId);
-      } finally {
-        setLocatingMe(false);
-      }
-    };
-
-    const onFinalError = (err: GeolocationPositionError) => {
-      console.warn("Geolocation failed:", err);
-      setLocatingMe(false);
-
-      if (err.code === 1) {
-        toast.error("Location permission denied. You can pick a spot on the map or search above.", { id: toastId, duration: 3000 });
-      } else {
-        // Show a brief, non-alarming message instead of a persistent error
-        toast("Tap on the map or search to pick your location.", { id: toastId, icon: "📍", duration: 2500 });
-      }
-    };
-
-    // Try with high accuracy first, fallback to low accuracy
-    navigator.geolocation.getCurrentPosition(
-      onSuccess,
-      (error) => {
-        console.warn("High accuracy failed, trying low accuracy:", error);
-        navigator.geolocation.getCurrentPosition(
-          onSuccess,
-          onFinalError,
-          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-        );
-      },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
-    );
+    try {
+      const locationData = await detectLocation();
+      setMapCoordinates({ lat: locationData.latitude!, lng: locationData.longitude! });
+      
+      setAddress(prev => ({
+        ...prev,
+        address_line: locationData.address,
+        city: locationData.city,
+        state: locationData.state,
+        pincode: locationData.pincode,
+        country: locationData.country,
+        location: { lat: locationData.latitude!, lng: locationData.longitude! }
+      }));
+      
+      toast.success("Location detected!", { id: toastId });
+    } catch (error: unknown) {
+      toast.dismiss(toastId);
+      const errorMessage = error instanceof Error ? error.message : "Failed to detect location";
+      toast.error(errorMessage, { duration: 3000 });
+    }
   };
 
   // Handle map location selection with reverse geocoding
@@ -146,54 +127,23 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
     try {
       setGeocodingLoading(true);
 
-      // Reverse geocoding using Nominatim API
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18&countrycodes=in`,
-        {
-          headers: {
-            'User-Agent': 'AlphaEventApp/1.0 (contact@alphaevent.com)'
-          },
-          signal: AbortSignal.timeout(10000)
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Nominatim API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data || data.error || !data.address) {
-        throw new Error("No address found for this location");
-      }
-
-      const addr = data.address;
-
-      // Extract address components
-      const addressParts: string[] = [];
-      if (addr.road) addressParts.push(addr.road);
-      if (addr.suburb) addressParts.push(addr.suburb);
-      if (addr.neighbourhood) addressParts.push(addr.neighbourhood);
-
-      const detectedCity = addr.city || addr.town || addr.village || addr.county || "";
-      const detectedState = addr.state || "";
-      const detectedPincode = addr.postcode || "";
-      const detectedCountry = addr.country || "India";
+      const locationData = await reverseGeocode(lat, lng);
 
       // Auto-fill address fields + save coordinates
       setAddress(prev => ({
         ...prev,
-        address_line: addressParts.join(", ") || data.display_name.split(",")[0],
-        city: detectedCity,
-        state: detectedState,
-        pincode: detectedPincode,
-        country: detectedCountry,
+        address_line: locationData.address,
+        city: locationData.city,
+        state: locationData.state,
+        pincode: locationData.pincode,
+        country: locationData.country,
         location: { lat, lng }
       }));
 
       setMapCoordinates({ lat, lng });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Reverse geocoding error:", error);
+      toast.error("Failed to get address for this location.");
     } finally {
       setGeocodingLoading(false);
     }
@@ -224,6 +174,8 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
         location: address.location.lat !== 0 && address.location.lng !== 0
           ? address.location
           : undefined,
+        recipient_name: orderingForSomeoneElse && recipientName.trim() ? recipientName.trim() : undefined,
+        map_url: mapUrl.trim() ? mapUrl.trim() : undefined,
       };
 
       await addAddress(finalAddress, token, dispatch);
@@ -233,6 +185,9 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
       setStep("map");
       setHouseDetails("");
       setLandmark("");
+      setRecipientName("");
+      setMapUrl("");
+      setOrderingForSomeoneElse(false);
       setAddress({
         address_line: "",
         city: "",
@@ -246,9 +201,10 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
       setSelectedCountryCode(defaultCountryCode);
 
       toast.success("Address added successfully.");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(error);
-      toast.error(error.message || "Failed to add address");
+      const errorMessage = error instanceof Error ? error.message : "Failed to add address";
+      toast.error(errorMessage);
     }
   };
 
@@ -260,7 +216,7 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
       }
     }}>
       <DialogContent className="max-w-92 md:max-w-md rounded-xl max-h-[95vh] flex flex-col p-0 overflow-hidden border border-gray-100 shadow-2xl">
-        
+
         {step === "map" ? (
           /* ================== STEP 1: MAP VIEW ================== */
           <div className="flex flex-col h-full w-full">
@@ -436,31 +392,102 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
                 />
               </div>
 
-              {/* City & Pincode Grid */}
+              {/* State & City Grid */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    City <span className="text-red-500">*</span>
+                    State <span className="text-red-500">*</span>
                   </label>
-                  <Input
-                    placeholder="Enter City"
-                    value={address.city}
-                    onChange={(e) => setAddress(prev => ({ ...prev, city: e.target.value }))}
-                    className="bg-white border-gray-200 focus:border-red-500 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0"
-                  />
+                  <Select
+                    value={address.state}
+                    onValueChange={(value) => setAddress(prev => ({ ...prev, state: value, city: "" }))}
+                  >
+                    <SelectTrigger className="bg-white border-gray-200 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0">
+                      <SelectValue placeholder="Select State" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cityStateData.map((item) => (
+                        <SelectItem key={item.state} value={item.state}>
+                          {item.state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Pincode <span className="text-red-500">*</span>
+                    City <span className="text-red-500">*</span>
                   </label>
-                  <Input
-                    placeholder="Enter Pincode"
-                    value={address.pincode}
-                    onChange={(e) => setAddress(prev => ({ ...prev, pincode: e.target.value }))}
-                    className="bg-white border-gray-200 focus:border-red-500 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0"
-                  />
+                  <Select
+                    value={address.city}
+                    onValueChange={(value) => setAddress(prev => ({ ...prev, city: value }))}
+                    disabled={!address.state}
+                  >
+                    <SelectTrigger className="bg-white border-gray-200 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0 disabled:opacity-70">
+                      <SelectValue placeholder={address.state ? "Select City" : "Select State First"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(cityStateData.find(item => item.state === address.state)?.cities || []).map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+
+              {/* Map URL */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Map URL (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. Google Maps Link"
+                  value={mapUrl}
+                  onChange={(e) => setMapUrl(e.target.value)}
+                  className="bg-white border-gray-200 focus:border-red-500 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0"
+                />
+              </div>
+
+              {/* Order For Someone Else */}
+              <div className="flex flex-col gap-2 pt-2 pb-1 border-t border-gray-100">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={orderingForSomeoneElse}
+                    onChange={(e) => setOrderingForSomeoneElse(e.target.checked)}
+                    className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                  />
+                  <span className="text-sm font-bold text-gray-700">Ordering for someone else?</span>
+                </label>
+
+                {orderingForSomeoneElse && (
+                  <div className="mt-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Recipient Name <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="Enter recipient's full name"
+                      value={recipientName}
+                      onChange={(e) => setRecipientName(e.target.value)}
+                      className="bg-white border-gray-200 focus:border-red-500 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Enter Pincode"
+                  value={address.pincode}
+                  onChange={(e) => setAddress(prev => ({ ...prev, pincode: e.target.value }))}
+                  className="bg-white border-gray-200 focus:border-red-500 mt-1 py-4 text-sm font-semibold rounded-lg focus-visible:ring-0"
+                />
               </div>
 
               {/* Mobile Number */}
@@ -513,7 +540,7 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
             </div>
           </div>
         )}
-        
+
       </DialogContent>
     </Dialog>
   );

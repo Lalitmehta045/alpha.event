@@ -36,25 +36,19 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(accessToken, secret);
       role = payload.role as string;
     } catch (err: any) {
-      // Token expired or invalid
-      // If refresh token exists, let the request through — client-side
-      // Axios interceptor will handle refresh automatically
-      if (refreshToken) {
-        // Allow the page to load — the client will refresh the token
-        // For protected routes, we still need to check if refresh token is valid
-        try {
-          const refreshSecret = new TextEncoder().encode(
-            process.env.SECRET_KEY_REFRESH_TOKEN
-          );
-          const { payload } = await jwtVerify(refreshToken, refreshSecret);
-          role = payload.role as string;
-          // Access token expired but refresh token valid — let request through
-          // Client-side interceptor will refresh on first API call
-        } catch {
-          // Both tokens invalid — force login
-          role = null;
-        }
-      }
+      // Access token expired or invalid, role remains null
+    }
+  }
+
+  if (!role && refreshToken) {
+    try {
+      const refreshSecret = new TextEncoder().encode(
+        process.env.SECRET_KEY_REFRESH_TOKEN
+      );
+      const { payload } = await jwtVerify(refreshToken, refreshSecret);
+      role = payload.role as string;
+    } catch {
+      role = null;
     }
   }
 

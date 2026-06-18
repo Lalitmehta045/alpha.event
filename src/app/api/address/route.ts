@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
     const userId = auth.userId;
 
-    const { address_line, city, state, pincode, mobile, country, location } = data;
+    const { address_line, city, state, pincode, mobile, country, location, recipient_name, map_url } = data;
 
     // 📝 Required field validation
     if (!address_line || !city || !state || !pincode) {
@@ -101,6 +101,8 @@ export async function POST(req: NextRequest) {
       country: country || "India",
       location: locationData,
       userId,
+      recipient_name: recipient_name || null,
+      map_url: map_url || null,
     });
 
     await UserModel.findByIdAndUpdate(userId, {

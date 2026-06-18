@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureAdmin } from "@/lib/adminGuard";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
@@ -45,6 +46,8 @@ function isHeicFile(name: string, type: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureAdmin(request);
+    
     const data = await request.formData();
     const file: File | null = data.get("my_file") as unknown as File;
 
@@ -120,7 +123,23 @@ export async function POST(request: NextRequest) {
     // Generate unique filename — always .jpg since we convert to JPEG
     const originalExt = file.name.split(".").pop()?.toLowerCase();
     const ext = isHeicFile(file.name, file.type) ? "jpg" : (originalExt || "jpg");
-    const fileName = `recent/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    const fileName = `recent/${uniqueId}.${ext}`;
+    const thumbFileName = `recent/thumb-${uniqueId}.${ext}`;
+
+    // Generate thumbBuffer
+    let thumbBuffer: Buffer;
+    try {
+      thumbBuffer = Buffer.from(
+        await sharp(buffer) // use the (possibly already resized) buffer or original
+          .resize(400, 400, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+          .toBuffer()
+      );
+    } catch (e) {
+      console.error("Thumb generation failed:", e);
+      thumbBuffer = buffer;
+    }
 
     // Upload to S3
     const uploadParams = {
@@ -132,16 +151,29 @@ export async function POST(request: NextRequest) {
     };
 
     const command = new PutObjectCommand(uploadParams);
+    
+    // Upload thumbnail to S3
+    const thumbUploadParams = {
+      Bucket: process.env.AWS_S3_BUCKET!,
+      Key: thumbFileName,
+      Body: thumbBuffer,
+      ContentType: "image/jpeg",
+      CacheControl: "max-age=31536000",
+    };
+    const thumbCommand = new PutObjectCommand(thumbUploadParams);
 
     // Add timeout for S3 upload
-    const uploadPromise = s3Client.send(command);
+    const uploadPromise = Promise.all([
+      s3Client.send(command),
+      s3Client.send(thumbCommand)
+    ]);
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error("Upload timeout")), 50000) // 50 second timeout
     );
 
     await Promise.race([uploadPromise, timeoutPromise]);
 
-    console.log("[upload-image] Uploaded to S3 with key:", fileName);
+    console.log("[upload-image] Uploaded to S3 with key:", fileName, "and thumb:", thumbFileName);
 
     return NextResponse.json({
       success: true,

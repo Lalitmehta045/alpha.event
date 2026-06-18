@@ -47,6 +47,16 @@ const AddressSchema = new Schema<IAddress>(
       ref: "User",
       required: true,
     },
+    recipient_name: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    map_url: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

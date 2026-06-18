@@ -7,15 +7,12 @@ export default function ProductForm({ initial }: { initial?: any }) {
   );
 
   async function uploadToS3(file: File) {
-    const presign = await fetch(
-      "/api/upload/presign?filename=" + encodeURIComponent(file.name)
-    );
-    const { url, fields } = await presign.json();
     const form = new FormData();
-    Object.entries(fields).forEach(([k, v]) => form.append(k, v as string));
-    form.append("file", file);
-    await fetch(url, { method: "POST", body: form });
-    return `${url}/${fields.key}`;
+    form.append("my_file", file);
+    const res = await fetch("/api/admin/product/upload-image", { method: "POST", body: form });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || "Upload failed");
+    return `https://alpha-arts.s3.eu-north-1.amazonaws.com/${json.result.url}`;
   }
 
   return (

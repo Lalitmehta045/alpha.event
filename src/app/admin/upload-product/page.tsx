@@ -375,8 +375,8 @@ const UploadProduct: React.FC = () => {
   };
 
   useEffect(() => {
-    getAllCategory(dispatch);
-    getAllSubCategory(dispatch);
+    if (allCategory.length === 0) getAllCategory(dispatch);
+    if (allSubCategory.length === 0) getAllSubCategory(dispatch);
   }, [allCategory.length, allSubCategory.length]);
 
   return (

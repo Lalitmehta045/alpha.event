@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { Product } from "@/@types/product";
@@ -10,6 +10,51 @@ import ParagraphV1 from "@/components/common/Texts/paragraph";
 import CTAButtonV1 from "@/components/common/ctaButton/ctaButtonV1";
 import { FaArrowRight } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+
+const STORAGE_KEY = "home_products_order";
+
+// Simple array shuffle (Fisher-Yates)
+function shuffleArray<T>(arr: T[]): T[] {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// Check if this page load was triggered by a manual reload (F5 / Ctrl+R)
+function isManualReload(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    return navEntries.length > 0 && navEntries[0].type === "reload";
+  } catch {
+    return false;
+  }
+}
+
+// Get saved product order from sessionStorage
+function getSavedOrder(): string[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    return JSON.parse(stored);
+  } catch {
+    return null;
+  }
+}
+
+// Save product order to sessionStorage
+function saveOrder(ids: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+  } catch {
+    // sessionStorage might be full or disabled
+  }
+}
 
 const HomeProducts = () => {
   const router = useRouter();
@@ -26,14 +71,34 @@ const HomeProducts = () => {
   React.useEffect(() => {
     if (productData.length === 0 || subCategories.length === 0) return;
 
+    // On manual reload (F5), clear saved order so products re-shuffle
+    if (isManualReload()) {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+
+    // Try to restore saved order (for back navigation / normal navigation)
+    const savedOrder = getSavedOrder();
+    if (savedOrder && savedOrder.length > 0) {
+      // Build a map for quick product lookup
+      const productMap = new Map<string, Product>();
+      productData.forEach(p => productMap.set(p._id, p));
+
+      // Reconstruct products in the saved order
+      const restored = savedOrder
+        .map(id => productMap.get(id))
+        .filter((p): p is Product => !!p);
+
+      if (restored.length > 0) {
+        setProductsToDisplay(restored);
+        return; // Use saved order, skip shuffle
+      }
+    }
+
+    // No saved order (first visit or after reload) — generate fresh shuffle
     const selected: Product[] = [];
     const seenIds = new Set<string>();
     let totalProducts = 0;
 
-    // Helper to shuffle array
-    const shuffleArray = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5);
-
-    // Shuffle subcategories so we don't always pick the same ones first
     const shuffledSubCats = shuffleArray(subCategories);
 
     for (const subCat of shuffledSubCats) {
@@ -47,16 +112,9 @@ const HomeProducts = () => {
       });
 
       if (subCatProducts.length > 0) {
-        // Shuffle products within this subcategory
         const shuffledSubCatProducts = shuffleArray(subCatProducts);
-
-        // Filter out already selected products to avoid duplicate keys
         const uniqueProducts = shuffledSubCatProducts.filter(p => !seenIds.has(p._id));
-
-        // Take up to 4 products from this subcategory
         const selectedProducts = uniqueProducts.slice(0, 4);
-        
-        // Ensure we don't exceed 32 total products
         const productsToAdd = selectedProducts.slice(0, 32 - totalProducts);
         
         if (productsToAdd.length > 0) {
@@ -67,12 +125,15 @@ const HomeProducts = () => {
       }
     }
 
-    // Shuffle the final selection so subcategories are mixed
-    setProductsToDisplay(shuffleArray(selected));
+    const finalProducts = shuffleArray(selected);
+    
+    // Save the shuffled order for future back navigations
+    saveOrder(finalProducts.map(p => p._id));
+    setProductsToDisplay(finalProducts);
   }, [productData, subCategories]);
 
   if (productsToDisplay.length === 0) {
-    return null; // Don't show anything if there are no products
+    return null;
   }
 
   return (
@@ -99,3 +160,4 @@ const HomeProducts = () => {
 };
 
 export default HomeProducts;
+

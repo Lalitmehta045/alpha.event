@@ -110,8 +110,8 @@ export const addProduct = async (
 
     result = response.data.data;
   } catch (error: any) {
-    console.error("ADD PRODUCT_POST_API ERROR:", error);
-    toast.error(error.message || "Something went wrong");
+    console.error("ADD PRODUCT_POST_API ERROR:", error.response?.data || error);
+    toast.error(error.response?.data?.message || error.message || "Something went wrong");
   } finally {
     toast.dismiss(toastId);
   }

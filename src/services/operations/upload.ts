@@ -1,43 +1,26 @@
 import toast from "react-hot-toast";
-import { apiConnector } from "../apiconnector";
-import { adminEndpoints } from "../api_endpoints";
-
-const { UPLOADIMAGE_POSTAPI } = adminEndpoints;
 
 export const uploadToS3 = async (file: File): Promise<string | null> => {
-  const toastId = toast.loading("Generating upload URL...");
+  const toastId = toast.loading("Uploading image...");
 
   try {
-    // 1️⃣ Get presigned URL from backend
-    const res = await apiConnector(
-      "GET",
-      `${UPLOADIMAGE_POSTAPI}?filename=${encodeURIComponent(
-        file.name
-      )}&contentType=${file.type}`
-    );
-
-    const { url, fields, key } = res.data;
-
-    // 2️⃣ Build form data
     const formData = new FormData();
-    Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
-    formData.append("file", file);
+    formData.append("my_file", file);
 
-    // 3️⃣ Upload directly to S3
-    const uploadResponse = await fetch(url, {
+    const uploadResponse = await fetch("/api/admin/product/upload-image", {
       method: "POST",
       body: formData,
     });
 
-    if (!uploadResponse.ok) {
-      const errText = await uploadResponse.text();
-      console.error("S3 upload failed:", errText);
-      toast.error("❌ Upload failed!", { id: toastId });
+    const data = await uploadResponse.json();
+
+    if (!data.success) {
+      console.error("Upload failed:", data.error);
+      toast.error(data.error || "❌ Upload failed!", { id: toastId });
       return null;
     }
 
-    // 4️⃣ Success — get the uploaded URL
-    const uploadedUrl = `${url}${fields.key}`;
+    const uploadedUrl = `https://alpha-arts.s3.eu-north-1.amazonaws.com/${data.result.url}`;
     toast.success("✅ File uploaded successfully!", { id: toastId });
     console.log("✅ Uploaded S3 URL:", uploadedUrl);
     return uploadedUrl;

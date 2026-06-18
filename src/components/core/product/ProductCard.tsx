@@ -45,11 +45,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
               {data.discount}% OFF
             </span>
           )}
-          
+
           <img
-            src={data.image?.[0] || "/no-image.png"}
+            src={data.thumbnails?.[0] || data.image?.[0] || "/no-image.png"}
             alt={data.name}
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            onError={(e) => {
+              const target = e.currentTarget;
+              const fallback = data.image?.[0] || "/no-image.png";
+              if (target.src !== fallback) {
+                target.src = fallback;
+              }
+            }}
           />
 
           {/* ❤️ Wishlist Button */}
@@ -72,7 +81,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
             {data.name}
           </h3>
         </Link>
-        
+
         <p className="text-gray-500 text-sm mt-1 mb-3 line-clamp-2 min-h-[40px]">
           {data.description}
         </p>

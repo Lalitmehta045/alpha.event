@@ -4,49 +4,7 @@ import { verifyUser } from "@/lib/verifyUser";
 import CartModel from "@/lib/models/Cart.model";
 import "@/lib/models/Product.model"; // 🔥 REQUIRED IMPORT
 import UserModel from "@/lib/models/User.model";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-
-// Initialize S3 client for generating signed URLs
-const s3Client = new S3Client({
-  region: process.env.AWS_S3_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-/**
- * Generate signed URLs for product images in cart items.
- * Converts S3 keys (e.g., "recent/123-abc.jpg") to temporary signed URLs.
- * Full URLs (old products starting with "http") are returned as-is.
- */
-async function generateSignedUrlsForCartItems(cartItems: any[]) {
-  for (const item of cartItems) {
-    const product = item.productId || item.product;
-    if (!product || !product.image || !Array.isArray(product.image)) continue;
-
-    const signedUrls = await Promise.all(
-      product.image.map(async (key: string) => {
-        // If already a full URL (old products), return as-is
-        if (key.startsWith("http")) return key;
-
-        try {
-          const command = new GetObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET!,
-            Key: key,
-          });
-          return await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
-        } catch (error) {
-          console.error(`[Cart] Failed to sign URL for key: ${key}`, error);
-          return key; // Return original key if signing fails
-        }
-      })
-    );
-    product.image = signedUrls;
-  }
-  return cartItems;
-}
+import { attachSignedUrlsAndThumbnails } from "@/utils/s3Signer";
 
 export async function GET(req: NextRequest) {
   try {
@@ -61,8 +19,8 @@ export async function GET(req: NextRequest) {
       .populate("productId")
       .lean();
 
-    // 🔥 Generate signed URLs for product images (fixes new product images in cart)
-    const cartWithSignedUrls = await generateSignedUrlsForCartItems(cart);
+    // 🔥 Generate signed URLs for product images
+    const cartWithSignedUrls = await attachSignedUrlsAndThumbnails(cart);
 
     return NextResponse.json({
       success: true,
@@ -115,7 +73,7 @@ export async function POST(req: NextRequest) {
 
       // 🔥 Generate signed URLs for product images
       if (populated) {
-        await generateSignedUrlsForCartItems([populated]);
+        await attachSignedUrlsAndThumbnails([populated]);
       }
 
       return NextResponse.json({
@@ -139,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     // 🔥 Generate signed URLs for product images
     if (populatedNew) {
-      await generateSignedUrlsForCartItems([populatedNew]);
+      await attachSignedUrlsAndThumbnails([populatedNew]);
     }
 
     await UserModel.findByIdAndUpdate(userId, {

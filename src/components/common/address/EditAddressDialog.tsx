@@ -57,6 +57,8 @@ export default function EditAddressDialog({
     country: "India",
     status: false,
     mobile: "",
+    recipient_name: "",
+    map_url: "",
   });
 
   const citiesForSelectedState =
@@ -88,6 +90,8 @@ export default function EditAddressDialog({
         country: addressData.country || "India",
         status: addressData.status ?? false,
         mobile: mobileNumber,
+        recipient_name: addressData.recipient_name || "",
+        map_url: addressData.map_url || "",
       });
     }
   }, [addressData]);
@@ -125,6 +129,8 @@ export default function EditAddressDialog({
       country: "India",
       status: false,
       mobile: "",
+      recipient_name: "",
+      map_url: "",
     });
 
     toast.success("Address updated successfully!");
@@ -246,6 +252,36 @@ export default function EditAddressDialog({
                 className="py-5 mt-2 border-gray-400"
               />
             </div>
+          </div>
+
+          {/* Map URL */}
+          <div>
+            <label className="text-sm font-medium text-gray-700">
+              Map URL (Optional) :
+            </label>
+            <Input
+              placeholder="e.g. Google Maps Link"
+              value={address.map_url || ""}
+              onChange={(e) =>
+                setAddress({ ...address, map_url: e.target.value })
+              }
+              className="py-5 mt-2 border-gray-400"
+            />
+          </div>
+
+          {/* Recipient Name (Order for someone else) */}
+          <div>
+            <label className="text-sm font-medium text-gray-700">
+              Recipient Name (Optional) :
+            </label>
+            <Input
+              placeholder="Enter recipient name"
+              value={address.recipient_name || ""}
+              onChange={(e) =>
+                setAddress({ ...address, recipient_name: e.target.value })
+              }
+              className="py-5 mt-2 border-gray-400"
+            />
           </div>
 
           {/* Mobile Number */}

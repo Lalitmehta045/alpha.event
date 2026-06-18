@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import AIConceptModel from "@/lib/models/AIConcept.model";
 
-// Allow up to 60 seconds for this route (for VPS/serverless platforms)
-export const maxDuration = 60;
+// Allow up to 120 seconds for this route (for VPS/serverless platforms)
+export const maxDuration = 120;
 
 // Helper: fetch with timeout using AbortController
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
@@ -20,7 +20,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 export async function POST(req: Request) {
   const debugLog: string[] = [];
   try {
-    const { eventType, venueType, guestCount, themeColors, budget } = await req.json();
+    const { eventType, venueType, guestCount, themeColors, budget, selectedProducts } = await req.json();
 
     if (!eventType || !venueType || !guestCount || !themeColors || themeColors.length === 0 || !budget) {
       return NextResponse.json(
@@ -32,6 +32,9 @@ export async function POST(req: Request) {
     let promptA = "";
     let promptB = "";
     let basePrompt = `A premium event design concept. Event Type: ${eventType}, Venue: ${venueType}, Guests: ${guestCount}, Colors: ${themeColors.join(" and ")}.`;
+    if (selectedProducts) {
+      basePrompt += ` The design must strongly feature these specific products/elements: ${selectedProducts}.`;
+    }
 
     let budgetStyle = "";
     if (budget < 50000) {
@@ -45,6 +48,7 @@ export async function POST(req: Request) {
     // Step 1: Generate smart prompts using GPT (with 15s timeout)
     const hasApiKey = !!process.env.OPENAI_API_KEY;
     debugLog.push(`API_KEY_EXISTS: ${hasApiKey}`);
+
     if (hasApiKey) {
       debugLog.push(`API_KEY_PREFIX: ${process.env.OPENAI_API_KEY!.substring(0, 7)}...`);
       try {
@@ -55,6 +59,7 @@ Guests: ${guestCount}
 Colors: ${themeColors.join(" and ")}
 Budget: ₹${budget}
 Required Scale/Style Based on Budget: ${budgetStyle}
+${selectedProducts ? `Specific Elements to Feature: ${selectedProducts}` : ""}
 
 Provide EXACTLY two prompts separated by '|||'.
 Prompt 1 should focus on a symmetrical layout incorporating the Required Scale/Style.
@@ -79,11 +84,11 @@ Make them highly descriptive and visual, focusing on lighting, floral arrangemen
         );
 
         const chatData = await chatRes.json();
-        
+
         if (chatData.choices && chatData.choices[0]) {
           const responseText = chatData.choices[0].message.content;
           const splitPrompts = responseText.split("|||");
-          
+
           if (splitPrompts.length >= 2) {
             promptA = splitPrompts[0].trim();
             promptB = splitPrompts[1].trim();
@@ -112,77 +117,53 @@ Make them highly descriptive and visual, focusing on lighting, floral arrangemen
       try {
         debugLog.push("STARTING_IMAGE_GEN");
         console.log("Generating images with OpenAI DALL-E 3...");
-        
-        // Generate images sequentially to reduce server load and avoid rate limits
-        // Image A
-        try {
-          const resA = await fetchWithTimeout(
-            "https://api.openai.com/v1/images/generations",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+
+        // Generate images concurrently to reduce total time
+        const generateImage = async (prompt: string, label: string) => {
+          try {
+            const res = await fetchWithTimeout(
+              "https://api.openai.com/v1/images/generations",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                },
+                body: JSON.stringify({
+                  model: "gpt-image-2",
+                  prompt: prompt,
+                  n: 1,
+                  size: "1024x1024",
+                  quality: "auto",
+                }),
               },
-              body: JSON.stringify({
-                model: "dall-e-3",
-                prompt: promptA,
-                n: 1,
-                size: "1024x1024",
-                quality: "standard",
-              }),
-            },
-            40000 // 40 second timeout per image
-          );
+              120000 // 120 second timeout per image
+            );
 
-          const dataA = await resA.json();
-          if (dataA.data && dataA.data[0]) {
-            variationAUrl = dataA.data[0].url || (dataA.data[0].b64_json ? `data:image/png;base64,${dataA.data[0].b64_json}` : "");
-            debugLog.push(`IMAGE_A_OK: URL length=${variationAUrl.length}`);
-          } else {
-            const errDetail = JSON.stringify(dataA.error || dataA);
-            debugLog.push(`IMAGE_A_ERROR: ${errDetail}`);
-            console.error("OpenAI Error A:", errDetail);
+            const data = await res.json();
+            if (data.data && data.data[0]) {
+              const url = data.data[0].url || (data.data[0].b64_json ? `data:image/png;base64,${data.data[0].b64_json}` : "");
+              debugLog.push(`IMAGE_${label}_OK: URL length=${url.length}`);
+              return url;
+            } else {
+              const errDetail = JSON.stringify(data.error || data);
+              debugLog.push(`IMAGE_${label}_ERROR: ${errDetail}`);
+              console.error(`OpenAI Error ${label}:`, errDetail);
+            }
+          } catch (err: any) {
+            debugLog.push(`IMAGE_${label}_EXCEPTION: ${err?.message || err}`);
+            console.error(`Image ${label} generation failed/timed out:`, err?.message || err);
           }
-        } catch (errA: any) {
-          debugLog.push(`IMAGE_A_EXCEPTION: ${errA?.message || errA}`);
-          console.error("Image A generation failed/timed out:", errA?.message || errA);
-        }
+          return "";
+        };
 
-        // Image B
-        try {
-          const resB = await fetchWithTimeout(
-            "https://api.openai.com/v1/images/generations",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-              },
-              body: JSON.stringify({
-                model: "dall-e-3",
-                prompt: promptB,
-                n: 1,
-                size: "1024x1024",
-                quality: "standard",
-              }),
-            },
-            40000 // 40 second timeout per image
-          );
+        const [urlA, urlB] = await Promise.all([
+          generateImage(promptA, "A"),
+          generateImage(promptB, "B")
+        ]);
 
-          const dataB = await resB.json();
-          if (dataB.data && dataB.data[0]) {
-            variationBUrl = dataB.data[0].url || (dataB.data[0].b64_json ? `data:image/png;base64,${dataB.data[0].b64_json}` : "");
-            debugLog.push(`IMAGE_B_OK: URL length=${variationBUrl.length}`);
-          } else {
-            const errDetail = JSON.stringify(dataB.error || dataB);
-            debugLog.push(`IMAGE_B_ERROR: ${errDetail}`);
-            console.error("OpenAI Error B:", errDetail);
-          }
-        } catch (errB: any) {
-          debugLog.push(`IMAGE_B_EXCEPTION: ${errB?.message || errB}`);
-          console.error("Image B generation failed/timed out:", errB?.message || errB);
-        }
+        variationAUrl = urlA;
+        variationBUrl = urlB;
 
       } catch (err: any) {
         console.error("Failed to generate images with OpenAI:", err?.message || err);
@@ -200,7 +181,7 @@ Make them highly descriptive and visual, focusing on lighting, floral arrangemen
         "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1024&q=80",
         "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1024&q=80"
       ];
-      
+
       const shuffled = curatedImages.sort(() => 0.5 - Math.random());
       variationAUrl = variationAUrl || shuffled[0];
       variationBUrl = variationBUrl || shuffled[1];
