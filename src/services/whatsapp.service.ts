@@ -86,6 +86,15 @@ async function sendWhatsAppTemplateMessage(
     .map((n) => normalizePhone(n.trim()))
     .filter((n) => n.length > 0);
 
+  // MSG91 API strictly rejects newlines (\n) in template body values
+  const sanitizedComponents: any = {};
+  for (const key in components) {
+    sanitizedComponents[key] = {
+      ...components[key],
+      value: String(components[key].value).replace(/\r?\n|\r/g, " "),
+    };
+  }
+
   const payload = {
     integrated_number: config.integratedNumber,
     content_type: "template",
@@ -102,7 +111,7 @@ async function sendWhatsAppTemplateMessage(
         to_and_components: [
           {
             to: toArray,
-            components,
+            components: sanitizedComponents,
           },
         ],
       },
@@ -447,7 +456,7 @@ export async function sendCustomerOrderConfirmed(populatedOrder: any) {
     await sendWhatsAppTemplateMessage(
       normalizedPhone,
       "order_approved_new",
-      null, // namespace is null for this template according to snippet
+      "d7c7b754_9f04_41ef_a1c2_e61f103806b5",
       components,
       populatedOrder.orderId,
       "customer_confirmation",
