@@ -260,33 +260,33 @@ export async function sendCustomerOrderReceived(
     const amount = `₹${createdOrder.totalAmt}`;
 
     const components = {
-      body_amount: {
-        type: "text",
-        value: amount,
-        parameter_name: "amount",
-      },
-      body_customer_name: {
+      body_1: {
         type: "text",
         value: customerName,
-        parameter_name: "customer_name",
       },
-      body_order_id: {
+      body_2: {
         type: "text",
         value: createdOrder.orderId,
-        parameter_name: "order_id",
       },
-      body_product_name: {
+      body_3: {
         type: "text",
         value: productName,
-        parameter_name: "product_name",
+      },
+      body_4: {
+        type: "text",
+        value: amount,
+      },
+      body_5: {
+        type: "text",
+        value: "Alpha Art & Events",
       },
     };
 
-    const logMessage = `✅ Order Received! Hello ${customerName}, your order #${createdOrder.orderId} for ${productName} (${amount}) has been received. [Template: order_approved]`;
+    const logMessage = `✅ Order Received! Hello ${customerName}, your order #${createdOrder.orderId} for ${productName} (${amount}) has been received. [Template: order_approved_new]`;
 
     await sendWhatsAppTemplateMessage(
       normalizedPhone,
-      "order_approved",
+      "order_approved_new",
       "d7c7b754_9f04_41ef_a1c2_e61f103806b5",
       components,
       createdOrder.orderId,
