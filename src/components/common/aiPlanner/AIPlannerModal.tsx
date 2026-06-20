@@ -253,10 +253,10 @@ export default function AIPlannerModal() {
           <motion.button
             whileHover="hover"
             whileTap={{ scale: 0.95 }}
-            onClick={() => { setIsOpen(true); resetForm(); }}
+            onClick={() => toast("AI Event Architect is coming soon!", { icon: "🚀", style: { borderRadius: '10px', background: '#333', color: '#fff' } })}
             initial="rest"
             animate="rest"
-            className="group relative flex items-center bg-transparent rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] overflow-hidden h-14 sm:h-16"
+            className="group relative flex items-center bg-transparent rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] overflow-hidden h-14 sm:h-16 grayscale-[30%]"
           >
             {/* Inner Multicolor Spinning Border */}
             <motion.div
@@ -280,7 +280,7 @@ export default function AIPlannerModal() {
             <motion.div
               variants={{
                 rest: { width: 0, opacity: 0 },
-                hover: { width: 130, opacity: 1 }
+                hover: { width: 140, opacity: 1 }
               }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="flex flex-col items-start whitespace-nowrap overflow-hidden z-20"
@@ -289,8 +289,8 @@ export default function AIPlannerModal() {
                 <span className="block text-[10px] sm:text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 uppercase tracking-widest leading-none mb-1">
                   Alpha Magic
                 </span>
-                <span className="block text-base sm:text-lg font-black text-white leading-none tracking-wide">
-                  Use AI
+                <span className="block text-sm sm:text-base font-black text-white leading-none tracking-wide">
+                  Coming Soon
                 </span>
               </div>
             </motion.div>

@@ -243,10 +243,10 @@ const ProductDisplayPage = () => {
 
                 <CTAButtonV1
                   variant="outline"
-                  text="Contact Now"
+                  text="Contact Now 7389288488"
                   icon={<IoCall style={{ width: 20, height: 20 }} />}
                   // onClick={() => router.push("/recent")}
-                  href="tel:+918966066299"
+                  href="tel:+917389288488"
                   className="px-4 md:px-8 py-5 md:py-6 w-full text-lg bg-black border border-gray-300 text-white"
                 />
               </div>
