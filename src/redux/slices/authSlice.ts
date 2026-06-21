@@ -23,29 +23,11 @@ interface AuthState {
   loading: boolean;
 }
 
-const getStoredUser = () => {
-  if (typeof window !== "undefined") {
-    const user = localStorage.getItem("user");
-    return user ? JSON.parse(user) : null;
-  }
-  return null;
-};
-
-const getStoredToken = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("accessToken") || null;
-  }
-  return null;
-};
-
 const initialState: AuthState = {
-  user: getStoredUser(), // load from storage
-  isAuthenticated: !!getStoredUser(),
-  token: getStoredToken(), // ✅ Restore token from localStorage for page refresh persistence
-  loginProvider:
-    typeof window !== "undefined" && localStorage.getItem("loginProvider")
-      ? (localStorage.getItem("loginProvider") as "google" | "credentials")
-      : null,
+  user: null,
+  isAuthenticated: false,
+  token: null,
+  loginProvider: null,
   loading: false,
   signupData: null,
 };

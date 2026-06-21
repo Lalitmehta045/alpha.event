@@ -69,7 +69,7 @@ export default function CompleteProfilePage() {
         const updatedUser = { ...user, phone: fullPhone };
         dispatch(setUser(updatedUser));
         localStorage.setItem("user", JSON.stringify(updatedUser));
-        
+
         toast.success("Phone number saved successfully!");
         router.push("/");
       } else {

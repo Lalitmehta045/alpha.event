@@ -347,9 +347,10 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
   return (
     <div
       className={cn(
-        "text-center cursor-pointer rounded-lg bg-white",
+        "text-center cursor-pointer rounded-lg bg-white flex items-center justify-center",
         className
       )}
+      onClick={qty === 0 && !loading ? handleAddToCart : undefined}
     >
       {qty > 0 ? (
         <QuantitySelector
@@ -467,13 +468,14 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
           min={0}
           disabled={loading}
           loading={loading}
-          className="w-full"
+          className="w-full h-full"
           size="md"
         />
       ) : (
         <button
           onClick={handleAddToCart}
-          className={`text-center flex gap-3 cursor-pointer items-center justify-center mx-auto font-semibold transition-all `}
+          className={`text-center flex w-full h-full gap-3 cursor-pointer items-center justify-center mx-auto font-semibold transition-all `}
+          disabled={loading}
         >
           {loading ? <Loading /> : "Add to cart"}
           {/* <IoCartOutline style={{ width: 20, height: 20 }} /> */}

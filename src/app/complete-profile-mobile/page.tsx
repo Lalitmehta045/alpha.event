@@ -66,9 +66,9 @@ export default function CompleteProfileMobilePage() {
         const updatedUser = { ...user, ...payload };
         dispatch(setUser(updatedUser));
         localStorage.setItem("user", JSON.stringify(updatedUser));
-        
+
         toast.success("Profile updated successfully!");
-        
+
         const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(updatedUser.role);
         router.push(isAdmin ? "/admin" : "/");
       } else {
