@@ -28,6 +28,7 @@ interface CartSheetProps {
 
 export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
   const token = useSelector((state: RootState) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const router = useRouter();
   const { items, totalPrice, totalQuantity, totalOriginalPrice } = useSelector(
     (state: RootState) => state.cart
@@ -47,7 +48,7 @@ export default function CartSheet({ openCart, setOpenCart }: CartSheetProps) {
   }, []);
 
   const handleProceedClick = () => {
-    if (!token) {
+    if (!isAuthenticated) {
       toast.error("Please login to proceed with checkout");
       router.push("/auth/sign-in?callbackUrl=/cart");
       return;

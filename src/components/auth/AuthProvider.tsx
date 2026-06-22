@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut, useSession, getSession } from "next-auth/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setToken, setUser } from "@/redux/slices/authSlice";
 import { RootState } from "@/redux/store/store";
@@ -20,6 +20,18 @@ export default function AuthProvider({
   useEffect(() => {
     if (status === "loading") return;
     const checkAuth = async () => {
+      const session = await getSession();
+     
+      if (session?.user) {
+        // A NextAuth Google session exists.
+        // GoogleAuthHandler will handle minting JWT cookies and setting Redux.
+        // AuthProvider should not call /api/auth/me here because JWT cookies
+        // don't exist yet — calling it would get 401 and clear state.
+        // Just set isChecking = false and let GoogleAuthHandler do its job.
+        setIsChecking(false);
+        return;
+      }
+
       try {
         // Explicitly check the me endpoint on startup
         const res = await apiConnector("GET", "/api/auth/me");
@@ -41,15 +53,6 @@ export default function AuthProvider({
         const responseStatus = error?.response?.status ?? error?.status;
 
         if (responseStatus === 401) {
-          const isMinting =
-            typeof window !== "undefined" &&
-            sessionStorage.getItem("google_token_minting") === "true";
-
-          if (isMinting || status === "authenticated") {
-            console.warn("AuthProvider: NextAuth session active or minting in progress, skipping state clear.");
-            return;
-          }
-
           dispatch(setUser(null));
           dispatch(setToken(null));
 

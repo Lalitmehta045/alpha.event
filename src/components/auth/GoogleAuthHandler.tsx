@@ -25,10 +25,6 @@ export default function GoogleAuthHandler() {
       if (session?.user && !reduxUser && status === "authenticated" && !fetchedRef.current) {
         fetchedRef.current = true;
         try {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("google_token_minting", "true");
-          }
-
           const res = await fetch("/api/auth/google-token", {
             method: "POST",
             credentials: "include", // Send cookies
@@ -64,10 +60,6 @@ export default function GoogleAuthHandler() {
           }
         } catch (error) {
           console.error("Failed to generate token for Google user:", error);
-        } finally {
-          if (typeof window !== "undefined") {
-            sessionStorage.removeItem("google_token_minting");
-          }
         }
       }
     };
