@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     // 1. 🔒 Authentication
     const auth = verifyUser(req);
     if (!auth) {
-      return NextResponse.json({ success: false, message: "Unauthorized" });
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
     const userId = auth.userId;
 

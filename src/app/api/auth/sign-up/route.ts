@@ -124,6 +124,7 @@ export async function POST(req: NextRequest) {
       password: hashedPassword,
       role: "USER",
       verify_email: true,
+      profileCompleted: true,
     });
 
     return NextResponse.json({
@@ -135,6 +136,7 @@ export async function POST(req: NextRequest) {
         lname: user.lname,
         email: user.email,
         phone: user.phone,
+        profileCompleted: user.profileCompleted,
       },
     });
   } catch (error: any) {

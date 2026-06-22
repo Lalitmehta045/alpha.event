@@ -4,9 +4,13 @@ import { NextRequest } from "next/server";
 export const verifyUser = (req: NextRequest) => {
   try {
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
-    const token =
-      req.cookies.get("accessToken")?.value ||
-      authHeader?.split(" ")[1];
+    
+    let token = req.cookies.get("accessToken")?.value;
+    const bearerToken = authHeader?.split(" ")[1];
+    
+    if (!token && bearerToken && bearerToken !== "null" && bearerToken !== "undefined") {
+      token = bearerToken;
+    }
 
     if (!token) return null;
 

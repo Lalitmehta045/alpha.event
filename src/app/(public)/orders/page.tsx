@@ -48,7 +48,7 @@ export default function OrderPage() {
 
   const fetchCartItem = async () => {
     // Only fetch cart if user is authenticated
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !token) return;
 
     try {
       const mappedCartData = await getAllCartItems(token);
@@ -135,7 +135,7 @@ export default function OrderPage() {
   };
 
   const fetchOrder = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !token) {
       toast.error("Please login first.");
       return;
     }
@@ -149,6 +149,8 @@ export default function OrderPage() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     fetchCartItem();
     fetchAddress();
     fetchOrder();
@@ -170,7 +172,7 @@ export default function OrderPage() {
         }
       }
     }
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">

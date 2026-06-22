@@ -51,10 +51,11 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Don't try to refresh for login/signup requests
+    // Don't try to refresh for login/signup/me requests
     if (
       originalRequest.url?.includes("/api/auth/sign-in") ||
-      originalRequest.url?.includes("/api/auth/sign-up")
+      originalRequest.url?.includes("/api/auth/sign-up") ||
+      originalRequest.url?.includes("/api/auth/me")
     ) {
       return Promise.reject(error);
     }

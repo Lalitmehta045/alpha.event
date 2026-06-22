@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
       data: categories,
     });
   } catch (error) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.error("GET CATEGORY ERROR:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

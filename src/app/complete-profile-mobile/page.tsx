@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "@/redux/slices/authSlice";
 import { RootState } from "@/redux/store/store";
 import toast from "react-hot-toast";
+import { apiConnector } from "@/services/apiconnector";
 
 export default function CompleteProfileMobilePage() {
   const router = useRouter();
@@ -46,23 +47,18 @@ export default function CompleteProfileMobilePage() {
       const payload: any = {
         fname: data.fname,
         lname: data.lname,
+        profileCompleted: true,
       };
 
       if (data.email && data.email.trim() !== "") {
         payload.email = data.email;
       }
 
-      const res = await fetch(`/api/profile/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await apiConnector("PUT", `/api/profile/${user.id}`, payload);
 
-      const result = await res.json();
+      const result = res.data;
 
-      if (res.ok && result.success) {
+      if (result.success) {
         const updatedUser = { ...user, ...payload };
         dispatch(setUser(updatedUser));
         localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -74,9 +70,10 @@ export default function CompleteProfileMobilePage() {
       } else {
         toast.error(result.message || "Failed to update profile");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      toast.error("An error occurred. Please try again.");
+      const errMsg = error.response?.data?.message || error.response?.data?.error || "An error occurred. Please try again.";
+      toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }

@@ -196,16 +196,12 @@ export async function msg91SignIn(
     toast.dismiss(toastId);
     toast.success(`🎉 Mobile Login successful!`);
 
-    if (isNewUser) {
-      router.push("/complete-profile-mobile");
-    } else {
-      // ✅ Redirect to callbackUrl if present, otherwise default route
-      const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(user.role);
-      const callbackUrl = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("callbackUrl")
-        : null;
-      router.push(callbackUrl || (isAdmin ? "/admin" : "/"));
-    }
+    // ✅ Redirect to callbackUrl if present, otherwise default route
+    const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(user.role);
+    const callbackUrl = typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("callbackUrl")
+      : null;
+    router.push(callbackUrl || (isAdmin ? "/admin" : "/"));
 
     return response.data;
 
@@ -240,7 +236,6 @@ export async function logout(router: any, dispatch: any) {
     toast.dismiss(toastId);
     toast.success("Logged out successfully. See you soon!");
 
-    router.refresh();
     router.replace("/auth/sign-in");
   } catch (err) {
     toast.dismiss(toastId);

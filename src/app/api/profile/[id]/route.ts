@@ -155,7 +155,7 @@ export async function PUT(req: NextRequest, { params }: ParamsPromise) {
     }
 
     // 2. Define the ONLY ALLOWED fields for update
-    const allowedFields = ["fname", "lname", "avatar", "email"];
+    const allowedFields = ["fname", "lname", "avatar", "email", "profileCompleted"];
 
     const updateData: Record<string, any> = {};
     for (const key of allowedFields) {

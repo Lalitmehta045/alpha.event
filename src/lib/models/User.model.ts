@@ -41,6 +41,10 @@ const UserSchema = new Schema<IUserProfile>(
       type: Boolean,
       default: false,
     },
+    profileCompleted: {
+      type: Boolean,
+      default: false,
+    },
     last_login_date: {
       type: Date,
       default: null,

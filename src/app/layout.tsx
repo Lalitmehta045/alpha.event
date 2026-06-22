@@ -8,7 +8,7 @@ import CartMobileBar from "@/components/common/cart/CartMobileBar";
 import GuestCartLoader from "@/components/common/cart/GuestCartLoader";
 import NextAuthProvider from "@/components/NextAuthProvider";
 import GoogleAuthHandler from "@/components/auth/GoogleAuthHandler";
-import PhoneNumberCheck from "@/components/auth/PhoneNumberCheck";
+import ProfileCompletionGuard from "@/components/auth/ProfileCompletionGuard";
 import CustomToaster from "@/components/common/CustomToaster";
 import AuthProvider from "@/components/auth/AuthProvider";
 
@@ -39,7 +39,7 @@ export default function RootLayout({
           <ReduxProvider>
             <AuthProvider>
               <GoogleAuthHandler />
-              <PhoneNumberCheck />
+              <ProfileCompletionGuard />
               <ScrollToTop />
               <GuestCartLoader />
               {children}

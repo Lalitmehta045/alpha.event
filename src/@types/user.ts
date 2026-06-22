@@ -47,6 +47,7 @@ export interface IUserProfile {
   avatar: string;
   phone?: number | null;
   verify_email: boolean;
+  profileCompleted: boolean;
   last_login_date?: string | null;
   refresh_token?: string;
   forgot_password_otp?: string;
@@ -65,6 +66,7 @@ export interface USERS {
   email: string;
   phone: number;
   verify_email: boolean;
+  profileCompleted: boolean;
   last_login_date?: string | null;
   status: string;
   role: "USER" | "ADMIN" | "SUPER-ADMIN";

@@ -8,6 +8,7 @@ export interface User {
   avatar?: string;
   phone?: string | null;
   verify_email: boolean;
+  profileCompleted: boolean;
   last_login_date?: string | null;
   status: string;
   role: "USER" | "ADMIN" | "SUPER-ADMIN";

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import UserModel from "@/lib/models/User.model";
+import { generateAccessToken } from "@/lib/token/generateAccessToken";
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
 
     let decoded: any = null;
     let usedToken = null;
+    let newAccessToken = null;
 
     // 1. Try accessToken first
     if (accessToken) {
@@ -30,7 +32,12 @@ export async function GET(req: NextRequest) {
         const refreshSecret = process.env.SECRET_KEY_REFRESH_TOKEN;
         if (!refreshSecret) throw new Error("Missing refresh secret");
         decoded = jwt.verify(refreshToken, refreshSecret);
-        usedToken = accessToken || null; // The client will still use the old access token until it refreshes via 401
+        newAccessToken = await generateAccessToken(
+          decoded.id,
+          decoded.email,
+          decoded.role
+        );
+        usedToken = newAccessToken;
       } catch (err) {
         // Expired or invalid refreshToken
         decoded = null;
@@ -55,6 +62,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    let isCompleted = user.profileCompleted;
+    if (!isCompleted) {
+      const isDummyOTPUser = user.fname === "User" && user.lname === "Mobile";
+      isCompleted = !!user.phone && !!user.fname && !!user.lname && !isDummyOTPUser;
+    }
+
     const payload = {
       id: user._id.toString(),
       fname: user.fname,
@@ -63,15 +76,28 @@ export async function GET(req: NextRequest) {
       role: user.role,
       avatar: user.avatar,
       phone: user.phone,
+      profileCompleted: isCompleted,
     };
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         user: payload,
         token: usedToken,
       },
     });
+
+    if (newAccessToken) {
+      response.cookies.set("accessToken", newAccessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 15 * 60,
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error("Error in /api/auth/me:", error);
     return NextResponse.json(

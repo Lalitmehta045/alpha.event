@@ -69,6 +69,12 @@ export async function POST(req: NextRequest) {
     // ✅ Update last login date
     await UserModel.updateOne({ _id: user._id }, { last_login_date: new Date() });
 
+    let isCompleted = user.profileCompleted;
+    if (!isCompleted) {
+      const isDummyOTPUser = user.fname === "User" && user.lname === "Mobile";
+      isCompleted = !!user.phone && !!user.fname && !!user.lname && !isDummyOTPUser;
+    }
+
     const payload = {
       id: user._id.toString(),
       fname: user.fname,
@@ -77,6 +83,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
       avatar: user.avatar,
       phone: user.phone,
+      profileCompleted: isCompleted,
     };
 
     const response = NextResponse.json({
@@ -93,7 +100,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 15 * 60, // 15 minutes — matches JWT expiry
     });
@@ -101,7 +108,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60, // 7 days — matches JWT expiry
     });

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
     const auth = verifyUser(req);
     if (!auth) {
-      return NextResponse.json({ success: false, message: "Unauthorized" });
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     const orders = await OrderModel.find({ userId: auth.userId })
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const auth = verifyUser(req);
 
     if (!auth) {
-      return NextResponse.json({ success: false, message: "Unauthorized" });
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     const data = await req.json();

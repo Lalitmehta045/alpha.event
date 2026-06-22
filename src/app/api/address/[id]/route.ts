@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, { params }: ParamsPromise) {
 
     const auth = verifyUser(req);
     if (!auth) {
-      return NextResponse.json({ success: false, message: "Unauthorized" });
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params; // ✅ FIX
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: ParamsPromise) {
 
     const auth = verifyUser(req);
     if (!auth) {
-      return NextResponse.json({ success: false, message: "Unauthorized" });
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -131,7 +131,7 @@ export async function DELETE(req: NextRequest, { params }: ParamsPromise) {
 
     const auth = verifyUser(req);
     if (!auth) {
-      return NextResponse.json({ success: false, message: "Unauthorized" });
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params; // ✅ FIX

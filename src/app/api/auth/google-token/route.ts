@@ -39,6 +39,12 @@ export async function POST(req: NextRequest) {
       user.role
     );
 
+    let isCompleted = user.profileCompleted;
+    if (!isCompleted) {
+      const isDummyOTPUser = user.fname === "User" && user.lname === "Mobile";
+      isCompleted = !!user.phone && !!user.fname && !!user.lname && !isDummyOTPUser;
+    }
+
     const response = NextResponse.json({
       success: true,
       data: {
@@ -52,6 +58,7 @@ export async function POST(req: NextRequest) {
           role: user.role,
           avatar: user.avatar,
           phone: user.phone,
+          profileCompleted: isCompleted,
         },
       },
     });
@@ -60,7 +67,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 15 * 60, // 15 minutes
     });
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });

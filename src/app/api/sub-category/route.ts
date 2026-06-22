@@ -36,8 +36,8 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error("GET SUBCATEGORY ERROR:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Unauthorized" },
-      { status: 401 }
+      { success: false, error: error.message || "Internal Server Error" },
+      { status: 500 }
     );
   }
 }

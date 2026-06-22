@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setToken, setUser } from "@/redux/slices/authSlice";
 import { RootState } from "@/redux/store/store";
@@ -14,34 +15,55 @@ export default function AuthProvider({
 }) {
   const dispatch = useDispatch();
   const [isChecking, setIsChecking] = useState(true);
+  const { status } = useSession();
 
   useEffect(() => {
+    if (status === "loading") return;
     const checkAuth = async () => {
       try {
         // Explicitly check the me endpoint on startup
         const res = await apiConnector("GET", "/api/auth/me");
-        
-        if (res?.data?.success) {
+
+        if (res?.data?.success === true) {
           const { user, token } = res.data.data;
-          
+
           // Hydrate Redux with authoritative data from the server
           dispatch(setUser(user));
           if (token) {
             dispatch(setToken(token));
           }
         } else {
-          throw new Error("Unauthorized");
+          const error = new Error("Unauthorized") as Error & { status?: number };
+          error.status = res?.status;
+          throw error;
         }
-      } catch (error) {
-        // If unauthenticated (e.g., cookies missing or expired)
-        // Ensure Redux and localStorage are completely clear
-        dispatch(setUser(null));
-        dispatch(setToken(null));
-        
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("user");
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("loginProvider");
+      } catch (error: any) {
+        const responseStatus = error?.response?.status ?? error?.status;
+
+        if (responseStatus === 401) {
+          const isMinting =
+            typeof window !== "undefined" &&
+            sessionStorage.getItem("google_token_minting") === "true";
+
+          if (isMinting || status === "authenticated") {
+            console.warn("AuthProvider: NextAuth session active or minting in progress, skipping state clear.");
+            return;
+          }
+
+          dispatch(setUser(null));
+          dispatch(setToken(null));
+
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("user");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("loginProvider");
+          }
+
+          await signOut({ redirect: false });
+        } else {
+          console.warn(
+            "AuthProvider: could not reach /api/auth/me, preserving existing state"
+          );
         }
       } finally {
         setIsChecking(false);
@@ -49,7 +71,7 @@ export default function AuthProvider({
     };
 
     checkAuth();
-  }, [dispatch]);
+  }, [dispatch, status]);
 
   // Show a full screen loader to prevent auth flicker during initial load
   if (isChecking) {

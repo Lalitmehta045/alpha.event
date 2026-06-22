@@ -69,6 +69,7 @@ export const authOptions: NextAuthOptions = {
           role: "USER",
           status: "Active",
           verify_email: true,
+          profileCompleted: false,
         });
       }
 

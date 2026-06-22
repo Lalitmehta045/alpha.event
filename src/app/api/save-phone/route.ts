@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     user.phone = phone;
+    user.profileCompleted = true;
     await user.save();
 
     return NextResponse.json({

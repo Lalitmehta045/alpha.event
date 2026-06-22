@@ -43,8 +43,7 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
   const reduxToken = useSelector((state: RootState) => state.auth.token);
 
   // Use NextAuth session OR Redux token
-  const token = reduxToken || (session?.user ? "google-auth-session" : null);
-  const isLoggedIn = !!token || !!session?.user;
+  const isLoggedIn = !!reduxToken || !!session?.user;
 
   const cartItems = useSelector((state: RootState) => state.cart.items);
 
@@ -90,7 +89,7 @@ const AddToCartButton: React.FC<Props> = ({ data, className, icon }) => {
       const productId = data._id;
 
       // Always get a fresh token if available
-      const currentToken = localStorage.getItem("accessToken") || token;
+      const currentToken = reduxToken || localStorage.getItem("accessToken");
 
       if (!currentToken) {
         toast.error("Session expired. Please log in again.");

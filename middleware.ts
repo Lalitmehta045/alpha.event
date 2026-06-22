@@ -17,10 +17,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- STEP 2: ALLOW AUTH PAGES ---
-  if (authRoutes.some((route) => pathname.startsWith(route))) {
-    return NextResponse.next();
-  }
+  // --- STEP 2: (Moved to after JWT verification) ---
 
   // --- STEP 3: VERIFY JWT FROM COOKIE ---
   const accessToken = request.cookies.get("accessToken")?.value;
@@ -52,7 +49,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // --- STEP 4: GUEST HANDLING (Not Logged In) ---
+  // --- STEP 4: AUTH PAGES HANDLING ---
+  if (authRoutes.some((route) => pathname.startsWith(route))) {
+    if (role) {
+      if (role === "SUPER-ADMIN" || role === "ADMIN") {
+        return NextResponse.redirect(new URL("/admin", request.url));
+      }
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // --- STEP 5: GUEST HANDLING (Not Logged In) ---
   if (!role) {
     // If trying to access protected routes → Redirect to Login
     if (
@@ -67,7 +75,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- STEP 5: ROLE BASED ACCESS CONTROL ---
+  // --- STEP 6: ROLE BASED ACCESS CONTROL ---
 
   // === SCENARIO A: FOR SUPER ADMIN ===
   if (role === "SUPER-ADMIN") {

@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import toast from "react-hot-toast";
+import { apiConnector } from "@/services/apiconnector";
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -55,17 +56,11 @@ export default function CompleteProfilePage() {
     try {
       const fullPhone = selectedCountryCode + " " + data.phone;
 
-      const res = await fetch("/api/save-phone", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ phone: fullPhone }),
-      });
+      const res = await apiConnector("POST", "/api/save-phone", { phone: fullPhone });
 
-      const result = await res.json();
+      const result = res.data;
 
-      if (res.ok && result.success) {
+      if (result.success) {
         const updatedUser = { ...user, phone: fullPhone };
         dispatch(setUser(updatedUser));
         localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -75,9 +70,10 @@ export default function CompleteProfilePage() {
       } else {
         toast.error(result.error || "Failed to save phone number");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving phone:", error);
-      toast.error("An error occurred. Please try again.");
+      const errMsg = error.response?.data?.error || error.response?.data?.message || "An error occurred. Please try again.";
+      toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }
