@@ -38,6 +38,7 @@ export default function GoogleAuthHandler() {
               dispatch(setToken(data.data.accessToken));
               dispatch(setUser(data.data.user));
               localStorage.setItem("user", JSON.stringify(data.data.user));
+              localStorage.setItem("loginProvider", "google");
 
               // ✅ Sync guest cart to server after Google login
               if (hasGuestCart()) {

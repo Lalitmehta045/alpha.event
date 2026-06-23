@@ -1,5 +1,7 @@
 "use client";
 
+import { signOut } from "next-auth/react";
+
 import { toast } from "react-hot-toast";
 import { endpoints } from "../api_endpoints";
 import { apiConnector } from "../apiconnector";
@@ -232,6 +234,9 @@ export async function logout(router: any, dispatch: any) {
     dispatch(setUser(null));
     dispatch(setToken(null));
     dispatch(setLoginProvider(null));
+
+    // ✅ Clear NextAuth session cookie to prevent auto-login on refresh
+    await signOut({ redirect: false });
 
     toast.dismiss(toastId);
     toast.success("Logged out successfully. See you soon!");

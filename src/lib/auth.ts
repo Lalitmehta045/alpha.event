@@ -10,9 +10,10 @@ import crypto from "crypto";
 export const authOptions: NextAuthOptions = {
   // Rely on env secret so callbacks/redirects use the correct host in prod
   secret: process.env.NEXTAUTH_SECRET,
-  session: { 
+  session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 days — aligned with refresh token expiry
+    maxAge: 60 * 60,        // 1 hour only (not 7 days default)
+    updateAge: 60 * 60,     // update every hour
   },
   providers: [
     Credentials({

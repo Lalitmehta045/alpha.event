@@ -21,16 +21,22 @@ export default function AuthProvider({
     if (status === "loading") return;
     const checkAuth = async () => {
       const session = await getSession();
-     
-      if (session?.user) {
-        // A NextAuth Google session exists.
-        // GoogleAuthHandler will handle minting JWT cookies and setting Redux.
-        // AuthProvider should not call /api/auth/me here because JWT cookies
-        // don't exist yet — calling it would get 401 and clear state.
-        // Just set isChecking = false and let GoogleAuthHandler do its job.
+      const loginProvider = typeof window !== "undefined"
+        ? localStorage.getItem("loginProvider")
+        : null;
+
+      if (session?.user && loginProvider === "google") {
+        // Legitimate Google session — let GoogleAuthHandler handle it.
+        // Only skip /api/auth/me when we KNOW this is a Google login,
+        // not a stale session lingering after credentials/OTP logout.
         setIsChecking(false);
         return;
       }
+
+      // For all other cases (credentials, OTP, post-logout):
+      // proceed to /api/auth/me check normally.
+      // If /api/auth/me fails with 401, it will call signOut() which
+      // clears the stale Google NextAuth session properly.
 
       try {
         // Explicitly check the me endpoint on startup
