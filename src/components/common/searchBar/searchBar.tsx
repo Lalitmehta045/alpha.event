@@ -45,14 +45,16 @@ const SearchBar = () => {
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsLocationDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, []);
 
@@ -103,7 +105,7 @@ const SearchBar = () => {
   }, [inputValue]);
 
   return (
-    <div className="relative w-full max-w-xl sm:max-w-2xl md:max-w-3xl">
+    <div className="relative z-[100] w-full max-w-xl sm:max-w-2xl md:max-w-3xl">
 
       {/* Search Field */}
       <div className="flex items-center bg-white border border-gray-300/80 shadow-sm hover:shadow-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#9c6567] focus-within:shadow-md focus-within:hover:shadow-md transition-all duration-300">

@@ -6,7 +6,7 @@ import { IoLogoWhatsapp } from "react-icons/io";
 
 const WhatsAppButton = () => {
   const handleWhatsAppClick = () => {
-    const phoneNumber = "919302282860"; // Same as in AIPlannerModal
+    const phoneNumber = "917389288488"; // Same as in AIPlannerModal
     const defaultMessage = encodeURIComponent("Hello Alpha Events! I am interested in your services.");
     window.open(`https://wa.me/${phoneNumber}?text=${defaultMessage}`, "_blank");
   };

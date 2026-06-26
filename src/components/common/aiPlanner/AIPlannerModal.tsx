@@ -441,6 +441,13 @@ export default function AIPlannerModal() {
                       src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0] || "/no-image.png"}
                       alt={selectedProduct.name}
                       className="w-20 h-20 rounded-xl object-cover shadow-md border border-white"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        const fallback = selectedProduct.image?.[0] || "/no-image.png";
+                        if (target.src !== fallback) {
+                          target.src = fallback;
+                        }
+                      }}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-0.5">Selected Product</p>
@@ -568,9 +575,19 @@ export default function AIPlannerModal() {
 
                   {/* Scanning Animation */}
                   <div className="relative z-10 w-48 h-48 md:w-64 md:h-64 border border-amber-500/30 rounded-2xl overflow-hidden bg-slate-900/50 shadow-[0_0_50px_rgba(245,158,11,0.15)] flex items-center justify-center">
-                    {/* Placeholder Product Silhouette */}
-                    {selectedProduct?.image?.[0] ? (
-                      <img src={selectedProduct.image[0]} alt="Processing" className="w-full h-full object-cover opacity-30 grayscale blur-sm" />
+                    {selectedProduct?.thumbnails?.[0] || selectedProduct?.image?.[0] ? (
+                      <img 
+                        src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0]} 
+                        alt="Processing" 
+                        className="w-full h-full object-cover opacity-30 grayscale blur-sm" 
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = selectedProduct.image?.[0] || "/no-image.png";
+                          if (target.src !== fallback) {
+                            target.src = fallback;
+                          }
+                        }}
+                      />
                     ) : (
                       <Sparkles className="w-16 h-16 text-slate-700" />
                     )}
@@ -658,7 +675,7 @@ export default function AIPlannerModal() {
 
                             const msg = `Hello Alpha Events! 🎈\n\nI just used your AI Balloon Color Studio and I love this concept!\n\n*Product:* ${selectedProduct?.name}\n*Balloon Colors:* ${selectedColors.join(", ")}\n*Concept ID:* ${generatedData._id}\n\n*Concept Image:* ${fullImgUrl}\n\nPlease let me know the availability and pricing!`;
 
-                            window.location.href = `https://wa.me/919302282860?text=${encodeURIComponent(msg)}`;
+                            window.location.href = `https://wa.me/917389288488?text=${encodeURIComponent(msg)}`;
                           }}
                           className="w-full sm:w-1/2 bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-6 rounded-2xl text-md md:text-lg font-black shadow-[0_0_30px_rgba(37,211,102,0.4)] hover:shadow-[0_0_40px_rgba(37,211,102,0.6)] transition-all flex items-center justify-center gap-2 group"
                         >

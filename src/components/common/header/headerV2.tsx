@@ -114,12 +114,14 @@ const HeaderV2 = () => {
               width={50}
               height={50}
               className="w-14 md:w-18 h-auto cursor-pointer"
+              priority
+              unoptimized
             />
           </Link>
 
           {/* Center: Title + mobile search shortcut */}
-          <div className="flex items-center justify-center flex-1 gap-3 md:hidden">
-            <h1 className="text-2xl mr-2 font-bold text-center md:text-left">
+          <div className="flex items-center justify-center flex-1 gap-2 md:hidden overflow-hidden">
+            <h1 className="text-lg sm:text-xl md:text-2xl mr-1 font-bold text-center md:text-left truncate">
               Alpha Art & Events
             </h1>
             {showSearchBar && (
