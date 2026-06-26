@@ -20,8 +20,148 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 export async function POST(req: Request) {
   const debugLog: string[] = [];
   try {
-    const { eventType, venueType, guestCount, themeColors, budget, selectedProducts } = await req.json();
+    const body = await req.json();
+    const { eventType, venueType, guestCount, themeColors, budget, selectedProducts, balloonColors, mode, productName, productDescription, productImageUrl } = body;
 
+    // ── Balloon Recolor Mode (simplified flow) ──
+    if (mode === "balloon-recolor" && balloonColors && balloonColors.length > 0 && productName) {
+      debugLog.push("MODE: balloon-recolor");
+
+      const colorList = balloonColors.join(", ");
+      const colorJoin = balloonColors.join(" and ");
+      const desc = productDescription ? ` Description: ${productDescription}.` : "";
+      const hasApiKey = !!process.env.OPENAI_API_KEY;
+
+      let layoutDescription = "";
+      
+      // Step 1: Use Vision AI to analyze the original product layout
+      if (productImageUrl && hasApiKey) {
+        try {
+          debugLog.push("Fetching layout description via gpt-4o-mini...");
+          const visionRes = await fetchWithTimeout(
+            "https://api.openai.com/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                  {
+                    role: "system",
+                    content: "You are an expert event decorator. Your job is to describe the exact physical layout, furniture, background, props, lighting, and arrangement of the provided decoration setup in extreme detail. Focus strictly on the structural layout. Do not focus on the color of the balloons, just mention where balloon arches, garlands, or bouquets are placed."
+                  },
+                  {
+                    role: "user",
+                    content: [
+                      { type: "text", text: "Describe the structural layout and props of this setup so it can be replicated exactly." },
+                      { type: "image_url", image_url: { url: productImageUrl } }
+                    ]
+                  }
+                ],
+                max_tokens: 250,
+              }),
+            },
+            30000
+          );
+          const visionData = await visionRes.json();
+          if (visionData.choices?.[0]?.message?.content) {
+            layoutDescription = visionData.choices[0].message.content;
+            debugLog.push("VISION_SUCCESS: Layout extracted");
+          } else {
+            debugLog.push(`VISION_ERROR: ${JSON.stringify(visionData.error || visionData)}`);
+          }
+        } catch (err: any) {
+          debugLog.push(`VISION_EXCEPTION: ${err?.message || err}`);
+        }
+      }
+
+      // Step 2: Generate highly targeted DALL-E prompt
+      let promptA = "";
+      if (layoutDescription) {
+        promptA = `A photorealistic, highly detailed image of an event setup. RECREATE THIS EXACT LAYOUT: ${layoutDescription}. \n\nCRITICAL INSTRUCTION: You must keep the exact same background, furniture, and arrangement as described above. HOWEVER, every single balloon in the scene MUST be colored in these exact pastel colors: ${colorList}. The balloons must ONLY be ${colorJoin}. Use professional event photography style, 4k, realistic lighting.`;
+      } else {
+        promptA = `A stunning, photorealistic image of a premium balloon decoration arrangement called "${productName}".${desc} ALL balloons MUST be in these EXACT pastel colors: ${colorList}. The balloon colors should be ${colorJoin} — NO other colors allowed. Show a beautiful, professional event decoration setup. Realistic textures, elegant arrangement, soft ambient lighting, sharp 4K details.`;
+      }
+
+      debugLog.push(`PROMPT_A: ${promptA.substring(0, 150)}...`);
+
+      // Generate single image
+      let variationAUrl = "";
+      let variationBUrl = "";
+
+      if (hasApiKey) {
+        const generateImage = async (prompt: string, label: string) => {
+          try {
+            const res = await fetchWithTimeout(
+              "https://api.openai.com/v1/images/generations",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                },
+                body: JSON.stringify({
+                  model: "gpt-image-2",
+                  prompt: prompt,
+                  n: 1,
+                  size: "1024x1024",
+                  quality: "auto",
+                }),
+              },
+              120000
+            );
+            const data = await res.json();
+            if (data.data && data.data[0]) {
+              const url = data.data[0].url || (data.data[0].b64_json ? `data:image/png;base64,${data.data[0].b64_json}` : "");
+              debugLog.push(`IMAGE_${label}_OK: URL length=${url.length}`);
+              return url;
+            } else {
+              debugLog.push(`IMAGE_${label}_ERROR: ${JSON.stringify(data.error || data)}`);
+            }
+          } catch (err: any) {
+            debugLog.push(`IMAGE_${label}_EXCEPTION: ${err?.message || err}`);
+          }
+          return "";
+        };
+
+        // Only generate Prompt A to save time and API costs
+        variationAUrl = await generateImage(promptA, "A");
+        variationBUrl = variationAUrl; // Duplicate for schema safety
+      }
+
+      // Fallback
+      if (!variationAUrl || !variationBUrl) {
+        const fallbacks = [
+          "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1024&q=80",
+          "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1024&q=80",
+        ];
+        variationAUrl = variationAUrl || fallbacks[0];
+        variationBUrl = variationBUrl || fallbacks[1];
+      }
+
+      await connectDB();
+      const newConcept = await AIConceptModel.create({
+        eventType: "Balloon Decoration",
+        venueType: "Event Venue",
+        guestCount: "50-100",
+        themeColors: balloonColors,
+        budget: 0,
+        promptUsed: promptA,
+        variationAUrl,
+        variationBUrl,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: { _id: newConcept._id, variationAUrl, variationBUrl },
+        _debug: debugLog,
+      });
+    }
+
+    // ── Original Event Architect Mode ──
     if (!eventType || !venueType || !guestCount || !themeColors || themeColors.length === 0 || !budget) {
       return NextResponse.json(
         { success: false, message: "Missing required fields." },
@@ -34,6 +174,13 @@ export async function POST(req: Request) {
     let basePrompt = `A premium event design concept. Event Type: ${eventType}, Venue: ${venueType}, Guests: ${guestCount}, Colors: ${themeColors.join(" and ")}.`;
     if (selectedProducts) {
       basePrompt += ` The design must strongly feature these specific products/elements: ${selectedProducts}.`;
+    }
+
+    // Balloon-specific color enhancement
+    let balloonColorInstruction = "";
+    if (eventType === "Balloon Decoration" && balloonColors && balloonColors.length > 0) {
+      balloonColorInstruction = `CRITICAL REQUIREMENT: The decoration MUST prominently feature balloons in these EXACT colors: ${balloonColors.join(", ")}. The balloons should be the dominant visual element. Show balloon arches, bouquets, garlands, and clusters all in ${balloonColors.join(" and ")} colors. Every balloon visible must be one of these colors.`;
+      basePrompt += ` ${balloonColorInstruction}`;
     }
 
     let budgetStyle = "";
@@ -60,11 +207,12 @@ Colors: ${themeColors.join(" and ")}
 Budget: ₹${budget}
 Required Scale/Style Based on Budget: ${budgetStyle}
 ${selectedProducts ? `Specific Elements to Feature: ${selectedProducts}` : ""}
+${balloonColorInstruction ? `\nBALLOON COLOR REQUIREMENT: ${balloonColorInstruction}` : ""}
 
 Provide EXACTLY two prompts separated by '|||'.
 Prompt 1 should focus on a symmetrical layout incorporating the Required Scale/Style.
 Prompt 2 should focus on creative or dramatic lighting incorporating the Required Scale/Style.
-Make them highly descriptive and visual, focusing on lighting, floral arrangements, stage setup, and textures. STRICTLY ensure the grandeur matches the Required Scale/Style. Do not include introductory or concluding text, just the two prompts separated by '|||'.`;
+Make them highly descriptive and visual, focusing on lighting, ${eventType === "Balloon Decoration" ? "balloon arrangements, balloon arches, balloon bouquets," : "floral arrangements,"} stage setup, and textures. STRICTLY ensure the grandeur matches the Required Scale/Style. Do not include introductory or concluding text, just the two prompts separated by '|||'.`;
 
         const chatRes = await fetchWithTimeout(
           "https://api.openai.com/v1/chat/completions",
@@ -157,14 +305,9 @@ Make them highly descriptive and visual, focusing on lighting, floral arrangemen
           return "";
         };
 
-        const [urlA, urlB] = await Promise.all([
-          generateImage(promptA, "A"),
-          generateImage(promptB, "B")
-        ]);
-
-        variationAUrl = urlA;
-        variationBUrl = urlB;
-
+        // Only generate Prompt A to save time
+        variationAUrl = await generateImage(promptA, "A");
+        variationBUrl = variationAUrl; // Duplicate for schema safety
       } catch (err: any) {
         console.error("Failed to generate images with OpenAI:", err?.message || err);
       }

@@ -5,11 +5,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { Product } from "@/@types/product";
 import ProductCard from "@/components/core/product/ProductCard";
-import HeadingV1 from "@/components/common/Texts/HeadingV1";
-import ParagraphV1 from "@/components/common/Texts/paragraph";
-import CTAButtonV1 from "@/components/common/ctaButton/ctaButtonV1";
-import { FaArrowRight } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { HiArrowRight, HiSparkles } from "react-icons/hi2";
+import Link from "next/link";
 
 const STORAGE_KEY = "home_products_order";
 
@@ -57,7 +54,6 @@ function saveOrder(ids: string[]): void {
 }
 
 const HomeProducts = () => {
-  const router = useRouter();
   const productData = useSelector(
     (state: RootState) => state.product.allProducts
   );
@@ -102,7 +98,7 @@ const HomeProducts = () => {
     const shuffledSubCats = shuffleArray(subCategories);
 
     for (const subCat of shuffledSubCats) {
-      if (totalProducts >= 32) break;
+      if (totalProducts >= 16) break;
 
       const subCatProducts = productData.filter((prod) => {
         if (!prod.subCategory || !Array.isArray(prod.subCategory)) return false;
@@ -115,7 +111,7 @@ const HomeProducts = () => {
         const shuffledSubCatProducts = shuffleArray(subCatProducts);
         const uniqueProducts = shuffledSubCatProducts.filter(p => !seenIds.has(p._id));
         const selectedProducts = uniqueProducts.slice(0, 4);
-        const productsToAdd = selectedProducts.slice(0, 32 - totalProducts);
+        const productsToAdd = selectedProducts.slice(0, 16 - totalProducts);
         
         if (productsToAdd.length > 0) {
           selected.push(...productsToAdd);
@@ -136,6 +132,9 @@ const HomeProducts = () => {
     return null;
   }
 
+  const totalProducts = productData.length;
+  const remainingCount = Math.max(0, totalProducts - productsToDisplay.length);
+
   return (
     <section className="bg-(--mainBg1) w-full py-12 flex flex-col px-2 sm:px-6 md:px-10 lg:px-20">
       <div className="w-11/12 mx-auto flex flex-col gap-12">
@@ -145,14 +144,28 @@ const HomeProducts = () => {
           ))}
         </div>
 
-        <div className="flex justify-center mt-8">
-          <CTAButtonV1
-            variant="secondary"
-            text="View More Products"
-            icon={<FaArrowRight />}
-            onClick={() => router.push("/products")}
-            className="px-6 py-4"
-          />
+        {/* Premium View More Section */}
+        <div className="flex flex-col items-center gap-6 mt-4">
+          {/* Gradient divider */}
+          <div className="w-full max-w-md h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+
+          <Link
+            href="/products"
+            className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--cta-Bg)] to-[color-mix(in_srgb,var(--cta-Bg),#000_15%)] text-white font-semibold text-base shadow-lg shadow-[var(--cta-Bg)]/25 hover:shadow-xl hover:shadow-[var(--cta-Bg)]/35 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-300 overflow-hidden"
+          >
+            {/* Shimmer effect */}
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+            <HiSparkles className="text-white/80 text-lg relative z-10" />
+            <span className="relative z-10">View More Products</span>
+            <HiArrowRight className="text-lg relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
+
+          {remainingCount > 0 && (
+            <p className="text-gray-400 text-sm font-medium tracking-wide">
+              +{remainingCount} more products to explore
+            </p>
+          )}
         </div>
       </div>
     </section>

@@ -1,17 +1,14 @@
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { DisplayPriceInRupees } from "@/utils/DisplayPriceInRupees";
 import { pricewithDiscount } from "@/utils/PriceWithDiscount";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { CiHeart } from "react-icons/ci";
 import { FaHeart } from "react-icons/fa";
 import Link from "next/link";
 import { valideURLConvert } from "@/utils/valideURLConvert";
 import { Product } from "@/@types/product";
+import { RootState } from "@/redux/store/store";
 import AddToCartButton from "@/components/common/cart/AddToCartButton";
 
 interface ProductCardProps {
@@ -21,6 +18,26 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
   const [likedItems, setLikedItems] = useState<{ [key: string]: boolean }>({});
+
+  // Resolve category IDs to names from Redux store
+  const allCategory = useSelector(
+    (state: RootState) => state.product.allCategory
+  );
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, string>();
+    allCategory.forEach((cat) => map.set(cat._id, cat.name));
+    return map;
+  }, [allCategory]);
+
+  // Resolve product categories to display names
+  const categoryNames = useMemo(() => {
+    if (!data.category || data.category.length === 0) return [];
+    return data.category
+      .map((cat) =>
+        typeof cat === "string" ? categoryMap.get(cat) : cat?.name
+      )
+      .filter(Boolean) as string[];
+  }, [data.category, categoryMap]);
 
   const toggleLike = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -40,9 +57,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
     >
       <Link href={url} className="w-full relative">
         <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden">
+          {/* Discount Badge — top left */}
           {data.discount > 0 && (
             <span className="absolute z-10 top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
               {data.discount}% OFF
+            </span>
+          )}
+
+          {/* Category Tag — top left below discount or at top */}
+          {categoryNames.length > 0 && (
+            <span
+              className="absolute z-10 left-0 bg-gradient-to-r from-[var(--cta-Bg)] to-[color-mix(in_srgb,var(--cta-Bg),#000_20%)] text-white text-[10px] font-bold uppercase tracking-widest pl-3 pr-4 py-1.5 rounded-r-full shadow-lg"
+              style={{ top: data.discount > 0 ? '2.75rem' : '0.75rem' }}
+            >
+              {categoryNames[0]}
             </span>
           )}
 
@@ -81,10 +109,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
             {data.name}
           </h3>
         </Link>
-
-        <p className="text-gray-500 text-sm mt-1 mb-3 line-clamp-2 min-h-[40px]">
-          {data.description}
-        </p>
 
         <div className="mt-auto">
           {/* Price */}

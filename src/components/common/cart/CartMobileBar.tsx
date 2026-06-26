@@ -13,6 +13,7 @@ export default function CartMobileBar() {
   const router = useRouter();
   const cart = useSelector((state: RootState) => state.cart.items);
   const totalQty = useSelector((state: RootState) => state.cart.totalQuantity);
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const [show, setShow] = useState(false);
 
@@ -25,7 +26,11 @@ export default function CartMobileBar() {
     }
   }, [cart]);
 
+  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER-ADMIN";
+  const isAdminPath = path?.startsWith("/admin");
+
   if (!cart || cart.length === 0) return null;
+  if (isAdmin || isAdminPath) return null;
 
   return (
     <>

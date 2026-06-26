@@ -14,6 +14,7 @@ import HomeProducts from "@/components/core/homeProducts/HomeProducts";
 import { getAllCartItems } from "@/services/operations/cartItem";
 import { handleAddItemCart } from "@/redux/slices/cartSlice";
 import AIPlannerModal from "@/components/common/aiPlanner/AIPlannerModal";
+import WhatsAppButton from "@/components/common/WhatsAppButton";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -84,6 +85,7 @@ export default function Home() {
         <ContactV1 />
       </LayoutV1>
       <AIPlannerModal />
+      <WhatsAppButton />
     </div>
   );
 }

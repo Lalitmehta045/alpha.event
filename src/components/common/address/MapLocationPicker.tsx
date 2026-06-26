@@ -14,8 +14,8 @@ interface MapLocationPickerProps {
 }
 
 export default function MapLocationPicker({
-  initialLat = 28.6139, // Default: New Delhi
-  initialLng = 77.2090,
+  initialLat = 22.7196, // Default: Indore
+  initialLng = 75.8577,
   onLocationSelect,
   height = "400px",
   className = "",

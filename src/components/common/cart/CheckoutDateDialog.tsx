@@ -34,6 +34,9 @@ function AnalogClock({
   onMinuteChange,
   onPeriodChange,
   onModeChange,
+  isToday,
+  minHour24,
+  minMinute,
 }: {
   hour: number;
   minute: number;
@@ -43,6 +46,9 @@ function AnalogClock({
   onMinuteChange: (m: number) => void;
   onPeriodChange: (p: Period) => void;
   onModeChange: (m: ClockMode) => void;
+  isToday: boolean;
+  minHour24: number;
+  minMinute: number;
 }) {
   const clockRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -51,6 +57,35 @@ function AnalogClock({
   const CLOCK_SIZE = 240;
   const CENTER = CLOCK_SIZE / 2;
   const NUMBER_RADIUS = 90;
+
+  // Helper: convert 12h to 24h
+  const to24 = useCallback((h: number, p: Period) => {
+    if (p === "AM" && h === 12) return 0;
+    if (p === "PM" && h !== 12) return h + 12;
+    return h;
+  }, []);
+
+  // Check if a given hour (12h format) is disabled
+  const isHourDisabled = useCallback(
+    (h12: number) => {
+      if (!isToday) return false;
+      const h24 = to24(h12, period);
+      return h24 < minHour24;
+    },
+    [isToday, period, minHour24, to24]
+  );
+
+  // Check if a given minute is disabled (only relevant when hour matches min hour)
+  const isMinuteDisabled = useCallback(
+    (m: number) => {
+      if (!isToday) return false;
+      const h24 = to24(hour, period);
+      if (h24 < minHour24) return true;
+      if (h24 === minHour24) return m < minMinute;
+      return false;
+    },
+    [isToday, hour, period, minHour24, minMinute, to24]
+  );
 
   const getAngleFromEvent = useCallback(
     (clientX: number, clientY: number) => {
@@ -74,13 +109,17 @@ function AnalogClock({
       if (mode === "hour") {
         let h = Math.round(angle / 30) % 12;
         if (h === 0) h = 12;
-        onHourChange(h);
+        if (!isHourDisabled(h)) {
+          onHourChange(h);
+        }
       } else {
         let m = Math.round(angle / 6) % 60;
-        onMinuteChange(m);
+        if (!isMinuteDisabled(m)) {
+          onMinuteChange(m);
+        }
       }
     },
-    [mode, getAngleFromEvent, onHourChange, onMinuteChange]
+    [mode, getAngleFromEvent, onHourChange, onMinuteChange, isHourDisabled, isMinuteDisabled]
   );
 
   const handlePointerDown = useCallback(
@@ -130,7 +169,8 @@ function AnalogClock({
         const x = CENTER + NUMBER_RADIUS * Math.cos(rad);
         const y = CENTER + NUMBER_RADIUS * Math.sin(rad);
         const isSelected = num === hour;
-        return { num, x, y, isSelected };
+        const disabled = isHourDisabled(num);
+        return { num, x, y, isSelected, disabled };
       });
     } else {
       return Array.from({ length: 12 }, (_, i) => {
@@ -140,10 +180,11 @@ function AnalogClock({
         const x = CENTER + NUMBER_RADIUS * Math.cos(rad);
         const y = CENTER + NUMBER_RADIUS * Math.sin(rad);
         const isSelected = num === minute;
-        return { num, x, y, isSelected };
+        const disabled = isMinuteDisabled(num);
+        return { num, x, y, isSelected, disabled };
       });
     }
-  }, [mode, hour, minute, CENTER, NUMBER_RADIUS]);
+  }, [mode, hour, minute, CENTER, NUMBER_RADIUS, isHourDisabled, isMinuteDisabled]);
 
   // Hand endpoint
   const HAND_LENGTH = 75;
@@ -288,7 +329,7 @@ function AnalogClock({
 
           {/* Selected number highlight */}
           {numbers.map((n) =>
-            n.isSelected ? (
+            n.isSelected && !n.disabled ? (
               <circle
                 key={`sel-${n.num}`}
                 cx={n.x}
@@ -334,11 +375,12 @@ function AnalogClock({
               y={n.y}
               textAnchor="middle"
               dominantBaseline="central"
-              fill={n.isSelected ? "white" : "#475569"}
+              fill={n.disabled ? "#d1d5db" : n.isSelected ? "white" : "#475569"}
               fontSize={14}
-              fontWeight={n.isSelected ? "700" : "500"}
+              fontWeight={n.isSelected && !n.disabled ? "700" : "500"}
               fontFamily="system-ui, sans-serif"
               className="pointer-events-none transition-all duration-200"
+              opacity={n.disabled ? 0.4 : 1}
             >
               {mode === "minute" ? String(n.num).padStart(2, "0") : n.num}
             </text>
@@ -402,9 +444,118 @@ export default function CheckoutDateDialog({
     return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${period}`;
   }, [hour, minute, period]);
 
+  // Check if selected date is today
+  const isTodaySelected = useMemo(() => {
+    if (!tempDate) return false;
+    const today = new Date();
+    return (
+      tempDate.getFullYear() === today.getFullYear() &&
+      tempDate.getMonth() === today.getMonth() &&
+      tempDate.getDate() === today.getDate()
+    );
+  }, [tempDate]);
+
+  // Minimum allowed hour (24h format) - current hour if today
+  const minHour24 = useMemo(() => {
+    if (!isTodaySelected) return 0;
+    return new Date().getHours();
+  }, [isTodaySelected]);
+
+  // Minimum allowed minute for the current selected hour
+  const minMinuteForHour = useMemo(() => {
+    if (!isTodaySelected) return 0;
+    const now = new Date();
+    const currentH24 = now.getHours();
+    // Convert selected hour to 24h
+    let selectedH24 = hour;
+    if (period === "AM" && hour === 12) selectedH24 = 0;
+    else if (period === "PM" && hour !== 12) selectedH24 = hour + 12;
+    if (selectedH24 === currentH24) return now.getMinutes();
+    return 0;
+  }, [isTodaySelected, hour, period]);
+
+  // Check if the currently selected time is valid (not in the past)
+  const isTimeValid = useMemo(() => {
+    if (!isTodaySelected) return true;
+    const now = new Date();
+    let selectedH24 = hour;
+    if (period === "AM" && hour === 12) selectedH24 = 0;
+    else if (period === "PM" && hour !== 12) selectedH24 = hour + 12;
+    if (selectedH24 > now.getHours()) return true;
+    if (selectedH24 === now.getHours() && minute >= now.getMinutes()) return true;
+    return false;
+  }, [isTodaySelected, hour, minute, period]);
+
+  // When switching to time step, auto-adjust time if it's today and current time is past
   const handleDateNext = () => {
     if (!tempDate) return;
+    // If today is selected, ensure time is not in the past
+    const today = new Date();
+    const isToday =
+      tempDate.getFullYear() === today.getFullYear() &&
+      tempDate.getMonth() === today.getMonth() &&
+      tempDate.getDate() === today.getDate();
+    if (isToday) {
+      const nowH = today.getHours();
+      const nowM = today.getMinutes();
+      // Convert current selection to 24h
+      let selH24 = hour;
+      if (period === "AM" && hour === 12) selH24 = 0;
+      else if (period === "PM" && hour !== 12) selH24 = hour + 12;
+      // If selected time is in the past, auto-adjust to next valid time
+      if (selH24 < nowH || (selH24 === nowH && minute < nowM)) {
+        // Round up to next 30 min slot
+        let newM = nowM < 30 ? 30 : 0;
+        let newH24 = nowM < 30 ? nowH : nowH + 1;
+        if (newH24 >= 24) {
+          newH24 = 23;
+          newM = 59;
+        }
+        const newPeriod: Period = newH24 >= 12 ? "PM" : "AM";
+        let newH12 = newH24 % 12;
+        if (newH12 === 0) newH12 = 12;
+        setHour(newH12);
+        setMinute(newM);
+        setPeriod(newPeriod);
+      }
+    }
     setStep("time");
+  };
+
+  // Handle period change with validation
+  const handlePeriodChange = (newPeriod: Period) => {
+    if (isTodaySelected) {
+      const now = new Date();
+      let newH24 = hour;
+      if (newPeriod === "AM" && hour === 12) newH24 = 0;
+      else if (newPeriod === "PM" && hour !== 12) newH24 = hour + 12;
+      // Don't allow switching to AM if current time is PM
+      if (newH24 < now.getHours()) {
+        return; // block the switch
+      }
+      // If switching makes the time exactly the current hour, ensure minute is valid
+      if (newH24 === now.getHours() && minute < now.getMinutes()) {
+        setMinute(now.getMinutes());
+      }
+    }
+    setPeriod(newPeriod);
+  };
+
+  // Handle minute change with validation
+  const handleMinuteChange = (m: number) => {
+    if (isTodaySelected) {
+      const now = new Date();
+      let selH24 = hour;
+      if (period === "AM" && hour === 12) selH24 = 0;
+      else if (period === "PM" && hour !== 12) selH24 = hour + 12;
+      if (selH24 === now.getHours() && m < now.getMinutes()) {
+        return; // block past minutes
+      }
+      if (selH24 < now.getHours()) {
+        return; // block entirely if hour is past
+      }
+    }
+    setMinute(m);
   };
 
   const handleConfirm = () => {
@@ -532,9 +683,12 @@ export default function CheckoutDateDialog({
               period={period}
               mode={clockMode}
               onHourChange={setHour}
-              onMinuteChange={setMinute}
-              onPeriodChange={setPeriod}
+              onMinuteChange={handleMinuteChange}
+              onPeriodChange={handlePeriodChange}
               onModeChange={setClockMode}
+              isToday={isTodaySelected}
+              minHour24={minHour24}
+              minMinute={minMinuteForHour}
             />
           )}
         </div>
@@ -572,10 +726,11 @@ export default function CheckoutDateDialog({
           ) : (
             <Button
               onClick={handleConfirm}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 shadow-md shadow-blue-500/20"
+              disabled={!isTimeValid}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Clock className="w-4 h-4 mr-1.5" />
-              Confirm Date & Time
+              {isTimeValid ? "Confirm Date & Time" : "Select a future time"}
             </Button>
           )}
         </div>

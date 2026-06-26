@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { ProductFormValues } from "@/@types/product";
 import { valideURLConvert } from "@/utils/valideURLConvert";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AddAddressDialog from "@/components/common/address/AddAddressDialog";
 
 const RECENT_SEARCHES_KEY = "recent_searches";
@@ -15,6 +16,7 @@ const MAX_RECENT_SEARCHES = 5;
 
 const SearchBar = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<ProductFormValues[]>(
     []
@@ -23,6 +25,8 @@ const SearchBar = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
+  const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -36,6 +40,20 @@ const SearchBar = () => {
         }
       }
     }
+  }, []);
+
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsLocationDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   // Save search to recent searches
@@ -86,70 +104,99 @@ const SearchBar = () => {
 
   return (
     <div className="relative w-full max-w-xl sm:max-w-2xl md:max-w-3xl">
-      {/* Placeholder text animation */}
-      {!inputValue && !isFocused && (
-        <div className="absolute left-[4.5rem] sm:left-[5.5rem] top-1/2 -translate-y-1/2 pointer-events-none font-medium text-gray-500 text-sm sm:text-base flex items-center gap-1">
-          <span>Search for</span>
-          <TypingAnimation
-            words={[
-              "props",
-              "premium décor",
-              "event lights",
-              "stage backdrops",
-              "creative setups",
-            ]}
-            loop
-          />
-        </div>
-      )}
 
       {/* Search Field */}
       <div className="flex items-center bg-white border border-gray-300/80 shadow-sm hover:shadow-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#9c6567] focus-within:shadow-md focus-within:hover:shadow-md transition-all duration-300">
-        <button
-          className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#fcf4f4] text-[#9c6567] hover:bg-[#faeaea] hover:scale-105 transition-all duration-300 shrink-0"
-          onClick={() => setIsAddressDialogOpen(true)}
-          title="Select Delivery Location"
-        >
-          <FaMapMarkerAlt className="text-base sm:text-lg" />
-        </button>
+        <div className="relative flex items-center h-full" ref={dropdownRef}>
+          <button
+            className="flex items-center justify-center gap-1.5 px-3 h-10 sm:h-11 rounded-full bg-[#fcf4f4] text-[#9c6567] hover:bg-[#faeaea] hover:scale-105 transition-all duration-300 shrink-0"
+            onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+            title="Select Delivery Location"
+          >
+            <FaMapMarkerAlt className="text-base sm:text-lg" />
+            {selectedLocation && (
+              <span className="text-sm font-medium hidden sm:block max-w-[80px] truncate">
+                {selectedLocation}
+              </span>
+            )}
+          </button>
+
+          {isLocationDropdownOpen && (
+            <div className="absolute top-full left-0 mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
+              <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
+                Select City
+              </div>
+              {["Indore", "Bhopal", "Ujjain", "Jabalpur"].map((city) => (
+                <button
+                  key={city}
+                  className="w-full text-left px-4 py-2 hover:bg-red-50 hover:text-red-600 text-gray-700 text-sm font-medium transition-colors"
+                  onClick={() => {
+                    setSelectedLocation(city);
+                    setIsLocationDropdownOpen(false);
+                  }}
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         
         <div className="h-7 w-px bg-gray-200 mx-2 sm:mx-3 shrink-0"></div>
 
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onFocus={() => {
-            setIsFocused(true);
-            setShowRecentSearches(true);
-          }}
-          onBlur={() => {
-            // Delay to allow click events on recent searches
-            setTimeout(() => {
-              setIsFocused(false);
-              setShowRecentSearches(false);
-            }, 200);
-          }}
-          onKeyDown={async (e) => {
-            if (e.key === "Enter" && inputValue.trim()) {
-              addToRecentSearches(inputValue);
-              const searchedProducts = await getAllProduct(dispatch, inputValue);
-              setFilteredProducts(searchedProducts || []);
-              setShowRecentSearches(false);
-            }
-          }}
-          className="flex-1 bg-transparent outline-none font-medium text-gray-800 text-base px-2 placeholder-transparent"
-        />
+        <div className="relative flex-1 flex items-center">
+          {/* Placeholder text animation */}
+          {!inputValue && !isFocused && (
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none font-medium text-gray-500 text-sm sm:text-base flex items-center gap-1 whitespace-nowrap">
+              <span>Search for</span>
+              <TypingAnimation
+                words={[
+                  "props",
+                  "premium décor",
+                  "event lights",
+                  "stage backdrops",
+                  "creative setups",
+                ]}
+                loop
+              />
+            </div>
+          )}
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onFocus={() => {
+              setIsFocused(true);
+              setShowRecentSearches(true);
+            }}
+            onBlur={() => {
+              // Delay to allow click events on recent searches
+              setTimeout(() => {
+                setIsFocused(false);
+                setShowRecentSearches(false);
+              }, 200);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && inputValue.trim()) {
+                addToRecentSearches(inputValue);
+                setFilteredProducts([]);
+                setShowRecentSearches(false);
+                setIsFocused(false);
+                router.push(`/products?search=${encodeURIComponent(inputValue.trim())}`);
+              }
+            }}
+            className="w-full bg-transparent outline-none font-medium text-gray-800 text-base px-2 placeholder-transparent"
+          />
+        </div>
         <button
           className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#3a0103] text-white hover:bg-[#9c6567] hover:scale-105 transition-all duration-300 shrink-0"
-          onClick={async () => {
+          onClick={() => {
             if (inputValue.trim()) {
               addToRecentSearches(inputValue);
-              const searchedProducts = await getAllProduct(
-                dispatch,
-                inputValue
-              );
-              setFilteredProducts(searchedProducts);
+              setFilteredProducts([]);
+              setShowRecentSearches(false);
+              setIsFocused(false);
+              router.push(`/products?search=${encodeURIComponent(inputValue.trim())}`);
             }
           }}
         >

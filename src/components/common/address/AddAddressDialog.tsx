@@ -67,8 +67,8 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
 
   const [step, setStep] = useState<"map" | "details">("map");
   const [mapCoordinates, setMapCoordinates] = useState({
-    lat: 28.6139, // Default: New Delhi
-    lng: 77.2090,
+    lat: 22.7196, // Default: Indore
+    lng: 75.8577,
   });
 
   const [address, setAddress] = useState({
@@ -256,6 +256,7 @@ export default function AddAddressDialog({ open, setOpen }: AddressProps) {
                 onLocationSelect={handleMapLocationSelect}
                 height="100%"
               />
+
 
               {/* Floating "Locate Me" GPS Button */}
               <button
