@@ -60,6 +60,7 @@ export default function AIPlannerModal() {
   // Redux & Router
   const products = useSelector((state: RootState) => state.product.allProducts) || [];
   const allCategory = useSelector((state: RootState) => state.product.allCategory) || [];
+  const allSubCategory = useSelector((state: RootState) => state.product.allSubCategory) || [];
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const router = useRouter();
 
@@ -67,21 +68,88 @@ export default function AIPlannerModal() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
-  // ── Filter balloon products from all products ──
+  // ── Filter available products from all products ──
   const balloonProducts = useMemo(() => {
     return products.filter((p) => {
-      const hasBalloonCategory = p.category?.some((cat: any) => {
-        const catName =
-          typeof cat === "string"
+      let isRoomDecor = false;
+      let isDecorOrBalloon = false;
+
+      // Check category array
+      if (p.category) {
+        p.category.forEach((cat: any) => {
+          const catName = typeof cat === "string" 
             ? allCategory.find((c) => c._id === cat)?.name || ""
             : cat?.name || "";
-        return catName.toLowerCase().includes("balloon") || catName.toLowerCase().includes("ballon");
-      });
-      const nameLower = p.name.toLowerCase();
-      const hasBalloonName = nameLower.includes("balloon") || nameLower.includes("ballon");
-      return hasBalloonCategory || hasBalloonName;
+          
+          const nameLower = catName.toLowerCase();
+          
+          if (nameLower.includes("room decor")) {
+            isRoomDecor = true;
+          }
+          if (nameLower.includes("decor") || nameLower.includes("balloon") || nameLower.includes("ballon")) {
+            isDecorOrBalloon = true;
+          }
+        });
+      }
+
+      // Check subCategory array
+      if (p.subCategory) {
+        p.subCategory.forEach((subCat: any) => {
+          const subCatName = typeof subCat === "string"
+            ? allSubCategory.find((c) => c._id === subCat)?.name || ""
+            : subCat?.name || "";
+            
+          const nameLower = subCatName.toLowerCase();
+          
+          if (nameLower.includes("room decor")) {
+            isRoomDecor = true;
+          }
+          if (nameLower.includes("decor") || nameLower.includes("balloon") || nameLower.includes("ballon")) {
+            isDecorOrBalloon = true;
+          }
+        });
+      }
+
+      // Check product name
+      const prodNameLower = p.name.toLowerCase();
+      if (prodNameLower.includes("room decor")) {
+        isRoomDecor = true;
+      }
+      if (prodNameLower.includes("decor") || prodNameLower.includes("balloon") || prodNameLower.includes("ballon")) {
+        isDecorOrBalloon = true;
+      }
+
+      return isDecorOrBalloon && !isRoomDecor;
+    }).sort((a, b) => {
+      const isBalloon = (p: any) => {
+        if (p.name.toLowerCase().includes("balloon") || p.name.toLowerCase().includes("ballon")) return true;
+        
+        let foundBalloon = false;
+        if (p.category) {
+          p.category.forEach((cat: any) => {
+            const catName = typeof cat === "string" ? allCategory.find((c) => c._id === cat)?.name || "" : cat?.name || "";
+            if (catName.toLowerCase().includes("balloon") || catName.toLowerCase().includes("ballon")) foundBalloon = true;
+          });
+        }
+        
+        if (p.subCategory) {
+          p.subCategory.forEach((subCat: any) => {
+            const subCatName = typeof subCat === "string" ? allSubCategory.find((c) => c._id === subCat)?.name || "" : subCat?.name || "";
+            if (subCatName.toLowerCase().includes("balloon") || subCatName.toLowerCase().includes("ballon")) foundBalloon = true;
+          });
+        }
+        
+        return foundBalloon;
+      };
+
+      const aIsBalloon = isBalloon(a);
+      const bIsBalloon = isBalloon(b);
+
+      if (aIsBalloon && !bIsBalloon) return -1;
+      if (!aIsBalloon && bIsBalloon) return 1;
+      return 0;
     });
-  }, [products, allCategory]);
+  }, [products, allCategory, allSubCategory]);
 
   // Loading text cycle
   useEffect(() => {
@@ -113,7 +181,7 @@ export default function AIPlannerModal() {
 
   // ── Generate Image ──
   const handleGenerate = async () => {
-    if (!selectedProduct || selectedColors.length === 0) return;
+    if (!selectedProduct) return;
 
     setStep(4);
     setIsGenerating(true);
@@ -122,12 +190,13 @@ export default function AIPlannerModal() {
       const response = await fetch("/api/ai/generate-event-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           mode: "balloon-recolor",
           productName: selectedProduct.name,
           productDescription: selectedProduct.description || "",
           productImageUrl: selectedProduct.image?.[0] || "",
-          balloonColors: selectedColors,
+          balloonColors: [],
           userCustomPrompt,
           // Required fields for existing API compat
           eventType: "Balloon Decoration",
@@ -330,17 +399,17 @@ export default function AIPlannerModal() {
                                     setSelectedProduct(null);
                                   } else {
                                     setSelectedProduct(product);
-                                    setTimeout(() => setStep(2), 150);
+                                    setTimeout(() => setStep(3), 150);
                                   }
                                 }}
-                                className={`relative cursor-pointer rounded-[16px] transition-all bg-[#f6f6f3] ${
+                                className={`relative h-full flex flex-col cursor-pointer rounded-[16px] transition-all bg-[#f6f6f3] ${
                                   isSelected
                                     ? "ring-2 ring-[#e60023] ring-offset-2 ring-offset-white"
                                     : "hover:bg-[#e5e5e0]"
                                 }`}
                               >
-                                <div className="pointer-events-none rounded-[16px] overflow-hidden">
-                                  <ProductCard data={product} id={product._id} />
+                                <div className="pointer-events-none rounded-[16px] overflow-hidden flex-1 flex flex-col">
+                                  <ProductCard data={product} id={product._id} hidePrice={true} customButtonText="Customize" />
                                 </div>
                                 {isSelected && (
                                   <div className="absolute top-3 left-3 bg-[#e60023] text-white p-1.5 rounded-full shadow-sm">
@@ -380,7 +449,7 @@ export default function AIPlannerModal() {
                       <div className="w-16 h-16 bg-[#f6f6f3] rounded-full flex items-center justify-center mb-4">
                         <Sparkles className="w-8 h-8 text-[#91918c]" />
                       </div>
-                      <p className="text-[#000000] font-bold text-[18px] mb-1">No Balloon Products Found</p>
+                      <p className="text-[#000000] font-bold text-[18px] mb-1">No Products Found</p>
                       <p className="text-[#62625b] text-[14px]">Try exploring other categories.</p>
                     </div>
                   )}
@@ -393,18 +462,19 @@ export default function AIPlannerModal() {
                           toast.error("Please select a product first");
                           return;
                         }
-                        setStep(2);
+                        setStep(3);
                       }}
                       disabled={!selectedProduct}
                       className="bg-[#e60023] text-white px-6 py-3 rounded-[16px] font-bold text-[16px] hover:bg-[#cc001f] disabled:bg-[#f6f6f3] disabled:text-[#91918c] transition-colors"
                     >
-                      Choose Colors
+                      Next
                     </button>
                   </div>
                 </motion.div>
               )}
 
               {/* ═══ STEP 2: Choose Balloon Colors ═══ */}
+              {/* 
               {step === 2 && selectedProduct && (
                 <motion.div
                   key="step2"
@@ -413,7 +483,6 @@ export default function AIPlannerModal() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-8"
                 >
-                  {/* Selected Product Preview */}
                   <div className="flex items-center gap-4 bg-[#f6f6f3] p-4 rounded-[16px]">
                     <img
                       src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0] || "/no-image.png"}
@@ -439,7 +508,6 @@ export default function AIPlannerModal() {
                     </button>
                   </div>
 
-                  {/* Color Picker */}
                   <div>
                     <h3 className="text-[22px] font-bold text-[#000000] tracking-tight mb-4">Color Palette</h3>
                     
@@ -467,7 +535,6 @@ export default function AIPlannerModal() {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex justify-between items-center pt-6 mt-4 border-t border-[#dadad3]">
                     <button
                       onClick={() => setStep(1)}
@@ -485,6 +552,7 @@ export default function AIPlannerModal() {
                   </div>
                 </motion.div>
               )}
+              */}
 
               {/* ═══ STEP 3: Customize ═══ */}
               {step === 3 && (
@@ -495,6 +563,33 @@ export default function AIPlannerModal() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-8"
                 >
+                  {selectedProduct && (
+                    <div className="flex items-center gap-4 bg-[#f6f6f3] p-4 rounded-[16px]">
+                      <img
+                        src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0] || "/no-image.png"}
+                        alt={selectedProduct.name}
+                        className="w-20 h-20 rounded-[16px] object-cover border border-[#dadad3]"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = selectedProduct.image?.[0] || "/no-image.png";
+                          if (target.src !== fallback) {
+                            target.src = fallback;
+                          }
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-bold text-[#62625b] uppercase">Selected Product</p>
+                        <p className="text-[18px] font-bold text-[#000000] truncate">{selectedProduct.name}</p>
+                      </div>
+                      <button
+                        onClick={() => { setSelectedProduct(null); setStep(1); }}
+                        className="bg-[#e5e5e0] hover:bg-[#c8c8c1] text-[#000000] px-4 py-2 rounded-[16px] font-bold text-[14px] transition-colors"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  )}
+
                   <div>
                     <h3 className="text-[22px] font-bold text-[#000000] tracking-tight mb-2">Add Custom Touches</h3>
                     <p className="text-[#62625b] text-[16px]">
@@ -523,7 +618,7 @@ export default function AIPlannerModal() {
                   {/* Action Buttons */}
                   <div className="flex justify-between items-center pt-6 mt-4 border-t border-[#dadad3]">
                     <button
-                      onClick={() => setStep(2)}
+                      onClick={() => setStep(1)}
                       className="bg-[#e5e5e0] hover:bg-[#c8c8c1] text-[#000000] px-6 py-3 rounded-[16px] font-bold text-[16px] transition-colors"
                     >
                       Back

@@ -14,9 +14,11 @@ import AddToCartButton from "@/components/common/cart/AddToCartButton";
 interface ProductCardProps {
   data: Product;
   id: any;
+  hidePrice?: boolean;
+  customButtonText?: string;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ data, id, hidePrice, customButtonText }) => {
   const [likedItems, setLikedItems] = useState<{ [key: string]: boolean }>({});
 
   // Resolve category IDs to names from Redux store
@@ -73,7 +75,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
   return (
     <Card
       key={id}
-      className="group flex flex-col cursor-pointer bg-white w-full max-w-sm mx-auto shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden relative"
+      className="group h-full flex flex-col cursor-pointer bg-white w-full max-w-sm mx-auto shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden relative"
     >
       <Link href={url} className="w-full relative">
         <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden">
@@ -130,27 +132,33 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
           </h3>
         </Link>
 
-        <div className="mt-auto">
+        <div className="mt-auto pt-3">
           {/* Price */}
-          <div className="flex items-center gap-2 mb-4">
-            {data.discount > 0 ? (
-              <>
-                <p className="text-gray-400 line-through text-sm">
-                  ₹{data.price}
-                </p>
-                <p className="text-gray-900 font-extrabold text-lg">
-                  {DisplayPriceInRupees(
-                    pricewithDiscount(data.price, data.discount)
-                  )}
-                </p>
-              </>
-            ) : (
-              <p className="text-gray-900 font-extrabold text-lg">₹{data.price}</p>
-            )}
-          </div>
+          {!hidePrice && (
+            <div className="flex items-center gap-2 mb-4">
+              {data.discount > 0 ? (
+                <>
+                  <p className="text-gray-400 line-through text-sm">
+                    ₹{data.price}
+                  </p>
+                  <p className="text-gray-900 font-extrabold text-lg">
+                    {DisplayPriceInRupees(
+                      pricewithDiscount(data.price, data.discount)
+                    )}
+                  </p>
+                </>
+              ) : (
+                <p className="text-gray-900 font-extrabold text-lg">₹{data.price}</p>
+              )}
+            </div>
+          )}
 
           <div className="w-full">
-            {data.stock == 0 ? (
+            {customButtonText ? (
+              <div className="w-full py-2.5 rounded-xl text-white font-semibold text-center shadow-md bg-(--cta-Bg)">
+                {customButtonText}
+              </div>
+            ) : data.stock == 0 ? (
               <div className="w-full py-2 bg-red-50 text-red-500 font-semibold text-center rounded-xl border border-red-100">
                 Out of Stock
               </div>

@@ -10,6 +10,7 @@ export interface IAIConcept extends Document {
   variationAUrl: string;
   variationBUrl: string;
   createdAt: Date;
+  userId?: string;
 }
 
 const AIConceptSchema = new Schema<IAIConcept>(
@@ -22,6 +23,7 @@ const AIConceptSchema = new Schema<IAIConcept>(
     promptUsed: { type: String, required: true },
     variationAUrl: { type: String, required: true },
     variationBUrl: { type: String, required: true },
+    userId: { type: String, required: false },
   },
   { timestamps: true }
 );

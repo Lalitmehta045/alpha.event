@@ -1,6 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import AIConceptModel from "@/lib/models/AIConcept.model";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { verifyUser } from "@/lib/verifyUser";
 
 // Allow up to 120 seconds for this route (for VPS/serverless platforms)
 export const maxDuration = 120;
@@ -17,22 +20,59 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const debugLog: string[] = [];
   try {
+    const session = await getServerSession(authOptions);
+    const verified = verifyUser(req);
+
+    const userId = session?.user?.email || (session?.user as any)?.id || verified?.userId || verified?.email;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "Please log in to use the AI Planner." },
+        { status: 401 }
+      );
+    }
+
+    await connectDB();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const usageCount = await AIConceptModel.countDocuments({
+      userId,
+      createdAt: { $gte: twentyFourHoursAgo }
+    });
+
+    if (usageCount >= 2) {
+      return NextResponse.json(
+        { success: false, message: "Daily limit reached. You can only generate 2 images per day. Please try again after 24 hours." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { eventType, venueType, guestCount, themeColors, budget, selectedProducts, balloonColors, mode, productName, productDescription, productImageUrl, userCustomPrompt } = body;
 
     // ── Balloon Recolor Mode (simplified flow) ──
-    if (mode === "balloon-recolor" && balloonColors && balloonColors.length > 0 && productName) {
+    if (mode === "balloon-recolor" && productName) {
       debugLog.push("MODE: balloon-recolor");
 
-      const colorList = balloonColors.join(", ");
-      const colorJoin = balloonColors.join(" and ");
+      const colorList = (balloonColors || []).join(", ");
+      const colorJoin = (balloonColors || []).join(" and ");
       const desc = productDescription ? ` Description: ${productDescription}.` : "";
       const hasApiKey = !!process.env.OPENAI_API_KEY;
 
-      const promptA = `Edit this balloon decoration image. Keep EVERYTHING exactly the same — the room, wall color, background, flooring, furniture, all props, butterfly decorations, arch backdrop structure and its ORIGINAL color, cylinder stand, and overall composition. ONLY recolor the BALLOONS to: ${colorList}. The arch panel, backdrop board, and all non-balloon elements must remain their original colors unchanged. Do not change any non-balloon elements. Every balloon must be ${colorJoin} colored.${userCustomPrompt ? ` Additionally, apply these custom changes to the image: ${userCustomPrompt}` : ""}`;
+      const promptA = balloonColors && balloonColors.length > 0
+        ? `Edit this balloon decoration image. Keep EVERYTHING exactly the same — the room, wall color, background, flooring, furniture, all props, balloon arrangement, structure and composition. ONLY recolor the BALLOONS to: ${colorList}. Every balloon must be ${colorJoin} colored.${userCustomPrompt ? ` Additionally: ${userCustomPrompt}` : ""}`
+        : `You are a precise image editor. Edit this decoration image by applying ONLY the following instruction: "${userCustomPrompt}". 
+
+Rules:
+- Read the instruction carefully and change ONLY what is explicitly mentioned
+- If instruction says "change balloon color to red" — change ONLY balloons, nothing else
+- If instruction says "change backdrop to green" — change ONLY the backdrop, nothing else  
+- If instruction says "change balloons to pink and backdrop to blue" — change only those two things
+- Every single element NOT mentioned in the instruction must remain 100% identical to the original — same color, same position, same texture
+- Do not make assumptions or apply changes beyond what is explicitly stated
+- Preserve photorealistic quality`;
 
       debugLog.push(`PROMPT_A: ${promptA.substring(0, 150)}...`);
 
@@ -53,6 +93,7 @@ export async function POST(req: Request) {
             formData.append("image", blob, "product.png");
             formData.append("prompt", prompt);
             formData.append("model", "gpt-image-1");
+            formData.append("quality", "medium");
             formData.append("n", "1");
             formData.append("size", "1024x1024");
 
@@ -108,6 +149,7 @@ export async function POST(req: Request) {
         promptUsed: promptA,
         variationAUrl,
         variationBUrl,
+        userId,
       });
 
       return NextResponse.json({
@@ -238,7 +280,7 @@ Make them highly descriptive and visual, focusing on lighting, ${eventType === "
                   prompt: prompt,
                   n: 1,
                   size: "1024x1024",
-                  quality: "auto",
+                  quality: "medium",
                 }),
               },
               120000 // 120 second timeout per image
@@ -296,6 +338,7 @@ Make them highly descriptive and visual, focusing on lighting, ${eventType === "
       promptUsed: promptA + " | " + promptB,
       variationAUrl,
       variationBUrl,
+      userId,
     });
 
     return NextResponse.json({
