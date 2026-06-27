@@ -33,45 +33,46 @@ export async function POST(req: Request) {
       const hasApiKey = !!process.env.OPENAI_API_KEY;
 
       let layoutDescription = "";
-      
-      // Step 1: Use Vision AI to analyze the original product layout
-      if (productImageUrl && hasApiKey) {
+
+      // Step 1: Use Vision AI to analyze the original product layout and write a perfect DALL-E prompt
+      if (productImageUrl && !!process.env.GEMINI_API_KEY) {
         try {
-          debugLog.push("Fetching layout description via gpt-4o-mini...");
-          const visionRes = await fetchWithTimeout(
-            "https://api.openai.com/v1/chat/completions",
+          debugLog.push("Fetching layout description via Gemini...");
+          // Fetch image and convert to base64
+          const imgRes = await fetchWithTimeout(productImageUrl, {}, 10000);
+          const arrayBuffer = await imgRes.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const base64Image = buffer.toString('base64');
+          const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+
+          const geminiPrompt = `You are an expert AI prompt engineer for DALL-E 3. Your task is to look at the provided event decoration image (Product Name: "${productName}") and write a highly detailed text-to-image prompt to recreate the exact same scene, BUT with the balloons changed to these exact colors: ${colorList}.
+
+CRITICAL INSTRUCTIONS for your prompt:
+1. Describe the background, room, furniture, props, lighting, and structural layout in extreme, photorealistic detail so the AI recreates the same exact environment.
+2. Clearly describe where the balloon arrangements (arches, garlands, bouquets) are placed.
+3. For the balloons, ONLY use these colors: ${colorJoin}. DO NOT mention the original colors of the balloons in the image.
+4. Ensure the prompt sounds like a DALL-E 3 prompt (e.g., "A photorealistic 4k image of...").
+5. Output ONLY the prompt text, without any introductory or concluding remarks.`;
+
+          const { GoogleGenerativeAI } = require("@google/generative-ai");
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+          const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+          const result = await model.generateContent([
+            geminiPrompt,
             {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-              },
-              body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [
-                  {
-                    role: "system",
-                    content: "You are an expert event decorator. Your job is to describe the exact physical layout, furniture, background, props, lighting, and arrangement of the provided decoration setup in extreme detail. Focus strictly on the structural layout. Do not focus on the color of the balloons, just mention where balloon arches, garlands, or bouquets are placed."
-                  },
-                  {
-                    role: "user",
-                    content: [
-                      { type: "text", text: "Describe the structural layout and props of this setup so it can be replicated exactly." },
-                      { type: "image_url", image_url: { url: productImageUrl } }
-                    ]
-                  }
-                ],
-                max_tokens: 250,
-              }),
-            },
-            30000
-          );
-          const visionData = await visionRes.json();
-          if (visionData.choices?.[0]?.message?.content) {
-            layoutDescription = visionData.choices[0].message.content;
-            debugLog.push("VISION_SUCCESS: Layout extracted");
+              inlineData: {
+                data: base64Image,
+                mimeType: mimeType
+              }
+            }
+          ]);
+
+          if (result.response.text()) {
+            layoutDescription = result.response.text().trim();
+            debugLog.push("VISION_SUCCESS: Layout extracted via Gemini");
           } else {
-            debugLog.push(`VISION_ERROR: ${JSON.stringify(visionData.error || visionData)}`);
+            debugLog.push(`VISION_ERROR: Gemini returned empty`);
           }
         } catch (err: any) {
           debugLog.push(`VISION_EXCEPTION: ${err?.message || err}`);
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
       // Step 2: Generate highly targeted DALL-E prompt
       let promptA = "";
       if (layoutDescription) {
-        promptA = `A photorealistic, highly detailed image of an event setup. RECREATE THIS EXACT LAYOUT: ${layoutDescription}. \n\nCRITICAL INSTRUCTION: You must keep the exact same background, furniture, and arrangement as described above. HOWEVER, every single balloon in the scene MUST be colored in these exact pastel colors: ${colorList}. The balloons must ONLY be ${colorJoin}. Use professional event photography style, 4k, realistic lighting.`;
+        promptA = layoutDescription;
       } else {
         promptA = `A stunning, photorealistic image of a premium balloon decoration arrangement called "${productName}".${desc} ALL balloons MUST be in these EXACT pastel colors: ${colorList}. The balloon colors should be ${colorJoin} — NO other colors allowed. Show a beautiful, professional event decoration setup. Realistic textures, elegant arrangement, soft ambient lighting, sharp 4K details.`;
       }

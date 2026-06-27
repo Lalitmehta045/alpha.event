@@ -112,7 +112,7 @@ const ProductsPage = () => {
   };
 
   return (
-    <div className="relative flex flex-col w-full mx-auto items-center font-sans bg-(--mainBg)">
+    <div className="relative flex flex-col w-full mx-auto items-center font-sans bg-(--mainBg) overflow-x-hidden">
       <LayoutV2>
         {/* Search Results Hero Banner */}
         {searchQuery && (
@@ -229,50 +229,63 @@ const ProductsPage = () => {
 
                 {/* Premium Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-12">
+                  <div className="flex justify-center items-center gap-1 sm:gap-2 mt-12">
                     <button
                       onClick={handlePrevPage}
                       disabled={currentPage === 1}
-                      className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                      className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-1 ${
                         currentPage === 1
                           ? "bg-gray-100 text-gray-300 cursor-not-allowed"
                           : "bg-white text-gray-700 shadow-md hover:shadow-lg border border-gray-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
                       }`}
+                      aria-label="Previous Page"
                     >
-                      ← Previous
+                      <span>←</span>
+                      <span className="hidden sm:inline">Previous</span>
                     </button>
 
-                    <div className="flex gap-1.5 mx-2">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                        (page) => (
-                          <button
-                            key={page}
-                            onClick={() => {
-                              setCurrentPage(page);
-                              window.scrollTo({ top: 0, behavior: "smooth" });
-                            }}
-                            className={`w-10 h-10 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center ${
-                              currentPage === page
-                                ? "bg-[#3a0103] text-white shadow-lg shadow-[#3a0103]/30 scale-110"
-                                : "bg-white text-gray-600 shadow-sm border border-gray-200 hover:bg-gray-50 hover:scale-105"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        )
-                      )}
+                    <div className="flex flex-wrap justify-center gap-1.5 mx-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          // Show first, last, current, and +/- 1 from current
+                          return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
+                        })
+                        .map((page, index, array) => {
+                          return (
+                            <React.Fragment key={page}>
+                              {index > 0 && array[index - 1] !== page - 1 && (
+                                <span className="flex items-center justify-center px-1 text-gray-500">...</span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setCurrentPage(page);
+                                  window.scrollTo({ top: 0, behavior: "smooth" });
+                                }}
+                                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center ${
+                                  currentPage === page
+                                    ? "bg-[#3a0103] text-white shadow-lg shadow-[#3a0103]/30 scale-110"
+                                    : "bg-white text-gray-600 shadow-sm border border-gray-200 hover:bg-gray-50 hover:scale-105"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
                     </div>
 
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages}
-                      className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                      className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-1 ${
                         currentPage === totalPages
                           ? "bg-gray-100 text-gray-300 cursor-not-allowed"
                           : "bg-white text-gray-700 shadow-md hover:shadow-lg border border-gray-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
                       }`}
+                      aria-label="Next Page"
                     >
-                      Next →
+                      <span className="hidden sm:inline">Next</span>
+                      <span>→</span>
                     </button>
                   </div>
                 )}

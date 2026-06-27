@@ -29,15 +29,35 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
     return map;
   }, [allCategory]);
 
-  // Resolve product categories to display names
-  const categoryNames = useMemo(() => {
-    if (!data.category || data.category.length === 0) return [];
-    return data.category
-      .map((cat) =>
-        typeof cat === "string" ? categoryMap.get(cat) : cat?.name
-      )
-      .filter(Boolean) as string[];
-  }, [data.category, categoryMap]);
+  const allSubCategory = useSelector(
+    (state: RootState) => state.product.allSubCategory
+  );
+  const subCategoryMap = useMemo(() => {
+    const map = new Map<string, string>();
+    allSubCategory?.forEach((sub) => map.set(sub._id, sub.name));
+    return map;
+  }, [allSubCategory]);
+
+  // Resolve product category to display name (showing subcategory for specific categories)
+  const displayTag = useMemo(() => {
+    if (!data.category || data.category.length === 0) return null;
+    
+    const cat = data.category[0] as any;
+    const catName = typeof cat === "string" ? categoryMap.get(cat) : cat?.name;
+
+    if (catName) {
+      const lowerCatName = catName.toLowerCase();
+      if (lowerCatName.includes("theme decor") || lowerCatName.includes("decoration")) {
+        if (data.subCategory && data.subCategory.length > 0) {
+          const subCat = data.subCategory[0] as any;
+          const subCatName = typeof subCat === "string" ? subCategoryMap.get(subCat) : subCat?.name;
+          if (subCatName) return subCatName;
+        }
+      }
+    }
+    
+    return catName || null;
+  }, [data.category, data.subCategory, categoryMap, subCategoryMap]);
 
   const toggleLike = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -65,12 +85,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
           )}
 
           {/* Category Tag — top left below discount or at top */}
-          {categoryNames.length > 0 && (
+          {displayTag && (
             <span
-              className="absolute z-10 left-0 bg-gradient-to-r from-[var(--cta-Bg)] to-[color-mix(in_srgb,var(--cta-Bg),#000_20%)] text-white text-[10px] font-bold uppercase tracking-widest pl-3 pr-4 py-1.5 rounded-r-full shadow-lg"
-              style={{ top: data.discount > 0 ? '2.75rem' : '0.75rem' }}
+              className="absolute z-10 left-0 bg-gradient-to-r from-[var(--cta-Bg)] to-[color-mix(in_srgb,var(--cta-Bg),#000_20%)] text-white text-[8px] sm:text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-r-full shadow-md"
+              style={{ top: data.discount > 0 ? '2.5rem' : '0.5rem' }}
             >
-              {categoryNames[0]}
+              {displayTag}
             </span>
           )}
 
@@ -79,7 +99,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
             alt={data.name}
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-contain bg-gray-50 transition-transform duration-700 group-hover:scale-105"
             onError={(e) => {
               const target = e.currentTarget;
               const fallback = data.image?.[0] || "/no-image.png";

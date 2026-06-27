@@ -111,13 +111,18 @@ const SearchBar = () => {
       <div className="flex items-center bg-white border border-gray-300/80 shadow-sm hover:shadow-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#9c6567] focus-within:shadow-md focus-within:hover:shadow-md transition-all duration-300">
         <div className="relative flex items-center h-full" ref={dropdownRef}>
           <button
+            type="button"
             className="flex items-center justify-center gap-1.5 px-3 h-10 sm:h-11 rounded-full bg-[#fcf4f4] text-[#9c6567] hover:bg-[#faeaea] hover:scale-105 transition-all duration-300 shrink-0"
-            onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsLocationDropdownOpen((prev) => !prev);
+            }}
             title="Select Delivery Location"
           >
-            <FaMapMarkerAlt className="text-base sm:text-lg" />
+            <FaMapMarkerAlt className="text-base sm:text-lg pointer-events-none shrink-0" />
             {selectedLocation && (
-              <span className="text-sm font-medium hidden sm:block max-w-[80px] truncate">
+              <span className="text-xs sm:text-sm font-medium max-w-[60px] sm:max-w-[80px] truncate pointer-events-none">
                 {selectedLocation}
               </span>
             )}
@@ -131,8 +136,11 @@ const SearchBar = () => {
               {["Indore", "Bhopal", "Ujjain", "Jabalpur"].map((city) => (
                 <button
                   key={city}
+                  type="button"
                   className="w-full text-left px-4 py-2 hover:bg-red-50 hover:text-red-600 text-gray-700 text-sm font-medium transition-colors"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setSelectedLocation(city);
                     setIsLocationDropdownOpen(false);
                   }}
