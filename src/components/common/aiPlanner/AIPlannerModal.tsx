@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, Sparkle, Check, RotateCcw, ChevronRight, ChevronLeft,
-  Palette, Crown, LayoutTemplate, Bot, X, Download, Eye
+  Sparkles, Check, RotateCcw, ChevronRight, ChevronLeft,
+  X, Download, Eye, Bot
 } from "lucide-react";
 import { IoLogoWhatsapp } from "react-icons/io";
 import { useRouter } from "next/navigation";
@@ -31,26 +31,27 @@ const BALLOON_COLORS = [
   { name: "Pastel Peach", hex: "#FDBA74", class: "bg-[#FDBA74]" },
   { name: "Pastel Mint", hex: "#6EE7B7", class: "bg-[#6EE7B7]" },
   { name: "Rose Gold", hex: "#E8B4B8", class: "bg-[#E8B4B8]" },
-  { name: "White", hex: "#FFFFFF", class: "bg-white border border-gray-300" },
-  { name: "Gold", hex: "#F5D08A", class: "bg-gradient-to-r from-[#F5D08A] to-[#E8C36A]" },
-  { name: "Silver", hex: "#C0C0C0", class: "bg-gradient-to-r from-[#D4D4D8] to-[#A1A1AA]" },
+  { name: "White", hex: "#FFFFFF", class: "bg-[#ffffff] border border-[#dadad3]" },
+  { name: "Gold", hex: "#F5D08A", class: "bg-[#F5D08A]" },
+  { name: "Silver", hex: "#C0C0C0", class: "bg-[#D4D4D8]" },
 ];
 
 const LoadingStates = [
-  { text: "Analyzing Your Selection...", icon: Sparkles },
-  { text: "Preparing Balloon Design...", icon: LayoutTemplate },
-  { text: "Applying Your Colors...", icon: Palette },
-  { text: "Generating HD Concept...", icon: Crown },
+  { text: "Analyzing Your Selection..." },
+  { text: "Preparing Balloon Design..." },
+  { text: "Applying Your Colors..." },
+  { text: "Generating Concept..." },
 ];
 
 export default function AIPlannerModal() {
   const [isOpen, setIsOpen] = useState(false);
-  // Steps: 1 = Select Product, 2 = Choose Colors, 3 = Loading, 4 = Result
+  // Steps: 1 = Select Product, 2 = Choose Colors, 3 = Customize, 4 = Loading, 5 = Result
   const [step, setStep] = useState(1);
 
   // State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [userCustomPrompt, setUserCustomPrompt] = useState("");
   const [generatedData, setGeneratedData] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
@@ -114,7 +115,7 @@ export default function AIPlannerModal() {
   const handleGenerate = async () => {
     if (!selectedProduct || selectedColors.length === 0) return;
 
-    setStep(3);
+    setStep(4);
     setIsGenerating(true);
 
     try {
@@ -127,6 +128,7 @@ export default function AIPlannerModal() {
           productDescription: selectedProduct.description || "",
           productImageUrl: selectedProduct.image?.[0] || "",
           balloonColors: selectedColors,
+          userCustomPrompt,
           // Required fields for existing API compat
           eventType: "Balloon Decoration",
           venueType: "Event Venue",
@@ -144,11 +146,11 @@ export default function AIPlannerModal() {
         imageUrl: result.data.variationAUrl || result.data.imageUrl,
       });
       setIsGenerating(false);
-      setStep(4);
+      setStep(5);
     } catch (error: any) {
       toast.error(error.message || "Failed to generate image");
       setIsGenerating(false);
-      setStep(2);
+      setStep(3);
     }
   };
 
@@ -177,6 +179,7 @@ export default function AIPlannerModal() {
     setStep(1);
     setSelectedProduct(null);
     setSelectedColors([]);
+    setUserCustomPrompt("");
     setGeneratedData(null);
   };
 
@@ -262,55 +265,41 @@ export default function AIPlannerModal() {
 
       {/* ═══════════════ Modal ═══════════════ */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 bg-white/95 backdrop-blur-xl border border-slate-200/50 shadow-2xl">
+        <DialogContent 
+          overlayClassName="bg-black/50 backdrop-blur-sm" 
+          className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto rounded-[32px] p-0 bg-[#ffffff] border-none shadow-[0_16px_32px_rgba(0,0,0,0.2)]"
+        >
           {/* ── Header ── */}
-          <div className="bg-gradient-to-r from-[#2A0001] via-[#4A0404] to-[#2A0001] p-5 md:p-6 text-white sticky top-0 z-20 shadow-lg">
-            <div className="flex justify-between items-center">
+          <div className="bg-[#ffffff] p-6 md:p-8 sticky top-0 z-20 border-b border-[#dadad3]">
+            <div className="flex justify-between items-start">
               <div>
-                <DialogTitle className="text-xl md:text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 flex items-center gap-2">
-                  <Sparkle className="w-5 h-5 md:w-6 md:h-6 text-amber-400" />
-                  Balloon Color Studio
+                <DialogTitle className="text-2xl md:text-[28px] font-bold text-[#000000] tracking-[-1.2px] leading-[1.2]">
+                  AI Design Studio
                 </DialogTitle>
-                <DialogDescription className="text-amber-100/70 text-xs mt-1 font-medium">
-                  Select a product, choose your colors — AI will visualize it for you.
+                <DialogDescription className="text-[#62625b] text-[16px] mt-1 font-normal">
+                  Select a product, choose your colors, and let AI visualize it.
                 </DialogDescription>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-9 h-9 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+                className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center bg-[#f6f6f3] hover:bg-[#e5e5e0] transition-colors"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-5 h-5 text-[#000000]" />
               </button>
             </div>
-
-            {/* Step Indicator (2 steps visible) */}
-            {step <= 2 && (
-              <div className="mt-5 flex items-center gap-3">
-                {[1, 2].map((s) => (
-                  <div key={s} className="flex-1 flex items-center gap-2">
-                    <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 transition-all ${
-                        step > s
-                          ? "bg-amber-400 text-[#2A0001]"
-                          : step === s
-                          ? "bg-white text-[#4A0404] shadow-lg"
-                          : "bg-white/15 text-white/50"
-                      }`}
-                    >
-                      {step > s ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : s}
-                    </div>
-                    <span className={`text-xs font-bold hidden sm:block ${step >= s ? "text-amber-200" : "text-white/30"}`}>
-                      {s === 1 ? "Select Product" : "Choose Colors"}
-                    </span>
-                    {s < 2 && <div className={`flex-1 h-0.5 rounded-full ${step > 1 ? "bg-amber-400" : "bg-white/10"}`} />}
-                  </div>
-                ))}
-              </div>
+            
+            {/* Step Indicator */}
+            {step <= 3 && (
+               <div className="mt-6 flex items-center gap-2">
+                 {[1, 2, 3].map(s => (
+                   <div key={s} className={`h-2 flex-1 rounded-full transition-colors ${step >= s ? 'bg-[#e60023]' : 'bg-[#e5e5e0]'}`} />
+                 ))}
+               </div>
             )}
           </div>
 
           {/* ── Content ── */}
-          <div className="p-5 md:p-8">
+          <div className="p-6 md:p-8 bg-[#ffffff]">
             <AnimatePresence mode="wait">
 
               {/* ═══ STEP 1: Select Your Balloon Product ═══ */}
@@ -320,96 +309,85 @@ export default function AIPlannerModal() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-5"
+                  className="space-y-6"
                 >
                   <div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-1 flex items-center gap-2">
-                      <Sparkle className="w-5 h-5 text-amber-600" />
-                      Select Your Balloon Product
-                    </h3>
-                    <p className="text-slate-500 text-sm font-medium">
-                      Choose 1 balloon product — AI will generate it in your chosen colors.
-                    </p>
+                    <h3 className="text-[22px] font-bold text-[#000000] tracking-tight mb-4">Select a Base Product</h3>
                   </div>
 
                   {balloonProducts.length > 0 ? (
                     <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {balloonProducts
                           .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
                           .map((product) => {
                             const isSelected = selectedProduct?._id === product._id;
                             return (
-                              <motion.div
+                              <div
                                 key={product._id}
-                                whileHover={{ y: -4 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                className={`relative cursor-pointer rounded-2xl transition-all duration-300 ${
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedProduct(null);
+                                  } else {
+                                    setSelectedProduct(product);
+                                    setTimeout(() => setStep(2), 150);
+                                  }
+                                }}
+                                className={`relative cursor-pointer rounded-[16px] transition-all bg-[#f6f6f3] ${
                                   isSelected
-                                    ? "ring-[3px] ring-amber-500 shadow-xl shadow-amber-500/15 scale-[1.02]"
-                                    : "hover:shadow-lg"
+                                    ? "ring-2 ring-[#e60023] ring-offset-2 ring-offset-white"
+                                    : "hover:bg-[#e5e5e0]"
                                 }`}
-                                onClick={() => setSelectedProduct(isSelected ? null : product)}
                               >
-                                <div className="pointer-events-none">
+                                <div className="pointer-events-none rounded-[16px] overflow-hidden">
                                   <ProductCard data={product} id={product._id} />
                                 </div>
-                                {/* Selection Badge */}
                                 {isSelected && (
-                                  <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="absolute top-3 left-3 bg-amber-500 text-white p-1.5 rounded-full z-20 shadow-lg shadow-amber-500/30"
-                                  >
+                                  <div className="absolute top-3 left-3 bg-[#e60023] text-white p-1.5 rounded-full shadow-sm">
                                     <Check className="w-4 h-4 stroke-[3px]" />
-                                  </motion.div>
+                                  </div>
                                 )}
-                                <div className="absolute inset-0 z-10 bg-transparent rounded-2xl" />
-                              </motion.div>
+                              </div>
                             );
                           })}
                       </div>
 
                       {/* Pagination Controls */}
                       {Math.ceil(balloonProducts.length / ITEMS_PER_PAGE) > 1 && (
-                        <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t border-slate-100">
-                          <Button
-                            variant="outline"
+                        <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t border-[#dadad3]">
+                          <button
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                            className="rounded-full w-10 h-10 p-0 border-slate-200"
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#f6f6f3] hover:bg-[#e5e5e0] disabled:opacity-50 text-[#000000] transition-colors"
                           >
-                            <ChevronLeft className="w-5 h-5 text-slate-600" />
-                          </Button>
-                          <span className="text-slate-600 font-bold text-sm">
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                          <span className="text-[#000000] font-bold text-[14px]">
                             Page {currentPage} of {Math.ceil(balloonProducts.length / ITEMS_PER_PAGE)}
                           </span>
-                          <Button
-                            variant="outline"
+                          <button
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(balloonProducts.length / ITEMS_PER_PAGE)))}
                             disabled={currentPage === Math.ceil(balloonProducts.length / ITEMS_PER_PAGE)}
-                            className="rounded-full w-10 h-10 p-0 border-slate-200"
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#f6f6f3] hover:bg-[#e5e5e0] disabled:opacity-50 text-[#000000] transition-colors"
                           >
-                            <ChevronRight className="w-5 h-5 text-slate-600" />
-                          </Button>
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
                         </div>
                       )}
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                        <Sparkle className="w-8 h-8 text-slate-300" />
+                      <div className="w-16 h-16 bg-[#f6f6f3] rounded-full flex items-center justify-center mb-4">
+                        <Sparkles className="w-8 h-8 text-[#91918c]" />
                       </div>
-                      <p className="text-slate-600 font-bold text-lg mb-1">No Balloon Products Found</p>
-                      <p className="text-slate-400 text-sm max-w-sm">
-                        Try exploring other categories.
-                      </p>
+                      <p className="text-[#000000] font-bold text-[18px] mb-1">No Balloon Products Found</p>
+                      <p className="text-[#62625b] text-[14px]">Try exploring other categories.</p>
                     </div>
                   )}
 
                   {/* Next Button */}
-                  <div className="flex justify-end pt-2">
-                    <Button
+                  <div className="flex justify-end pt-4">
+                    <button
                       onClick={() => {
                         if (!selectedProduct) {
                           toast.error("Please select a product first");
@@ -418,10 +396,10 @@ export default function AIPlannerModal() {
                         setStep(2);
                       }}
                       disabled={!selectedProduct}
-                      className="bg-[#4A0404] text-white hover:bg-[#2A0001] px-8 py-6 rounded-xl text-md font-bold shadow-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="bg-[#e60023] text-white px-6 py-3 rounded-[16px] font-bold text-[16px] hover:bg-[#cc001f] disabled:bg-[#f6f6f3] disabled:text-[#91918c] transition-colors"
                     >
-                      Choose Colors <ChevronRight className="w-5 h-5 ml-2" />
-                    </Button>
+                      Choose Colors
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -433,14 +411,14 @@ export default function AIPlannerModal() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
+                  className="space-y-8"
                 >
                   {/* Selected Product Preview */}
-                  <div className="flex items-center gap-4 bg-gradient-to-r from-slate-50 to-white p-4 rounded-2xl border border-slate-100">
+                  <div className="flex items-center gap-4 bg-[#f6f6f3] p-4 rounded-[16px]">
                     <img
                       src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0] || "/no-image.png"}
                       alt={selectedProduct.name}
-                      className="w-20 h-20 rounded-xl object-cover shadow-md border border-white"
+                      className="w-20 h-20 rounded-[16px] object-cover border border-[#dadad3]"
                       onError={(e) => {
                         const target = e.currentTarget;
                         const fallback = selectedProduct.image?.[0] || "/no-image.png";
@@ -450,263 +428,211 @@ export default function AIPlannerModal() {
                       }}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-0.5">Selected Product</p>
-                      <p className="text-lg font-black text-slate-800 truncate">{selectedProduct.name}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">AI will generate this design with your chosen colors</p>
+                      <p className="text-[12px] font-bold text-[#62625b] uppercase">Selected Product</p>
+                      <p className="text-[18px] font-bold text-[#000000] truncate">{selectedProduct.name}</p>
                     </div>
                     <button
                       onClick={() => { setSelectedProduct(null); setStep(1); }}
-                      className="text-slate-400 hover:text-slate-600 text-xs font-bold shrink-0"
+                      className="bg-[#e5e5e0] hover:bg-[#c8c8c1] text-[#000000] px-4 py-2 rounded-[16px] font-bold text-[14px] transition-colors"
                     >
                       Change
                     </button>
                   </div>
 
                   {/* Color Picker */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
-                        <Palette className="w-5 h-5 text-amber-600" />
-                        Choose Balloon Colors
-                      </h3>
-                      <p className="text-slate-500 text-sm">Pick the colors you want for the balloons (select 1 to 5)</p>
-                    </div>
-
+                  <div>
+                    <h3 className="text-[22px] font-bold text-[#000000] tracking-tight mb-4">Color Palette</h3>
+                    
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {BALLOON_COLORS.map((color) => {
                         const isSelected = selectedColors.includes(color.name);
                         return (
-                          <motion.button
+                          <button
                             key={color.name}
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
                             onClick={() => handleColorToggle(color.name)}
-                            className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all duration-200 ${
+                            className={`flex items-center gap-3 p-3 rounded-[16px] border transition-colors text-left ${
                               isSelected
-                                ? "border-amber-500 bg-amber-50 shadow-md shadow-amber-500/10"
-                                : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm"
+                                ? "border-[#e60023] bg-[#fff0f2]"
+                                : "border-[#dadad3] hover:bg-[#f6f6f3] bg-[#ffffff]"
                             }`}
                           >
-                            <div
-                              className={`w-8 h-8 rounded-full shadow-inner shrink-0 ${color.class} ${
-                                isSelected ? "ring-2 ring-amber-400 ring-offset-2" : ""
-                              }`}
-                            />
-                            <div className="text-left min-w-0">
-                              <span className={`text-sm font-bold block truncate ${isSelected ? "text-amber-700" : "text-slate-700"}`}>
-                                {color.name}
-                              </span>
-                            </div>
+                            <div className={`w-8 h-8 rounded-full border border-[#dadad3] shrink-0 ${color.class}`} />
+                            <span className="font-bold text-[14px] text-[#000000] flex-1 truncate">{color.name}</span>
                             {isSelected && (
-                              <Check className="w-4 h-4 text-amber-500 ml-auto shrink-0 stroke-[3px]" />
+                              <Check className="w-5 h-5 text-[#e60023] shrink-0" />
                             )}
-                          </motion.button>
+                          </button>
                         );
                       })}
                     </div>
-
-                    {/* Selected Colors Preview */}
-                    {selectedColors.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-gradient-to-r from-amber-50/80 to-orange-50/50 p-4 rounded-2xl border border-amber-200/40"
-                      >
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Your Palette:</span>
-                          <div className="flex -space-x-1.5">
-                            {selectedColors.map((cn) => {
-                              const col = BALLOON_COLORS.find((c) => c.name === cn);
-                              return (
-                                <div
-                                  key={cn}
-                                  className={`w-7 h-7 rounded-full border-2 border-white shadow-sm ${col?.class}`}
-                                  title={cn}
-                                />
-                              );
-                            })}
-                          </div>
-                          <span className="text-xs text-amber-600 font-medium">
-                            {selectedColors.join(" · ")}
-                          </span>
-                        </div>
-                      </motion.div>
-                    )}
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex justify-between pt-2">
-                    <Button
+                  <div className="flex justify-between items-center pt-6 mt-4 border-t border-[#dadad3]">
+                    <button
                       onClick={() => setStep(1)}
-                      variant="outline"
-                      className="px-6 py-6 rounded-xl text-md font-bold"
+                      className="bg-[#e5e5e0] hover:bg-[#c8c8c1] text-[#000000] px-6 py-3 rounded-[16px] font-bold text-[16px] transition-colors"
                     >
-                      <ChevronLeft className="w-5 h-5 mr-2" /> Back
-                    </Button>
-                    <Button
-                      onClick={handleGenerate}
+                      Back
+                    </button>
+                    <button
+                      onClick={() => setStep(3)}
                       disabled={selectedColors.length === 0}
-                      className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white hover:opacity-90 px-8 py-6 rounded-xl text-md font-bold shadow-xl shadow-amber-500/20 group disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="bg-[#e60023] text-white px-6 py-3 rounded-[16px] font-bold text-[16px] hover:bg-[#cc001f] disabled:bg-[#f6f6f3] disabled:text-[#91918c] transition-colors"
                     >
-                      <Sparkles className="w-5 h-5 mr-2 group-hover:animate-spin" />
-                      Generate AI Image
-                      <ChevronRight className="w-5 h-5 ml-2" />
-                    </Button>
+                      Customize
+                    </button>
                   </div>
                 </motion.div>
               )}
 
-              {/* ═══ STEP 3: Loading ═══ */}
+              {/* ═══ STEP 3: Customize ═══ */}
               {step === 3 && (
                 <motion.div
                   key="step3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="py-16 md:py-24 flex flex-col items-center justify-center text-center space-y-10 relative overflow-hidden rounded-3xl bg-slate-950"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-8"
                 >
-                  {/* Digital Grid Background */}
-                  <div
-                    className="absolute inset-0 z-0 opacity-20 pointer-events-none"
-                    style={{
-                      backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)",
-                      backgroundSize: "20px 20px"
-                    }}
-                  />
-
-                  {/* Scanning Animation */}
-                  <div className="relative z-10 w-48 h-48 md:w-64 md:h-64 border border-amber-500/30 rounded-2xl overflow-hidden bg-slate-900/50 shadow-[0_0_50px_rgba(245,158,11,0.15)] flex items-center justify-center">
-                    {selectedProduct?.thumbnails?.[0] || selectedProduct?.image?.[0] ? (
-                      <img 
-                        src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0]} 
-                        alt="Processing" 
-                        className="w-full h-full object-cover opacity-30 grayscale blur-sm" 
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          const fallback = selectedProduct.image?.[0] || "/no-image.png";
-                          if (target.src !== fallback) {
-                            target.src = fallback;
-                          }
-                        }}
-                      />
-                    ) : (
-                      <Sparkles className="w-16 h-16 text-slate-700" />
-                    )}
-
-                    {/* Scanning Laser Line */}
-                    <motion.div
-                      animate={{ y: ["-100%", "200%"] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      className="absolute left-0 right-0 h-1 bg-amber-400 shadow-[0_0_15px_#fbbf24] z-20"
-                    />
-
-                    {/* Color Overlay Hint */}
-                    <motion.div
-                      animate={{ opacity: [0, 0.4, 0] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute inset-0 z-10"
-                      style={{
-                        background: `linear-gradient(45deg, ${BALLOON_COLORS.find(c => c.name === selectedColors[0])?.hex || '#F5D08A'} 0%, transparent 100%)`
-                      }}
-                    />
+                  <div>
+                    <h3 className="text-[22px] font-bold text-[#000000] tracking-tight mb-2">Add Custom Touches</h3>
+                    <p className="text-[#62625b] text-[16px]">
+                      Describe any extra elements like confetti, backdrops, or lighting. (Optional)
+                    </p>
                   </div>
 
-                  <div className="space-y-3 h-20 relative z-10">
-                    <motion.h3
-                      key={loadingTextIndex}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-xl md:text-2xl font-black text-amber-400 tracking-wide"
+                  <div className="relative">
+                    <textarea
+                      value={userCustomPrompt}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 200) {
+                          setUserCustomPrompt(e.target.value);
+                        }
+                      }}
+                      placeholder="e.g. change backdrop to red, add gold confetti..."
+                      className="w-full h-32 bg-[#ffffff] border border-[#dadad3] rounded-[16px] p-4 focus:ring-2 focus:ring-[#435ee5] focus:border-transparent focus:outline-none text-[16px] text-[#000000] transition-shadow resize-none"
+                    />
+                    <div className="absolute bottom-4 right-4 bg-[#f6f6f3] px-2 py-1 rounded-[8px] border border-[#dadad3]">
+                      <span className={`text-[12px] font-medium ${userCustomPrompt.length >= 200 ? 'text-[#9e0a0a]' : 'text-[#62625b]'}`}>
+                        {200 - userCustomPrompt.length} chars
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-between items-center pt-6 mt-4 border-t border-[#dadad3]">
+                    <button
+                      onClick={() => setStep(2)}
+                      className="bg-[#e5e5e0] hover:bg-[#c8c8c1] text-[#000000] px-6 py-3 rounded-[16px] font-bold text-[16px] transition-colors"
                     >
-                      {LoadingStates[loadingTextIndex].text}
-                    </motion.h3>
-                    <p className="text-slate-400 font-medium text-sm md:text-base animate-pulse">
-                      Synthesizing AI vision in high resolution...
-                    </p>
+                      Back
+                    </button>
+                    <button
+                      onClick={handleGenerate}
+                      className="bg-[#e60023] text-white px-6 py-3 rounded-[16px] font-bold text-[16px] hover:bg-[#cc001f] flex items-center gap-2 transition-colors"
+                    >
+                      <Sparkles className="w-5 h-5 fill-current" /> 
+                      Generate Concept
+                    </button>
                   </div>
                 </motion.div>
               )}
 
-              {/* ═══ STEP 4: Result ═══ */}
-              {step === 4 && generatedData && (
+              {/* ═══ STEP 4: Loading ═══ */}
+              {step === 4 && (
                 <motion.div
                   key="step4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="py-24 flex flex-col items-center justify-center text-center space-y-6"
+                >
+                  <div className="relative w-16 h-16 flex items-center justify-center mb-4">
+                     <div className="absolute inset-0 rounded-full border-4 border-[#e5e5e0]" />
+                     <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#e60023] animate-spin" />
+                  </div>
+
+                  <h3 className="text-[22px] md:text-[28px] font-bold text-[#000000] tracking-tight">
+                    {LoadingStates[loadingTextIndex].text}
+                  </h3>
+                  <p className="text-[#62625b] text-[16px]">
+                    Synthesizing AI vision in 4K resolution...
+                  </p>
+                </motion.div>
+              )}
+
+              {/* ═══ STEP 5: Result ═══ */}
+              {step === 5 && generatedData && (
+                <motion.div
+                  key="step5"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="space-y-6"
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
                 >
                   {/* Generated Image */}
-                  <div className="relative h-72 md:h-[450px] rounded-3xl overflow-hidden shadow-2xl group border-4 border-white">
+                  <div className="relative rounded-[32px] overflow-hidden bg-[#f6f6f3] border border-[#dadad3] cursor-zoom-in" onClick={() => setIsLightboxOpen(true)}>
                     <img
                       src={generatedData.imageUrl}
                       alt="Generated Balloon Concept"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="w-full h-auto max-h-[500px] object-contain mx-auto"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
-
-                    {/* Color Palette Used */}
-                    <div className="absolute top-5 right-5 flex -space-x-1.5 z-10">
-                      {selectedColors.map((cn) => {
-                        const col = BALLOON_COLORS.find((c) => c.name === cn);
-                        return (
-                          <div
-                            key={cn}
-                            className={`w-7 h-7 rounded-full border-2 border-white shadow-md ${col?.class}`}
-                            title={cn}
-                          />
-                        );
-                      })}
-                    </div>
-
-                    {/* Bottom Info */}
-                    <div className="absolute bottom-0 left-0 p-5 md:p-8 text-white w-full">
-                      <h2 className="text-2xl md:text-3xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 drop-shadow-md">
-                        {selectedProduct?.name}
-                      </h2>
-                      <p className="text-white/80 text-sm mb-6 font-medium">
-                        Custom Palette: {selectedColors.join(", ")}
-                      </p>
-
-                      <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-                        <Button
-                          onClick={() => {
-                            const origin = window.location.origin;
-                            const baseUrl = origin.includes("localhost") ? "https://alphaartandevents.com" : origin;
-                            const fullImgUrl = `${baseUrl}/api/concept-image/${generatedData._id}?opt=A`;
-
-                            const msg = `Hello Alpha Events! 🎈\n\nI just used your AI Balloon Color Studio and I love this concept!\n\n*Product:* ${selectedProduct?.name}\n*Balloon Colors:* ${selectedColors.join(", ")}\n*Concept ID:* ${generatedData._id}\n\n*Concept Image:* ${fullImgUrl}\n\nPlease let me know the availability and pricing!`;
-
-                            window.location.href = `https://wa.me/917389288488?text=${encodeURIComponent(msg)}`;
-                          }}
-                          className="w-full sm:w-1/2 bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-6 rounded-2xl text-md md:text-lg font-black shadow-[0_0_30px_rgba(37,211,102,0.4)] hover:shadow-[0_0_40px_rgba(37,211,102,0.6)] transition-all flex items-center justify-center gap-2 group"
-                        >
-                          <IoLogoWhatsapp className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                          Enquire
-                        </Button>
-                        
-                        <div className="flex w-full sm:w-1/2 gap-2">
-                          <Button
-                            onClick={() => setIsLightboxOpen(true)}
-                            className="w-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/20 py-6 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2"
-                          >
-                            <Eye className="w-5 h-5" /> View
-                          </Button>
-                          
-                          <Button
-                            onClick={() => handleDownload(generatedData.imageUrl)}
-                            className="w-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/20 py-6 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2"
-                          >
-                            <Download className="w-5 h-5" /> Save
-                          </Button>
-                        </div>
-                      </div>
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 border border-[#dadad3]">
+                      <Sparkles className="w-3.5 h-3.5 text-[#e60023] fill-current" />
+                      <span className="text-[12px] font-bold text-[#000000]">AI Concept</span>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex justify-center pt-2">
-                    <Button onClick={resetForm} variant="ghost" className="text-slate-500 hover:text-slate-800 font-bold">
-                      <RotateCcw className="w-4 h-4 mr-2" /> Try Another Product
-                    </Button>
+                  {/* Actions & Info */}
+                  <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                    <div>
+                      <h2 className="text-[28px] font-bold text-[#000000] tracking-[-1.2px]">{selectedProduct?.name}</h2>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className="text-[#62625b] text-[14px] font-medium">Palette:</span>
+                        <div className="flex gap-1.5">
+                          {selectedColors.map((cn) => {
+                            const col = BALLOON_COLORS.find((c) => c.name === cn);
+                            return (
+                              <div
+                                key={cn}
+                                className={`w-5 h-5 rounded-full border border-[#dadad3] ${col?.class}`}
+                                title={cn}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full md:w-auto">
+                      <button
+                        onClick={() => {
+                          const origin = window.location.origin;
+                          const baseUrl = origin.includes("localhost") ? "https://alphaartandevents.com" : origin;
+                          const fullImgUrl = `${baseUrl}/api/concept-image/${generatedData._id}?opt=A`;
+                          const msg = `Hello Alpha Events! 🎈\n\nI just used your AI Balloon Color Studio and I love this concept!\n\n*Product:* ${selectedProduct?.name}\n*Balloon Colors:* ${selectedColors.join(", ")}\n*Concept ID:* ${generatedData._id}\n\n*Concept Image:* ${fullImgUrl}\n\nPlease let me know the availability and pricing!`;
+                          window.location.href = `https://wa.me/917389288488?text=${encodeURIComponent(msg)}`;
+                        }}
+                        className="bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-3 rounded-[16px] font-bold text-[16px] transition-colors flex items-center justify-center gap-2 flex-1 md:flex-none"
+                      >
+                        <IoLogoWhatsapp className="w-5 h-5" /> Enquire Now
+                      </button>
+                      <button
+                        onClick={() => handleDownload(generatedData.imageUrl)}
+                        className="bg-[#e5e5e0] hover:bg-[#c8c8c1] text-[#000000] px-6 py-3 rounded-[16px] font-bold text-[16px] transition-colors flex items-center justify-center gap-2 flex-1 md:flex-none"
+                      >
+                        <Download className="w-5 h-5" /> Save
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center pt-6 border-t border-[#dadad3]">
+                    <button 
+                      onClick={resetForm} 
+                      className="text-[#000000] font-bold text-[16px] flex items-center gap-2 hover:bg-[#f6f6f3] px-4 py-2 rounded-[16px] transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" /> Design Another Concept
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -725,11 +651,11 @@ export default function AIPlannerModal() {
                 <img
                   src={generatedData.imageUrl}
                   alt="Generated Concept Fullscreen"
-                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                  className="max-w-full max-h-full object-contain rounded-[16px] shadow-[0_16px_64px_rgba(0,0,0,0.5)]"
                 />
                 <button
                   onClick={() => setIsLightboxOpen(false)}
-                  className="absolute top-0 right-0 md:-right-12 md:-top-5 w-10 h-10 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center transition-all text-white shadow-lg border border-white/30"
+                  className="absolute top-2 right-2 md:-right-12 md:-top-5 w-10 h-10 bg-[#ffffff] hover:bg-[#f6f6f3] rounded-full flex items-center justify-center transition-colors text-[#000000] shadow-md"
                 >
                   <X className="w-6 h-6" />
                 </button>

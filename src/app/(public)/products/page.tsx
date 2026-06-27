@@ -233,11 +233,10 @@ const ProductsPage = () => {
                     <button
                       onClick={handlePrevPage}
                       disabled={currentPage === 1}
-                      className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-1 ${
-                        currentPage === 1
+                      className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-1 ${currentPage === 1
                           ? "bg-gray-100 text-gray-300 cursor-not-allowed"
                           : "bg-white text-gray-700 shadow-md hover:shadow-lg border border-gray-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
-                      }`}
+                        }`}
                       aria-label="Previous Page"
                     >
                       <span>←</span>
@@ -261,11 +260,10 @@ const ProductsPage = () => {
                                   setCurrentPage(page);
                                   window.scrollTo({ top: 0, behavior: "smooth" });
                                 }}
-                                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center ${
-                                  currentPage === page
+                                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center ${currentPage === page
                                     ? "bg-[#3a0103] text-white shadow-lg shadow-[#3a0103]/30 scale-110"
                                     : "bg-white text-gray-600 shadow-sm border border-gray-200 hover:bg-gray-50 hover:scale-105"
-                                }`}
+                                  }`}
                               >
                                 {page}
                               </button>
@@ -277,11 +275,10 @@ const ProductsPage = () => {
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages}
-                      className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-1 ${
-                        currentPage === totalPages
+                      className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-1 ${currentPage === totalPages
                           ? "bg-gray-100 text-gray-300 cursor-not-allowed"
                           : "bg-white text-gray-700 shadow-md hover:shadow-lg border border-gray-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
-                      }`}
+                        }`}
                       aria-label="Next Page"
                     >
                       <span className="hidden sm:inline">Next</span>

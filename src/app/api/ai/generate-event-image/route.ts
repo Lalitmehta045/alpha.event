@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const debugLog: string[] = [];
   try {
     const body = await req.json();
-    const { eventType, venueType, guestCount, themeColors, budget, selectedProducts, balloonColors, mode, productName, productDescription, productImageUrl } = body;
+    const { eventType, venueType, guestCount, themeColors, budget, selectedProducts, balloonColors, mode, productName, productDescription, productImageUrl, userCustomPrompt } = body;
 
     // ── Balloon Recolor Mode (simplified flow) ──
     if (mode === "balloon-recolor" && balloonColors && balloonColors.length > 0 && productName) {
@@ -32,60 +32,7 @@ export async function POST(req: Request) {
       const desc = productDescription ? ` Description: ${productDescription}.` : "";
       const hasApiKey = !!process.env.OPENAI_API_KEY;
 
-      let layoutDescription = "";
-
-      // Step 1: Use Vision AI to analyze the original product layout and write a perfect DALL-E prompt
-      if (productImageUrl && !!process.env.GEMINI_API_KEY) {
-        try {
-          debugLog.push("Fetching layout description via Gemini...");
-          // Fetch image and convert to base64
-          const imgRes = await fetchWithTimeout(productImageUrl, {}, 10000);
-          const arrayBuffer = await imgRes.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          const base64Image = buffer.toString('base64');
-          const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
-
-          const geminiPrompt = `You are an expert AI prompt engineer for DALL-E 3. Your task is to look at the provided event decoration image (Product Name: "${productName}") and write a highly detailed text-to-image prompt to recreate the exact same scene, BUT with the balloons changed to these exact colors: ${colorList}.
-
-CRITICAL INSTRUCTIONS for your prompt:
-1. Describe the background, room, furniture, props, lighting, and structural layout in extreme, photorealistic detail so the AI recreates the same exact environment.
-2. Clearly describe where the balloon arrangements (arches, garlands, bouquets) are placed.
-3. For the balloons, ONLY use these colors: ${colorJoin}. DO NOT mention the original colors of the balloons in the image.
-4. Ensure the prompt sounds like a DALL-E 3 prompt (e.g., "A photorealistic 4k image of...").
-5. Output ONLY the prompt text, without any introductory or concluding remarks.`;
-
-          const { GoogleGenerativeAI } = require("@google/generative-ai");
-          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-          const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-          const result = await model.generateContent([
-            geminiPrompt,
-            {
-              inlineData: {
-                data: base64Image,
-                mimeType: mimeType
-              }
-            }
-          ]);
-
-          if (result.response.text()) {
-            layoutDescription = result.response.text().trim();
-            debugLog.push("VISION_SUCCESS: Layout extracted via Gemini");
-          } else {
-            debugLog.push(`VISION_ERROR: Gemini returned empty`);
-          }
-        } catch (err: any) {
-          debugLog.push(`VISION_EXCEPTION: ${err?.message || err}`);
-        }
-      }
-
-      // Step 2: Generate highly targeted DALL-E prompt
-      let promptA = "";
-      if (layoutDescription) {
-        promptA = layoutDescription;
-      } else {
-        promptA = `A stunning, photorealistic image of a premium balloon decoration arrangement called "${productName}".${desc} ALL balloons MUST be in these EXACT pastel colors: ${colorList}. The balloon colors should be ${colorJoin} — NO other colors allowed. Show a beautiful, professional event decoration setup. Realistic textures, elegant arrangement, soft ambient lighting, sharp 4K details.`;
-      }
+      const promptA = `Edit this balloon decoration image. Keep EVERYTHING exactly the same — the room, wall color, background, flooring, furniture, all props, butterfly decorations, arch backdrop structure and its ORIGINAL color, cylinder stand, and overall composition. ONLY recolor the BALLOONS to: ${colorList}. The arch panel, backdrop board, and all non-balloon elements must remain their original colors unchanged. Do not change any non-balloon elements. Every balloon must be ${colorJoin} colored.${userCustomPrompt ? ` Additionally, apply these custom changes to the image: ${userCustomPrompt}` : ""}`;
 
       debugLog.push(`PROMPT_A: ${promptA.substring(0, 150)}...`);
 
@@ -93,24 +40,30 @@ CRITICAL INSTRUCTIONS for your prompt:
       let variationAUrl = "";
       let variationBUrl = "";
 
-      if (hasApiKey) {
+      if (hasApiKey && productImageUrl) {
         const generateImage = async (prompt: string, label: string) => {
           try {
+            const imgRes = await fetchWithTimeout(productImageUrl, {}, 10000);
+            const arrayBuffer = await imgRes.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const mimeType = imgRes.headers.get('content-type') || 'image/png';
+            const blob = new Blob([buffer], { type: mimeType });
+
+            const formData = new FormData();
+            formData.append("image", blob, "product.png");
+            formData.append("prompt", prompt);
+            formData.append("model", "gpt-image-1");
+            formData.append("n", "1");
+            formData.append("size", "1024x1024");
+
             const res = await fetchWithTimeout(
-              "https://api.openai.com/v1/images/generations",
+              "https://api.openai.com/v1/images/edits",
               {
                 method: "POST",
                 headers: {
-                  "Content-Type": "application/json",
                   Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
                 },
-                body: JSON.stringify({
-                  model: "gpt-image-2",
-                  prompt: prompt,
-                  n: 1,
-                  size: "1024x1024",
-                  quality: "auto",
-                }),
+                body: formData as any,
               },
               120000
             );
@@ -131,6 +84,8 @@ CRITICAL INSTRUCTIONS for your prompt:
         // Only generate Prompt A to save time and API costs
         variationAUrl = await generateImage(promptA, "A");
         variationBUrl = variationAUrl; // Duplicate for schema safety
+      } else if (!productImageUrl) {
+        debugLog.push("IMAGE_A_ERROR: productImageUrl is missing, cannot use edit endpoint.");
       }
 
       // Fallback

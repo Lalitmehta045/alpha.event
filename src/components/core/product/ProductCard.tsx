@@ -41,7 +41,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
   // Resolve product category to display name (showing subcategory for specific categories)
   const displayTag = useMemo(() => {
     if (!data.category || data.category.length === 0) return null;
-    
+
     const cat = data.category[0] as any;
     const catName = typeof cat === "string" ? categoryMap.get(cat) : cat?.name;
 
@@ -55,7 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id }) => {
         }
       }
     }
-    
+
     return catName || null;
   }, [data.category, data.subCategory, categoryMap, subCategoryMap]);
 
