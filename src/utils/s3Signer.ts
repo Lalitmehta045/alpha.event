@@ -16,13 +16,26 @@ const CACHE_DURATION = 50 * 60 * 1000; // 50 minutes (URLs expire in 1 hour)
 function extractS3Key(key: string): string {
   if (typeof key !== 'string') return key;
   const s3Domain = "alpha-arts.s3.eu-north-1.amazonaws.com";
+  let s3Key = key;
+
   if (key.includes(s3Domain)) {
     const parts = key.split(`${s3Domain}/`);
     if (parts.length > 1) {
-      return parts[1];
+      s3Key = parts[1];
     }
   }
-  return key;
+
+  // Clean up any accidentally saved query parameters (from presigned URLs)
+  try {
+    s3Key = decodeURIComponent(s3Key);
+  } catch (e) {
+    // ignore decode errors
+  }
+  if (s3Key.includes("?")) {
+    s3Key = s3Key.split("?")[0];
+  }
+
+  return s3Key;
 }
 
 export const getS3SignedUrl = async (key: string, expiresIn: number = 3600): Promise<string> => {

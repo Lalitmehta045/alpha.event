@@ -19,6 +19,7 @@ const MostPopularProd = () => {
   const dispatch = useDispatch();
 
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [likedItems, setLikedItems] = useState<LikedState>({});
 
@@ -32,9 +33,11 @@ const MostPopularProd = () => {
   const getPopularProduct = async () => {
     try {
       const res = await getMostPopularProduct(dispatch);
-      setPopularProducts(res);
+      setPopularProducts(res || []);
     } catch (error) {
       console.error("Error fetching popular products:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,12 +48,16 @@ const MostPopularProd = () => {
   const productNameShort = (name: string) =>
     name.length > 15 ? name.slice(0, 15) + "..." : name;
 
-  if (popularProducts.length === 0) {
+  if (loading) {
     return (
       <section className="w-full py-8 text-center text-gray-500">
         <p>Loading most popular products...</p>
       </section>
     );
+  }
+
+  if (popularProducts.length === 0) {
+    return null;
   }
 
   return (

@@ -114,37 +114,46 @@ export const RecentProductV2 = () => {
               viewport={{ once: true }}
             >
               <Card
-                className="group w-full h-68 sm:h-72 max-w-sm md:max-w-md lg:max-w-4xl mx-auto sm:mx-0 hover:shadow-xl transition-all duration-300 cursor-pointer"
+                className="group relative w-full h-80 sm:h-96 max-w-sm md:max-w-md lg:max-w-4xl mx-auto sm:mx-0 hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-0 rounded-2xl"
               >
-                <div className="relative w-full h-56 sm:h-64 md:h-60 lg:78 overflow-hidden">
-                  <Image
-                    src={recent.image}
-                    alt={recent.title || "Recent product"}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    unoptimized
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {recent.title || "Untitled"}
-                  </h3>
-                  {recent.description && (
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-600">
-                        {expanded.has(recent._id || recent.title || "unknown") ? recent.description : `${recent.description.substring(0, 100)}${recent.description.length > 100 ? '...' : ''}`}
-                      </p>
-                      {recent.description.length > 100 && (
-                        <button
-                          onClick={() => toggleExpanded(recent._id || recent.title || "unknown")}
-                          className="text-blue-500 text-sm mt-1 hover:underline"
-                        >
-                          {expanded.has(recent._id || recent.title || "unknown") ? 'Read Less' : 'Read More'}
-                        </button>
-                      )}
-                    </div>
-                  )}
+                <Image
+                  src={recent.image}
+                  alt={recent.title || "Recent product"}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  unoptimized
+                />
+                
+                {/* Gradient overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+
+                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 z-10 flex flex-col justify-end h-full pointer-events-none">
+                  <div className="pointer-events-auto">
+                    <h3 className="text-xl font-bold text-white mb-2 drop-shadow-md">
+                      {recent.title || "Untitled"}
+                    </h3>
+                    {recent.description && (
+                      <div className="mt-1">
+                        <p className="text-sm text-gray-200 drop-shadow">
+                          {expanded.has(recent._id || recent.title || "unknown") 
+                            ? recent.description 
+                            : `${recent.description.substring(0, 100)}${recent.description.length > 100 ? '...' : ''}`}
+                        </p>
+                        {recent.description.length > 100 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpanded(recent._id || recent.title || "unknown");
+                            }}
+                            className="text-indigo-400 font-medium text-sm mt-2 hover:text-indigo-300 hover:underline transition-colors"
+                          >
+                            {expanded.has(recent._id || recent.title || "unknown") ? 'Read Less' : 'Read More'}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card>
             </motion.div>

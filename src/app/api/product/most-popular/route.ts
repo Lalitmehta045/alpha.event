@@ -7,17 +7,13 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB();
 
-    // 2. Calculate the date exactly 7 days ago.
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    // 3. Query products created on or after the calculated date.
+    // 3. Query the latest 10 products to display as most popular/recent
     // We sort by 'createdAt' descending (-1) to show the newest items first.
     const popularProducts = await ProductModel.find({
       publish: true, // Only fetch published products (best practice)
-      createdAt: { $gte: sevenDaysAgo },
     })
-      .sort({ createdAt: 1 }) // Sort newest first
+      .sort({ createdAt: -1 }) // Sort newest first
+      .limit(10) // Limit to 10 products
       .lean();
 
     // ✅ Generate fresh signed URLs and thumbnails for all product images
