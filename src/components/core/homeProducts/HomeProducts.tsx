@@ -20,12 +20,22 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled;
 }
 
+let handledReload = false;
+
 // Check if this page load was triggered by a manual reload (F5 / Ctrl+R)
 function isManualReload(): boolean {
   if (typeof window === "undefined") return false;
   try {
+    if (handledReload) return false;
+
     const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-    return navEntries.length > 0 && navEntries[0].type === "reload";
+    const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+    
+    if (isReload) {
+      handledReload = true;
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
