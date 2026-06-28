@@ -129,14 +129,12 @@ Rules:
         debugLog.push("IMAGE_A_ERROR: productImageUrl is missing, cannot use edit endpoint.");
       }
 
-      // Fallback
+      // Return error if image generation failed
       if (!variationAUrl || !variationBUrl) {
-        const fallbacks = [
-          "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1024&q=80",
-          "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1024&q=80",
-        ];
-        variationAUrl = variationAUrl || fallbacks[0];
-        variationBUrl = variationBUrl || fallbacks[1];
+        return NextResponse.json(
+          { success: false, message: "We're experiencing high demand right now and couldn't generate the AI concept. Please try again in a few moments." },
+          { status: 503 }
+        );
       }
 
       await connectDB();
@@ -311,21 +309,14 @@ Make them highly descriptive and visual, focusing on lighting, ${eventType === "
       }
     }
 
-    // Fallback if OpenAI key is missing or request failed/timed out
+    // Return error if OpenAI key is missing or request failed/timed out
     if (!variationAUrl || !variationBUrl) {
       debugLog.push(`USING_FALLBACK: A=${!variationAUrl}, B=${!variationBUrl}`);
-      console.warn("Using fallback images for missing variations...");
-      const curatedImages = [
-        "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1024&q=80"
-      ];
-
-      const shuffled = curatedImages.sort(() => 0.5 - Math.random());
-      variationAUrl = variationAUrl || shuffled[0];
-      variationBUrl = variationBUrl || shuffled[1];
+      console.warn("Image generation failed. Returning error instead of fallbacks...");
+      return NextResponse.json(
+        { success: false, message: "We're experiencing high demand right now and couldn't generate the AI concept. Please try again in a few moments." },
+        { status: 503 }
+      );
     }
 
     await connectDB();
