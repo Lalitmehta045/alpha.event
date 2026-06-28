@@ -42,9 +42,9 @@ export async function POST(req: NextRequest) {
       createdAt: { $gte: twentyFourHoursAgo }
     });
 
-    if (usageCount >= 2) {
+    if (usageCount >= 3) {
       return NextResponse.json(
-        { success: false, message: "Daily limit reached. You can only generate 2 images per day. Please try again after 24 hours." },
+        { success: false, message: "Daily limit reached. You can only generate 3 images per day. Please try again after 24 hours." },
         { status: 429 }
       );
     }
