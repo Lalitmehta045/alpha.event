@@ -5,7 +5,7 @@ const nextConfig = {
 
   // Include native/dynamic modules in standalone output
   // heic-convert & heic-decode are dynamically imported and won't be traced automatically
-  serverExternalPackages: ["heic-convert", "heic-decode", "sharp"],
+  serverExternalPackages: ["heic-convert", "heic-decode", "sharp", "mongoose"],
 
   // ✅ Increase body size limit for API routes (fixes 413 Request Entity Too Large)
   experimental: {
