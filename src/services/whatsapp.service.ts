@@ -504,3 +504,67 @@ export async function resendWhatsAppMessage(logId: string) {
 
   return { success: true, message: "WhatsApp message resend triggered successfully" };
 }
+
+// ═════════════════════════════════════════════════════════════
+// 5. ADMIN — Call Now Alert (Fired from cart before order is placed)
+//    Uses MSG91 "admin_new_order_alert" template
+// ═════════════════════════════════════════════════════════════
+export async function sendCallNowAlert(payload: {
+  customerName: string;
+  customerPhone: string;
+  orderDate: string;
+  orderItems: string;
+  totalAmount: string;
+  deliveryAddress: string;
+}) {
+  try {
+    const config = getConfig();
+    if (!config?.adminNumber) {
+      console.warn("⚠️ ADMIN_WHATSAPP_NUMBER not set. Skipping Call Now alert.");
+      return;
+    }
+
+    // Using Named Variables mapping exactly as required by the new MSG91 template
+    const components = {
+      customer_name: {
+        type: "text",
+        value: payload.customerName || "Customer",
+      },
+      customer_phone: {
+        type: "text",
+        value: payload.customerPhone || "N/A",
+      },
+      order_date: {
+        type: "text",
+        value: payload.orderDate || new Date().toLocaleString("en-IN"),
+      },
+      order_items: {
+        type: "text",
+        value: payload.orderItems || "N/A",
+      },
+      total_amount: {
+        type: "text",
+        value: payload.totalAmount || "0",
+      },
+      delivery_address: {
+        type: "text",
+        value: payload.deliveryAddress || "Not Selected",
+      },
+    };
+
+    const dummyOrderId = `CALL_REQ_${Date.now()}`;
+    const logMessage = `📞 Call Now Alert! Customer: ${payload.customerName} (${payload.customerPhone}), Items: ${payload.orderItems}, Total: ₹${payload.totalAmount}`;
+
+    await sendWhatsAppTemplateMessage(
+      config.adminNumber,
+      "admin_new_order_alert",
+      null, // Namespace usually null for MSG91 utility templates unless specified
+      components,
+      dummyOrderId,
+      "admin_notification",
+      logMessage
+    );
+  } catch (error) {
+    console.error("❌ sendCallNowAlert error:", error);
+  }
+}

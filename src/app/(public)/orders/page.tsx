@@ -16,7 +16,7 @@ import { handleAddItemCart } from "@/redux/slices/cartSlice";
 import AddAddressDialog from "@/components/common/address/AddAddressDialog";
 import EditAddressDialog from "@/components/common/address/EditAddressDialog";
 import { MdDelete } from "react-icons/md";
-import { FaEdit, FaPlus } from "react-icons/fa";
+import { FaEdit, FaPlus, FaWhatsapp } from "react-icons/fa";
 import { TbFileInvoice, TbTruckDelivery } from "react-icons/tb";
 import { FaTruckArrowRight } from "react-icons/fa6";
 import ConfirmDeleteDialog from "@/components/common/Dialogs/ConfirmDialog";
@@ -28,6 +28,7 @@ export default function OrderPage() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const token = useSelector((state: RootState) => state.auth.token) as string;
+  const userProfile = useSelector((state: RootState) => state.profile?.profile);
 
   const addressList = useSelector(
     (state: RootState) => state.address.addresses
@@ -132,6 +133,96 @@ export default function OrderPage() {
       console.error("Handle COD Error:", error);
       toast.error("Failed to place order");
     }
+  };
+
+  const getCartDetailsText = () => {
+    // Current Date Time
+    const now = new Date();
+    const dateTimeString = now.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+    let text = "*🆕 New Order Request* 📦\n\n";
+    text += `*🕒 Date & Time:* ${dateTimeString}\n\n`;
+    text += "*📝 Order Summary:*\n";
+    text += "--------------------------------------\n";
+    
+    items.forEach((item: any, index: number) => {
+      // Fix: CartSlice uses item.product.name and item.product.price
+      const price = item?.product?.price || item?.product_details?.price || 0;
+      const name = item?.product?.name || item?.product_details?.name || "Product";
+      
+      text += `${index + 1}. *${name}*\n`;
+      text += `    Qty: ${item?.quantity}  |  Price: ₹${price}\n`;
+    });
+    
+    text += "--------------------------------------\n";
+    text += `*Total Items:* ${totalQuantity}\n`;
+    text += `*Grand Total:* ₹${totalPrice}\n\n`;
+
+    // Add Address if selected
+    if (selectedAddress !== null && addressList && addressList[selectedAddress]) {
+      const addr = addressList[selectedAddress];
+      text += "*📍 Delivery Address:*\n";
+      text += `${addr.address_line}, ${addr.city}\n`;
+      text += `${addr.state}, ${addr.country} - ${addr.pincode}\n`;
+      text += `Phone: ${addr.mobile}\n\n`;
+    }
+
+    if (deliveryDate) {
+      text += `*📅 Preferred Delivery Date:*\n`;
+      text += `${deliveryDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}\n\n`;
+    }
+
+    text += "_Please confirm my order._";
+    return text;
+  };
+
+  const handleWhatsApp = () => {
+    const text = getCartDetailsText();
+    const url = `https://wa.me/917389288488?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
+  const handleCallNow = async () => {
+    try {
+      const now = new Date();
+      const orderDate = now.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+      
+      let orderItems = "";
+      items.forEach((item: any, index: number) => {
+        const price = item?.product?.price || item?.product_details?.price || 0;
+        const name = item?.product?.name || item?.product_details?.name || "Product";
+        orderItems += `${index + 1}. ${name} - Qty: ${item?.quantity} | Price: ₹${price}\n`;
+      });
+
+      let deliveryAddressStr = "Not Selected";
+      if (selectedAddress !== null && addressList && addressList[selectedAddress]) {
+        const addr = addressList[selectedAddress];
+        deliveryAddressStr = `${addr.address_line}, ${addr.city}, ${addr.state}, ${addr.country} - ${addr.pincode}`;
+      }
+
+      const payload = {
+        customerName: userProfile?.fname ? `${userProfile.fname} ${userProfile.lname || ""}`.trim() : "Guest",
+        customerPhone: userProfile?.phone ? String(userProfile.phone) : (addressList?.[selectedAddress]?.mobile || "N/A"),
+        orderDate,
+        orderItems,
+        totalAmount: String(totalPrice),
+        deliveryAddress: deliveryAddressStr,
+      };
+
+      // Call the API route without awaiting strictly to prevent blocking dialer immediately
+      fetch("/api/whatsapp/call-now-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch((e) => console.error("Call Now API Error:", e));
+
+    } catch (e) {
+      console.error("Error formatting call now payload", e);
+    }
+    
+    // Note: We can only open the dialer here. Automatically sending a message 
+    // without opening an app requires a backend API to send an SMS/Email.
+    window.location.href = "tel:+917389288488";
   };
 
   const fetchOrder = async () => {
@@ -319,10 +410,23 @@ export default function OrderPage() {
               </div>
 
               {/* Buttons */}
-              <Button className="w-full p-5 bg-green-600 hover:bg-green-900 cursor-pointer">
-                <Link href="tel:+917389288488">Contact Now 7389288488</Link>
-                <IoCall style={{ width: 20, height: 20 }} />
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full pt-2">
+                <Button 
+                  className="flex-1 py-4 sm:py-5 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white flex justify-center items-center gap-2 rounded-xl font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-95 text-sm sm:text-base"
+                  onClick={handleCallNow}
+                >
+                  <IoCall className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Call Now
+                </Button>
+
+                <Button 
+                  className="flex-1 py-4 sm:py-5 bg-green-500 hover:bg-green-600 cursor-pointer text-white flex justify-center items-center gap-2 rounded-xl font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-95 text-sm sm:text-base"
+                  onClick={handleWhatsApp}
+                >
+                  <FaWhatsapp className="w-5 h-5 sm:w-6 sm:h-6" />
+                  WhatsApp
+                </Button>
+              </div>
 
               <Button
                 onClick={(e) => {
@@ -330,10 +434,10 @@ export default function OrderPage() {
                   setOpenCODModal(true);
                 }}
                 variant="outline"
-                className="w-full p-5 cursor-pointer"
+                className="w-full py-4 sm:py-5 mt-1 cursor-pointer flex justify-center items-center gap-2 rounded-xl font-semibold border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all hover:shadow-sm active:scale-95 text-gray-700 text-sm sm:text-base"
               >
+                <FaTruckArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 Cash on Delivery
-                <FaTruckArrowRight style={{ width: 20, height: 20 }} />
               </Button>
 
               {/* <Button

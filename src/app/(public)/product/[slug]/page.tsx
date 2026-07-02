@@ -11,7 +11,7 @@ import { RootState } from "@/redux/store/store";
 import { getProductDetail } from "@/services/operations/product";
 import { Product } from "@/@types/product";
 import CTAButtonV1 from "@/components/common/ctaButton/ctaButtonV1";
-import { IoCall, IoCartOutline } from "react-icons/io5";
+import { IoCall, IoCartOutline, IoClose } from "react-icons/io5";
 import services from "@/assets/data/services.json";
 import FeaturedProd from "@/components/core/featuredProd/featuredProd";
 import CTASection from "@/components/common/ctaButton/ctaSection";
@@ -57,6 +57,42 @@ const ProductDisplayPage = () => {
   const [imageIndex, setImageIndex] = useState(0);
   const imageContainerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      setImageIndex((prev) => (prev < data.image.length - 1 ? prev + 1 : 0));
+    }
+    if (isRightSwipe) {
+      setImageIndex((prev) => (prev > 0 ? prev - 1 : data.image.length - 1));
+    }
+  };
+
+  const handlePrevImage = () => {
+    setImageIndex((prev) => (prev > 0 ? prev - 1 : data.image.length - 1));
+  };
+
+  const handleNextImage = () => {
+    setImageIndex((prev) => (prev < data.image.length - 1 ? prev + 1 : 0));
+  };
 
   const fetchProductDetails = async () => {
     try {
@@ -92,40 +128,86 @@ const ProductDisplayPage = () => {
   }, [productId, token]);
 
   return (
-    <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">
+    <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg) pt-[100px] md:pt-[130px] lg:pt-[160px]">
       <LayoutV2>
-        <section className="relative w-11/12 mt-20 md:mt-28 mx-auto py-10 md:py-10 px-2 sm:px-6 md:px-12 lg:px-24 gap-8 grid lg:grid-cols-2">
+        <section className="relative w-11/12 mx-auto pb-10 md:py-10 px-2 sm:px-6 md:px-12 lg:px-24 gap-6 md:gap-8 grid lg:grid-cols-2">
           {/* LEFT SIDE */}
           <div>
             {/* Main Image */}
-            <div className="bg-white h-[65vh] py-6 px-4 rounded-lg">
+            <div className="relative bg-white h-[40vh] sm:h-[50vh] md:h-[65vh] p-4 md:py-6 md:px-4 rounded-lg group overflow-hidden">
               {data.image.length > 0 ? (
-                <img
-                  key={imageIndex} // force re-render
-                  src={data.image[imageIndex]}
-                  className="w-full h-full object-contain rounded-md cursor-pointer"
-                  alt="product"
-                />
+                <>
+                  <div
+                    className="w-full h-full relative"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
+                    <img
+                      key={imageIndex} // force re-render
+                      src={data.image[imageIndex]}
+                      className="w-full h-full object-contain rounded-md cursor-pointer animate-in fade-in zoom-in-95 duration-500 hover:scale-105 transition-transform"
+                      alt="product"
+                      onClick={() => setIsFullscreen(true)}
+                    />
+
+                    {/* Gallery Icon Indicator (Professional Touch) */}
+                    {data.image.length > 1 && (
+                      <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-md px-2.5 py-1.5 rounded-full flex items-center gap-1.5 text-white/90 shadow-sm border border-white/10 z-10">
+                        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 24 24" height="14" width="14" xmlns="http://www.w3.org/2000/svg"><path fill="none" d="M0 0h24v24H0z"></path><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"></path></svg>
+                        <span className="text-xs font-semibold tracking-wider">
+                          {imageIndex + 1}/{data.image.length}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Swipe Buttons (Premium Glassmorphism) */}
+                  {data.image.length > 1 && (
+                    <>
+                      <button
+                        onClick={handlePrevImage}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 backdrop-blur-md border border-white/20 text-white p-2.5 sm:p-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 hover:scale-105 active:scale-95 z-20"
+                        aria-label="Previous image"
+                      >
+                        <FaAngleLeft className="text-xl sm:text-2xl drop-shadow-md" />
+                      </button>
+                      <button
+                        onClick={handleNextImage}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 backdrop-blur-md border border-white/20 text-white p-2.5 sm:p-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 hover:scale-105 active:scale-95 z-20"
+                        aria-label="Next image"
+                      >
+                        <FaAngleRight className="text-xl sm:text-2xl drop-shadow-md" />
+                      </button>
+                    </>
+                  )}
+                </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">
                   No Image Available
                 </div>
               )}
             </div>
 
-            {/* Photo Indicators */}
-            <div className="flex items-center justify-center gap-3 my-4">
-              {data.image.map((img, index) => (
-                <div
-                  key={img + index + "point"}
-                  className={`bg-slate-200 w-3 h-3 lg:w-5 lg:h-5 rounded-full ${index === imageIndex && "bg-slate-300"
-                    }`}
-                ></div>
-              ))}
-            </div>
+            {/* Premium Photo Indicators */}
+            {data.image.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8 md:mt-12 mb-4">
+                {data.image.map((img, index) => (
+                  <button
+                    key={img + index + "point"}
+                    onClick={() => setImageIndex(index)}
+                    className={`transition-all duration-500 ease-out rounded-full ${index === imageIndex
+                        ? "bg-gradient-to-r from-red-900 to-red-700 w-8 h-2 sm:h-2.5 shadow-md shadow-red-900/20"
+                        : "bg-gray-200 hover:bg-gray-300 w-2 h-2 sm:w-2.5 sm:h-2.5"
+                      }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* All Images Strip */}
-            <div className="grid relative">
+            <div className="grid relative mt-8 md:mt-12">
               <div
                 ref={imageContainerRef}
                 className="flex gap-4 w-full overflow-x-auto scrollbar-none"
@@ -257,6 +339,71 @@ const ProductDisplayPage = () => {
         <FeaturedProd productId={data._id} />
         <CTASection />
       </LayoutV2>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      {isFullscreen && data.image.length > 0 && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors z-[110]"
+            aria-label="Close fullscreen"
+          >
+            <IoClose className="text-3xl" />
+          </button>
+
+          {/* Main Image in Fullscreen */}
+          <div
+            className="relative w-full h-full max-w-5xl max-h-screen flex items-center justify-center"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <img
+              key={imageIndex + "fullscreen"}
+              src={data.image[imageIndex]}
+              className="max-w-full max-h-full object-contain animate-in fade-in zoom-in-95 duration-300"
+              alt={`Fullscreen ${data.name}`}
+            />
+
+            {/* Swipe Buttons (Fullscreen) */}
+            {data.image.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handlePrevImage(); }}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 sm:p-4 rounded-full backdrop-blur-sm transition-colors z-[110]"
+                  aria-label="Previous image"
+                >
+                  <FaAngleLeft className="text-2xl sm:text-3xl" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleNextImage(); }}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 sm:p-4 rounded-full backdrop-blur-sm transition-colors z-[110]"
+                  aria-label="Next image"
+                >
+                  <FaAngleRight className="text-2xl sm:text-3xl" />
+                </button>
+              </>
+            )}
+
+            {/* Fullscreen Photo Indicators */}
+            {data.image.length > 1 && (
+              <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2">
+                {data.image.map((img, index) => (
+                  <button
+                    key={img + index + "fs-point"}
+                    onClick={() => setImageIndex(index)}
+                    className={`transition-all duration-300 rounded-full ${index === imageIndex
+                        ? "bg-white w-6 h-2 sm:h-2.5"
+                        : "bg-white/40 hover:bg-white/60 w-2 h-2 sm:w-2.5 sm:h-2.5"
+                      }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

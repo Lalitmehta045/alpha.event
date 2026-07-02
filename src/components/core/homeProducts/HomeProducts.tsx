@@ -142,8 +142,6 @@ const HomeProducts = () => {
     return null;
   }
 
-  const totalProducts = productData.length;
-  const remainingCount = Math.max(0, totalProducts - productsToDisplay.length);
 
   return (
     <section className="bg-(--mainBg1) w-full py-12 flex flex-col px-2 sm:px-6 md:px-10 lg:px-20">
@@ -171,11 +169,7 @@ const HomeProducts = () => {
             <HiArrowRight className="text-lg relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
 
-          {remainingCount > 0 && (
-            <p className="text-gray-400 text-sm font-medium tracking-wide">
-              +{remainingCount} more products to explore
-            </p>
-          )}
+
         </div>
       </div>
     </section>
