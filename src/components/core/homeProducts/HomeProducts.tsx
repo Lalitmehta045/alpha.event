@@ -144,7 +144,7 @@ const HomeProducts = () => {
 
 
   return (
-    <section className="bg-(--mainBg1) w-full py-12 flex flex-col px-2 sm:px-6 md:px-10 lg:px-20">
+    <section className="bg-[#f8efde] w-full py-12 flex flex-col px-2 sm:px-6 md:px-10 lg:px-20">
       <div className="w-11/12 mx-auto flex flex-col gap-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {productsToDisplay.map((product) => (

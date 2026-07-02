@@ -45,7 +45,7 @@ const CategoryPage = () => {
   }, [token]);
 
   return (
-    <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans">
+    <div className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[url('/desktop-banner.jpeg')] bg-cover bg-center bg-no-repeat bg-fixed">
       <LayoutV2>
         <CategoryV2 />
         <MostPopularProd />

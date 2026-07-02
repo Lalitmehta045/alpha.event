@@ -6,13 +6,13 @@ import { RecentProductV2 } from "@/components/core/recentProducts/recentProductV
 
 export default function RecentProduct() {
   return (
-    <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">
+    <div className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[url('/desktop-banner.jpeg')] bg-cover bg-center bg-no-repeat bg-fixed">
       <LayoutV2>
         {/* Blogs Page */}
         <RecentProductV2 />
 
         {/* CTA Section */}
-        <CTASection />
+        <CTASection textColor="text-black" descColor="text-gray-800" />
       </LayoutV2>
     </div>
   );

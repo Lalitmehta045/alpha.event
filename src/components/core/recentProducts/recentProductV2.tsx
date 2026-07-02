@@ -81,7 +81,7 @@ export const RecentProductV2 = () => {
     });
   };
   return (
-    <section className="bg-(--mainBg) w-full h-full max-h-5/6 md:max-h-10/12 lg:max-h-11/12 xl:max-h-full pt-32 sm:pt-28 md:pt-38 lg:pt-36 py-20 flex flex-col items-center justify-center text-center text-white px-0 sm:px-6 md:px-10 lg:px-20">
+    <section className="bg-transparent w-full h-full max-h-5/6 md:max-h-10/12 lg:max-h-11/12 xl:max-h-full pt-32 sm:pt-28 md:pt-38 lg:pt-36 py-20 flex flex-col items-center justify-center text-center text-black px-0 sm:px-6 md:px-10 lg:px-20">
       <div className="w-11/12 mx-auto">
         {/* Hero Section */}
         <motion.section
@@ -93,12 +93,12 @@ export const RecentProductV2 = () => {
           <HeadingV1
             text="Our Recent Products"
             size="5xl"
-            color="text-(--mainHeading2)"
+            color="text-black"
           />
           <ParagraphV1
             text="Get inspired with expert tips and creative ideas designed to make your celebration one to remember."
             size="lg"
-            color="text-(--secondaryParagraph)"
+            color="text-gray-800"
             className="mt-3 max-w-max"
           />
         </motion.section>

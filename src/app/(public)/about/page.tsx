@@ -7,7 +7,7 @@ import LayoutV2 from "../layout/layoutV2";
 
 const AboutPage = () => {
   return (
-    <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">
+    <div className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[url('/desktop-banner.jpeg')] bg-cover bg-center bg-no-repeat bg-fixed">
       <LayoutV2>
         {/* Hero / About Section */}
         <AboutV1 />
@@ -16,7 +16,7 @@ const AboutPage = () => {
         <OurTeam />
 
         {/* CTA Section */}
-        <CTASection />
+        <CTASection textColor="text-black" descColor="text-gray-800" />
       </LayoutV2>
     </div>
   );

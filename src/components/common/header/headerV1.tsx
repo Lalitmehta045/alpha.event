@@ -94,7 +94,7 @@ const HeaderV1 = () => {
   return (
     <>
       {/* <header className="fixed top-1 z-50 w-11/12 drop-shadow-xl/40 bg-white rounded-full"> */}
-      <header className="fixed top-1 z-50 w-full drop-shadow-xl/40 bg-white rounded-2xl">
+      <header className="fixed top-3 z-50 w-[94%] left-0 right-0 mx-auto drop-shadow-lg bg-white/70 backdrop-blur-lg rounded-3xl border border-white/20">
         <main className="w-full md:w-11/12 mx-auto flex items-center justify-start md:justify-between py-2 px-3">
           {/* Logo (Left) */}
           <Link href="/" className="shrink-0 mx-0 p-2">

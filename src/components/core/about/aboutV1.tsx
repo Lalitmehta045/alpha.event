@@ -7,7 +7,7 @@ import ParagraphV1 from "@/components/common/Texts/paragraph";
 
 const AboutV1 = () => {
   return (
-    <section className="bg-(--mainBg) w-full h-full max-h-5/6 md:max-h-10/12 lg:max-h-11/12 xl:max-h-full pt-32 sm:pt-28 md:pt-32 lg:pt-36 py-20 flex flex-col items-center justify-center text-center text-white px-0 sm:px-6 md:px-10 lg:px-20">
+    <section className="bg-transparent w-full h-full max-h-5/6 md:max-h-10/12 lg:max-h-11/12 xl:max-h-full pt-32 sm:pt-28 md:pt-32 lg:pt-36 py-20 flex flex-col items-center justify-center text-center text-black px-0 sm:px-6 md:px-10 lg:px-20">
       <div className="w-11/12 mx-auto grid xl:grid-cols-2 gap-15 lg:gap-10 items-center">
         {/* Left Side — Image */}
         <motion.div
@@ -37,22 +37,22 @@ const AboutV1 = () => {
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="flex flex-col gap-8"
+          className="flex flex-col gap-8 bg-white/80 backdrop-blur-md p-8 lg:p-10 rounded-3xl shadow-2xl border border-white/50"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-white text-center md:text-start leading-tight tracking-tight">
-            About <span className="text-indigo-600">Alpha Art and Event</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-black text-center md:text-start leading-tight tracking-tight">
+            About <span className="text-indigo-800">Alpha Art and Event</span>
           </h2>
 
           <ParagraphV1
             text="At Alpha Art and Event, we believe luxury doesn’t have to be owned — it can be rented. With Alpha Rentals, we make it easy for individuals, event planners, and businesses to access premium event décor, lighting, and props — all without the burden of buying and storing."
             size="lg"
-            color="text-gray-200 text-start"
+            color="text-gray-800 text-start"
           />
 
           <ParagraphV1
             text="Whether it’s a wedding, photoshoot, festival, or corporate event, our curated rental collection ensures your venue looks breathtaking. We deliver, install, and pick up — so you can focus on what truly matters: creating memories."
             size="lg"
-            color="text-gray-200 text-start"
+            color="text-gray-800 text-start"
           />
 
           <div className="grid sm:grid-cols-2 gap-4 mt-4">

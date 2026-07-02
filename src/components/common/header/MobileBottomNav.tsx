@@ -61,7 +61,7 @@ const MobileBottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg rounded-tl-3xl rounded-tr-3xl border-t border-gray-200 flex justify-around py-4 md:hidden z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/70 backdrop-blur-lg shadow-lg rounded-tl-3xl rounded-tr-3xl border-t border-white/20 flex justify-around py-4 md:hidden z-50">
       {navItems.map((item) => {
         const isActive = pathname === item.path;
 

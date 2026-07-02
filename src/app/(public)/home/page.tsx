@@ -71,7 +71,7 @@ export default function Home() {
   }, [categories.length, subCategories.length, productData.length]);
 
   return (
-    <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans">
+    <div className="relative flex flex-col w-full mx-auto h-min items-center font-sans">
       <LayoutV1>
         <MainHero />
         <HomeProducts />

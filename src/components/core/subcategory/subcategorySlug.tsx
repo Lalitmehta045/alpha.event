@@ -68,13 +68,13 @@ const SubCategorySlug: React.FC<Props> = ({ data, category, subCategory }) => {
           <HeadingV1
             text={subCategory?.name ?? ""}
             size="5xl"
-            color="text-(--mainHeading2)"
+            color="text-black"
           />
 
           <ParagraphV1
             text={category?.description ?? ""}
             size="lg"
-            color="text-(--secondaryParagraph)"
+            color="text-gray-800"
             className="mt-3 max-w-max"
           />
         </motion.section>
@@ -97,11 +97,11 @@ const SubCategorySlug: React.FC<Props> = ({ data, category, subCategory }) => {
                   />
                 </div>
 
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-4 sm:mb-6 tracking-tight">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-black mb-4 sm:mb-6 tracking-tight">
                   Magic in the Making!
                 </h2>
 
-                <p className="text-gray-200 text-base sm:text-lg lg:text-xl mb-8 sm:mb-10 leading-relaxed">
+                <p className="text-gray-800 text-base sm:text-lg lg:text-xl mb-8 sm:mb-10 leading-relaxed">
                   {`We're currently stocking this ${subCategory?.name} product with incredible items.
         Check back soon—you won't want to miss what's coming next!`}
                 </p>

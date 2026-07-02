@@ -108,7 +108,7 @@ const SearchBar = () => {
     <div className="relative z-[100] w-full max-w-xl sm:max-w-2xl md:max-w-3xl">
 
       {/* Search Field */}
-      <div className="flex items-center bg-white border border-gray-300/80 shadow-sm hover:shadow-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#9c6567] focus-within:shadow-md focus-within:hover:shadow-md transition-all duration-300">
+      <div className="flex items-center bg-white/70 backdrop-blur-lg border border-white/20 shadow-sm hover:shadow-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#9c6567] focus-within:shadow-md focus-within:hover:shadow-md transition-all duration-300">
         <div className="relative flex items-center h-full" ref={dropdownRef}>
           <button
             type="button"

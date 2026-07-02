@@ -183,28 +183,15 @@ const ProductsPage = () => {
           </div>
         )}
 
-        <section className="bg-(--mainBg1) w-full py-10 flex flex-col px-2 sm:px-6 md:px-10 lg:px-20 min-h-[60vh]">
+        <section className="bg-[#f8efde] w-full py-10 flex flex-col px-2 sm:px-6 md:px-10 lg:px-20 min-h-[60vh]">
           <div className="w-11/12 mx-auto flex flex-col gap-8">
             {/* Results stats bar */}
-            {productsToDisplay.length > 0 && (
-              <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+            {productsToDisplay.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-end border-b border-gray-200 pb-4">
                 <p className="text-gray-500 text-sm">
-                  Showing{" "}
-                  <span className="font-semibold text-gray-800">
-                    {indexOfFirstItem + 1}–{Math.min(indexOfLastItem, productsToDisplay.length)}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-semibold text-gray-800">
-                    {productsToDisplay.length}
-                  </span>{" "}
-                  products
+                  Page <span className="font-semibold text-gray-800">{currentPage}</span> of{" "}
+                  <span className="font-semibold text-gray-800">{totalPages}</span>
                 </p>
-                {totalPages > 1 && (
-                  <p className="text-gray-500 text-sm">
-                    Page <span className="font-semibold text-gray-800">{currentPage}</span> of{" "}
-                    <span className="font-semibold text-gray-800">{totalPages}</span>
-                  </p>
-                )}
               </div>
             )}
 

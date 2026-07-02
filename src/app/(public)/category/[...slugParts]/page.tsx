@@ -78,12 +78,12 @@ export default function CategoryResolverPage() {
           </div>
 
           {/* Heading */}
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-4 sm:mb-6 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-black mb-4 sm:mb-6 tracking-tight">
             Something Exciting is Coming!
           </h2>
 
           {/* Description */}
-          <p className="text-gray-200 text-base sm:text-lg lg:text-xl mb-8 sm:mb-10 leading-relaxed">
+          <p className="text-gray-800 text-base sm:text-lg lg:text-xl mb-8 sm:mb-10 leading-relaxed">
             We’re currently working on this category. Amazing products will
             appear here soon. Stay tuned—you won’t want to miss it!
           </p>
@@ -128,7 +128,7 @@ export default function CategoryResolverPage() {
     const sortedSubCats = [...prioritized, ...others];
 
     return (
-      <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">
+      <div className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[url('/desktop-banner.jpeg')] bg-cover bg-center bg-no-repeat bg-fixed">
         <LayoutV2>
           <section className="relative mt-20 md:mt-28 w-11/12 flex flex-col items-start justify-start min-h-min py-10 md:py-10 px-2 sm:px-6 md:px-16 lg:px-20">
             <motion.section
@@ -140,12 +140,12 @@ export default function CategoryResolverPage() {
               <HeadingV1
                 text={category.name}
                 size="5xl"
-                color="text-(--mainHeading2)"
+                color="text-black"
               />
               <ParagraphV1
                 text={category.description}
                 size="lg"
-                color="text-(--secondaryParagraph)"
+                color="text-gray-800"
                 className="mt-3 max-w-max"
               />
             </motion.section>
@@ -178,7 +178,7 @@ export default function CategoryResolverPage() {
           </section>
 
           {/* CTA Section */}
-          <CTASection />
+          <CTASection textColor="text-black" descColor="text-gray-800" />
         </LayoutV2>
       </div>
     );
@@ -191,7 +191,7 @@ export default function CategoryResolverPage() {
     );
 
     return (
-      <div className="relative flex flex-col gap-10 w-full mx-auto h-min items-center font-sans bg-(--mainBg)">
+      <div className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[url('/desktop-banner.jpeg')] bg-cover bg-center bg-no-repeat bg-fixed">
         <LayoutV2>
           <SubCategorySlug
             category={category}
@@ -200,7 +200,7 @@ export default function CategoryResolverPage() {
           />
 
           {/* CTA Section */}
-          <CTASection />
+          <CTASection textColor="text-black" descColor="text-gray-800" />
         </LayoutV2>
       </div>
     );

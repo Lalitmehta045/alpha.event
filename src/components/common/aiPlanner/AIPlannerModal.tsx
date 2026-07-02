@@ -306,8 +306,9 @@ export default function AIPlannerModal() {
             <div className="absolute inset-[3px] bg-[#110101] rounded-full z-10" />
 
             {/* The circular icon part */}
-            <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 shrink-0 z-20">
-              <Bot className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)] relative z-10" />
+            <div className="relative flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 shrink-0 z-20">
+              <Bot className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)] relative z-10" />
+              <span className="text-white font-bold text-[10px] sm:text-[11px] drop-shadow-[0_0_12px_rgba(255,255,255,0.8)] relative z-10 leading-none mt-0.5 tracking-wider">Use AI</span>
             </div>
 
             {/* Expanding Text Container */}
