@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, Variants } from 'framer-motion';
 
 export interface AnimatedCategoryBadgeProps {
   text: string;
@@ -23,7 +23,7 @@ const AnimatedCategoryBadge: React.FC<AnimatedCategoryBadgeProps> = ({
 
   const characters = text.split('');
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0, y: -20 },
     visible: {
       opacity: 1,
@@ -37,7 +37,7 @@ const AnimatedCategoryBadge: React.FC<AnimatedCategoryBadgeProps> = ({
     },
   };
 
-  const charVariants = {
+  const charVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
