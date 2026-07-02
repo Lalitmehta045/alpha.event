@@ -6,7 +6,10 @@ import CategoryV1 from "@/components/core/category/categoryV1";
 
 const MainHero = () => {
   return (
-    <section className="bg-[url('/desktop-banner.jpeg')] bg-cover bg-[position:60%_top] bg-no-repeat w-full min-h-screen pt-24 sm:pt-40 md:pt-32 lg:pt-32 flex flex-col items-center justify-center text-center text-white px-0 sm:px-6 md:px-10 lg:px-20">
+    <section 
+      className="bg-cover bg-[position:60%_top] bg-no-repeat w-full min-h-screen pt-24 sm:pt-40 md:pt-32 lg:pt-32 flex flex-col items-center justify-center text-center text-white px-0 sm:px-6 md:px-10 lg:px-20"
+      style={{ backgroundImage: "url('/desktop-banner.jpeg')" }}
+    >
       {/* Hero Content */}
       <ContainerV1>
         <SearchBar />

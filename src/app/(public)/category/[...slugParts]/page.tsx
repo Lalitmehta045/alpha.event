@@ -128,7 +128,10 @@ export default function CategoryResolverPage() {
     const sortedSubCats = [...prioritized, ...others];
 
     return (
-      <div className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[url('/desktop-banner.jpeg')] bg-cover bg-center bg-no-repeat bg-fixed">
+      <div 
+        className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-cover bg-center bg-no-repeat bg-fixed"
+        style={{ backgroundImage: "url('/desktop-banner.jpeg')" }}
+      >
         <LayoutV2>
           <section className="relative mt-20 md:mt-28 w-11/12 flex flex-col items-start justify-start min-h-min py-10 md:py-10 px-2 sm:px-6 md:px-16 lg:px-20">
             <motion.section
@@ -191,7 +194,10 @@ export default function CategoryResolverPage() {
     );
 
     return (
-      <div className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[url('/desktop-banner.jpeg')] bg-cover bg-center bg-no-repeat bg-fixed">
+      <div 
+        className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-cover bg-center bg-no-repeat bg-fixed"
+        style={{ backgroundImage: "url('/desktop-banner.jpeg')" }}
+      >
         <LayoutV2>
           <SubCategorySlug
             category={category}
