@@ -565,29 +565,33 @@ export default function AIPlannerModal() {
                   className="space-y-8"
                 >
                   {selectedProduct && (
-                    <div className="flex items-center gap-4 bg-[#f6f6f3] p-4 rounded-[16px]">
-                      <img
-                        src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0] || "/no-image.png"}
-                        alt={selectedProduct.name}
-                        className="w-20 h-20 rounded-[16px] object-cover border border-[#dadad3]"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          const fallback = selectedProduct.image?.[0] || "/no-image.png";
-                          if (target.src !== fallback) {
-                            target.src = fallback;
-                          }
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-bold text-[#62625b] uppercase">Selected Product</p>
-                        <p className="text-[18px] font-bold text-[#000000] truncate">{selectedProduct.name}</p>
+                    <div className="bg-[#f6f6f3] p-3 rounded-[24px]">
+                      <div className="w-full h-48 sm:h-64 rounded-[16px] overflow-hidden border border-[#dadad3] bg-[#ffffff] mb-3 relative group">
+                        <img
+                          src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0] || "/no-image.png"}
+                          alt={selectedProduct.name}
+                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallback = selectedProduct.image?.[0] || "/no-image.png";
+                            if (target.src !== fallback) {
+                              target.src = fallback;
+                            }
+                          }}
+                        />
                       </div>
-                      <button
-                        onClick={() => { setSelectedProduct(null); setStep(1); }}
-                        className="bg-[#e5e5e0] hover:bg-[#c8c8c1] text-[#000000] px-4 py-2 rounded-[16px] font-bold text-[14px] transition-colors"
-                      >
-                        Change
-                      </button>
+                      <div className="flex items-center justify-between gap-4 px-2 pb-1">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-bold text-[#62625b] uppercase mb-0.5">Selected Product</p>
+                          <p className="text-[18px] sm:text-[20px] font-bold text-[#000000] truncate">{selectedProduct.name}</p>
+                        </div>
+                        <button
+                          onClick={() => { setSelectedProduct(null); setStep(1); }}
+                          className="bg-[#e5e5e0] hover:bg-[#d8d8d3] text-[#000000] px-5 py-2.5 rounded-[14px] font-bold text-[14px] transition-colors shrink-0"
+                        >
+                          Change
+                        </button>
+                      </div>
                     </div>
                   )}
 

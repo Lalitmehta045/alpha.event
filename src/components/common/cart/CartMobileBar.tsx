@@ -45,19 +45,19 @@ export default function CartMobileBar() {
       >
         <div
           className="
-          bg-[#f8efde] px-3.5 py-2.5 rounded-full text-gray-900 text-sm flex items-center justify-between gap-4 shadow-xl cart-bar"
+          bg-[#047857]/95 backdrop-blur-md px-4 py-3 rounded-full text-white text-sm flex items-center justify-between gap-4 shadow-[0_8px_30px_rgb(4,120,87,0.4)] cart-bar border border-white/20"
         >
           {/* <Link href="/cart" className="flex items-center gap-4"> */}
-          <div className="p-2 bg-white rounded-full shadow-sm">
-            <FaCartShopping size={22} color="#3a0103" />
+          <div className="p-2.5 bg-white/20 rounded-full shadow-inner flex items-center justify-center">
+            <FaCartShopping size={20} color="white" />
           </div>
 
           <div className="flex flex-col -ml-1">
-            <span className="text-base font-bold text-gray-900">View Cart</span>
-            <p className="text-xs text-gray-700 font-medium">{totalQty} items</p>
+            <span className="text-[16px] font-bold text-white tracking-wide drop-shadow-sm">View Cart</span>
+            <p className="text-[12px] text-[#a7f3d0] font-medium">{totalQty} items</p>
           </div>
 
-          <div className="flex items-center gap-1 p-2 bg-[#3a0103] text-white rounded-full">
+          <div className="flex items-center justify-center p-2 bg-white text-[#047857] rounded-full shadow-lg">
             <MdKeyboardArrowRight size={24} />
           </div>
           {/* </Link> */}
