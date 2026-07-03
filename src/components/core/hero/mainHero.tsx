@@ -3,12 +3,13 @@
 import ContainerV1 from "@/app/(public)/layout/containerV1";
 import SearchBar from "@/components/common/searchBar/searchBar";
 import CategoryV1 from "@/components/core/category/categoryV1";
+import bgImage from "../../../../public/desktop-banner.jpeg";
 
 const MainHero = () => {
   return (
     <section 
       className="bg-cover bg-[position:60%_top] bg-no-repeat w-full min-h-screen pt-24 sm:pt-40 md:pt-32 lg:pt-32 flex flex-col items-center justify-center text-center text-white px-0 sm:px-6 md:px-10 lg:px-20"
-      style={{ backgroundImage: "url('/desktop-banner.jpeg')" }}
+      style={{ backgroundImage: `url(${bgImage.src})` }}
     >
       {/* Hero Content */}
       <ContainerV1>
