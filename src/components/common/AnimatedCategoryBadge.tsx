@@ -21,27 +21,18 @@ const AnimatedCategoryBadge: React.FC<AnimatedCategoryBadgeProps> = ({
 
   const backgroundStyle = blueGradient;
 
-  const characters = text.split('');
-
   const containerVariants: Variants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeOut",
-        when: "beforeChildren",
-        staggerChildren: 0.08,
-      },
+    hidden: { 
+      clipPath: 'inset(0 100% 0 0)',
+      opacity: 0
     },
-  };
-
-  const charVariants: Variants = {
-    hidden: { opacity: 0 },
     visible: {
+      clipPath: 'inset(0 0% 0 0)',
       opacity: 1,
-      transition: { duration: 0.1 },
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
     },
   };
 
@@ -68,18 +59,7 @@ const AnimatedCategoryBadge: React.FC<AnimatedCategoryBadgeProps> = ({
         ...style
       }}
     >
-      {characters.map((char, index) => (
-        <motion.span
-          key={`${index}-${char}`}
-          variants={charVariants}
-          style={{
-            display: 'inline-block',
-            whiteSpace: 'pre'
-          }}
-        >
-          {char}
-        </motion.span>
-      ))}
+      {text}
     </motion.div>
   );
 };

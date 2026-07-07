@@ -147,7 +147,7 @@ export default function AIPlannerModal() {
 
       if (aIsBalloon && !bIsBalloon) return -1;
       if (!aIsBalloon && bIsBalloon) return 1;
-      return 0;
+      return Math.random() - 0.5;
     });
   }, [products, allCategory, allSubCategory]);
 
@@ -566,7 +566,7 @@ export default function AIPlannerModal() {
                 >
                   {selectedProduct && (
                     <div className="bg-[#f6f6f3] p-3 rounded-[24px]">
-                      <div className="w-full h-48 sm:h-64 rounded-[16px] overflow-hidden border border-[#dadad3] bg-[#ffffff] mb-3 relative group">
+                      <div className="w-full h-64 sm:h-[400px] rounded-[16px] overflow-hidden border border-[#dadad3] bg-[#ffffff] mb-3 relative group">
                         <img
                           src={selectedProduct.thumbnails?.[0] || selectedProduct.image?.[0] || "/no-image.png"}
                           alt={selectedProduct.name}
@@ -596,9 +596,9 @@ export default function AIPlannerModal() {
                   )}
 
                   <div>
-                    <h3 className="text-[22px] font-bold text-[#000000] tracking-tight mb-2">Add Custom Touches</h3>
+                    <h3 className="text-[22px] font-bold text-[#000000] tracking-tight mb-2">Share Your Ideas</h3>
                     <p className="text-[#62625b] text-[16px]">
-                      Describe any extra elements like confetti, backdrops, or lighting. (Optional)
+                      Tell us what you want to change or add.
                     </p>
                   </div>
 
@@ -606,7 +606,7 @@ export default function AIPlannerModal() {
                     <textarea
                       value={userCustomPrompt}
                       onChange={(e) => {
-                        if (e.target.value.length <= 200) {
+                        if (e.target.value.length <= 500) {
                           setUserCustomPrompt(e.target.value);
                         }
                       }}
@@ -614,8 +614,8 @@ export default function AIPlannerModal() {
                       className="w-full h-32 bg-[#ffffff] border border-[#dadad3] rounded-[16px] p-4 focus:ring-2 focus:ring-[#435ee5] focus:border-transparent focus:outline-none text-[16px] text-[#000000] transition-shadow resize-none"
                     />
                     <div className="absolute bottom-4 right-4 bg-[#f6f6f3] px-2 py-1 rounded-[8px] border border-[#dadad3]">
-                      <span className={`text-[12px] font-medium ${userCustomPrompt.length >= 200 ? 'text-[#9e0a0a]' : 'text-[#62625b]'}`}>
-                        {200 - userCustomPrompt.length} chars
+                      <span className={`text-[12px] font-medium ${userCustomPrompt.length >= 500 ? 'text-[#9e0a0a]' : 'text-[#62625b]'}`}>
+                        {500 - userCustomPrompt.length} chars
                       </span>
                     </div>
                   </div>
@@ -630,7 +630,8 @@ export default function AIPlannerModal() {
                     </button>
                     <button
                       onClick={handleGenerate}
-                      className="bg-[#e60023] text-white px-6 py-3 rounded-[16px] font-bold text-[16px] hover:bg-[#cc001f] flex items-center gap-2 transition-colors"
+                      disabled={!userCustomPrompt.trim()}
+                      className="bg-[#e60023] text-white px-6 py-3 rounded-[16px] font-bold text-[16px] hover:bg-[#cc001f] disabled:bg-[#f6f6f3] disabled:text-[#91918c] flex items-center gap-2 transition-colors"
                     >
                       <Sparkles className="w-5 h-5 fill-current" /> 
                       Generate Concept

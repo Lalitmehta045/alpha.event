@@ -14,7 +14,11 @@ import AddAddressDialog from "@/components/common/address/AddAddressDialog";
 const RECENT_SEARCHES_KEY = "recent_searches";
 const MAX_RECENT_SEARCHES = 5;
 
-const SearchBar = () => {
+interface SearchBarProps {
+  onLocationChange?: (location: string) => void;
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({ onLocationChange }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
@@ -26,7 +30,7 @@ const SearchBar = () => {
   const [showRecentSearches, setShowRecentSearches] = useState(false);
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<string>("Indore");
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -143,6 +147,7 @@ const SearchBar = () => {
                     e.stopPropagation();
                     setSelectedLocation(city);
                     setIsLocationDropdownOpen(false);
+                    if (onLocationChange) onLocationChange(city);
                   }}
                 >
                   {city}
