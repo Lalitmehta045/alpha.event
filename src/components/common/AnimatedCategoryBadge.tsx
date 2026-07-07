@@ -22,7 +22,7 @@ const AnimatedCategoryBadge: React.FC<AnimatedCategoryBadgeProps> = ({
   const backgroundStyle = blueGradient;
 
   const containerVariants: Variants = {
-    hidden: { 
+    hidden: {
       clipPath: 'inset(0 100% 0 0)',
       opacity: 0
     },
