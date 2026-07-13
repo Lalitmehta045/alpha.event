@@ -39,9 +39,11 @@ import { setLoginProvider } from "@/redux/slices/authSlice";
 export default function AuthForm({
   isSignUp,
   isSignIn,
+  isVendor,
 }: {
   isSignUp: boolean;
   isSignIn: boolean;
+  isVendor?: boolean;
 }) {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -92,8 +94,9 @@ export default function AuthForm({
       const finalData = {
         ...data,
         fname,
-        lname,
+        lname: lname || "User",
         phone: selectedCountryCode + " " + data.phone,
+        role: isVendor ? "VENDOR" : "USER",
       };
 
       if (isSignUp) {
@@ -163,6 +166,11 @@ export default function AuthForm({
     }
   };
 
+  const inputClass = isVendor
+    ? "h-13 focus-visible:ring-amber-500"
+    : "h-13";
+  const labelClass = "";
+
   return (
     <>
       <Script src="https://verify.msg91.com/otp-provider.js" strategy="afterInteractive" />
@@ -187,9 +195,9 @@ export default function AuthForm({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel className={labelClass}>Full Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="John Doe" className="h-13" />
+                      <Input {...field} placeholder="John Doe" className={inputClass} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -211,12 +219,12 @@ export default function AuthForm({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address</FormLabel>
+                    <FormLabel className={labelClass}>Email Address</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         placeholder="you@example.com"
-                        className="h-13"
+                        className={inputClass}
                       />
                     </FormControl>
                     <FormMessage />
@@ -239,7 +247,7 @@ export default function AuthForm({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mobile No.</FormLabel>
+                    <FormLabel className={labelClass}>Mobile No.</FormLabel>
 
                     {/* Flex row for Country Code + Phone Input */}
                     <div className="flex gap-3">
@@ -251,7 +259,7 @@ export default function AuthForm({
                           setSelectedCountryCode(val.split("-")[0]); // store only "+91"
                         }}
                       >
-                        <SelectTrigger className="w-32 h-13! py-5 border-gray-400">
+                        <SelectTrigger className={`w-32 h-13! py-5 border-gray-400 ${isVendor ? "focus:ring-amber-500" : ""}`}>
                           <SelectValue placeholder="Code" />
                         </SelectTrigger>
 
@@ -275,7 +283,7 @@ export default function AuthForm({
                           type="tel"
                           maxLength={10}
                           placeholder="1234567890"
-                          className="h-13 flex-1 focus-visible:ring-2 focus-visible:ring-blue-300"
+                          className={`${inputClass} flex-1`}
                         />
                       </FormControl>
                     </div>
@@ -301,14 +309,14 @@ export default function AuthForm({
                 }}
                 render={({ field }) => (
                   <FormItem className="mb-1">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className={labelClass}>Password</FormLabel>
                     <div className="relative">
                       <FormControl>
                         <Input
                           {...field}
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
-                          className="h-13 pr-10"
+                          className={`${inputClass} pr-10`}
                         />
                       </FormControl>
   
@@ -332,7 +340,7 @@ export default function AuthForm({
                 <button
                   type="button"
                   onClick={() => router.push("/forgot-password")}
-                  className="text-sm font-medium text-blue-500 hover:text-blue-700 cursor-pointer transition-colors"
+                  className={`text-sm font-medium ${isVendor ? "text-amber-600 hover:text-amber-700" : "text-blue-500 hover:text-blue-700"} cursor-pointer transition-colors`}
                 >
                   Forget Password?
                 </button>
@@ -352,14 +360,14 @@ export default function AuthForm({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className={labelClass}>Confirm Password</FormLabel>
                     <div className="relative">
                       <FormControl>
                         <Input
                           {...field}
                           type={showConfirm ? "text" : "password"}
                           placeholder="Re-enter password"
-                          className="h-13 pr-10"
+                          className={`${inputClass} pr-10`}
                         />
                       </FormControl>
 
@@ -383,7 +391,11 @@ export default function AuthForm({
             <Button
               type="submit"
               disabled={!form.formState.isValid || isLoading}
-              className="w-full cursor-pointer disabled:cursor-no-drop bg-indigo-600 hover:bg-indigo-700 text-white h-11 disabled:opacity-40 relative"
+              className={`w-full cursor-pointer disabled:cursor-no-drop h-11 disabled:opacity-40 relative ${
+                isVendor
+                  ? "bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-lg shadow-amber-500/25"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+              }`}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -411,60 +423,93 @@ export default function AuthForm({
           </form>
         </Form>
 
-        {/* Mobile/Email Toggle Button */}
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full mt-4 flex items-center justify-center gap-2 h-11 border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-colors cursor-pointer"
-          onClick={handleMsg91LoginToggle}
-        >
-          {loginMethod === "email" ? (
-            <>
-              <FiSmartphone size={18} />
-              <span className="font-medium">Login with Mobile Number</span>
-            </>
-          ) : (
-            <>
-              <FiMail size={18} />
-              <span className="font-medium">Login with Email</span>
-            </>
-          )}
-        </Button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-2 my-6">
-          <Separator className="flex-1 bg-gray-300" />
-          <span className="text-gray-400 text-sm">Or</span>
-          <Separator className="flex-1 bg-gray-300" />
-        </div>
-
-        {/* Social Buttons */}
-        <div className="flex justify-center gap-4">
+        {/* Mobile/Email Toggle Button (Hidden for Vendors to prevent incorrect role assignment) */}
+        {!isVendor && (
           <Button
-            variant="outline"
             type="button"
-            className="w-16 h-14 rounded-xl p-2 cursor-pointer"
-            onClick={() => {
-              dispatch(setLoginProvider("google"));
-              nextAuthSignIn("google", { callbackUrl: "/" });
-            }}
+            variant="outline"
+            className="w-full mt-4 flex items-center justify-center gap-2 h-11 border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-colors cursor-pointer"
+            onClick={handleMsg91LoginToggle}
           >
-            <Image src={googleImg} alt="google" />
+            {loginMethod === "email" ? (
+              <>
+                <FiSmartphone size={18} />
+                <span className="font-medium">Login with Mobile Number</span>
+              </>
+            ) : (
+              <>
+                <FiMail size={18} />
+                <span className="font-medium">Login with Email</span>
+              </>
+            )}
           </Button>
-        </div>
+        )}
+
+        {/* Divider (Hidden for Vendors) */}
+        {!isVendor && (
+          <div className="flex items-center gap-2 my-6">
+            <Separator className="flex-1 bg-gray-300" />
+            <span className="text-gray-400 text-sm">Or</span>
+            <Separator className="flex-1 bg-gray-300" />
+          </div>
+        )}
+
+        {/* Social Buttons (Hidden for Vendors) */}
+        {!isVendor && (
+          <div className="flex justify-center gap-4">
+            <Button
+              variant="outline"
+              type="button"
+              className="w-16 h-14 rounded-xl p-2 cursor-pointer"
+              onClick={() => {
+                dispatch(setLoginProvider("google"));
+                nextAuthSignIn("google", { callbackUrl: "/" });
+              }}
+            >
+              <Image src={googleImg} alt="google" />
+            </Button>
+          </div>
+        )}
       </CardContent>
 
       {/* Footer */}
-      <CardFooter className="flex justify-center text-sm pb-6">
-        <p>
+      <CardFooter className="flex flex-col items-center gap-4 text-sm pb-6">
+        <p className="">
           {isSignUp ? "Already have an account?" : "Don’t have an account?"}
           <button
-            onClick={() =>
-              router.push(isSignUp ? "/auth/sign-in" : "/auth/sign-up")
-            }
-            className="text-indigo-600 font-bold cursor-pointer"
+            onClick={() => {
+              if (isVendor) {
+                router.push(isSignUp ? "/auth/vendor-login" : "/auth/vendor-register");
+              } else {
+                router.push(isSignUp ? "/auth/sign-in" : "/auth/sign-up");
+              }
+            }}
+            className={`font-bold cursor-pointer ml-1 ${isVendor ? "text-amber-600 hover:text-amber-500" : "text-indigo-600"}`}
           >
             {isSignUp ? "Log-In" : "Create Account"}
+          </button>
+        </p>
+
+        {/* Separator for Vendor/User Switch */}
+        <div className="w-full h-px bg-border/40 my-1" />
+
+        <p className={isVendor ? "text-gray-400" : "text-gray-500"}>
+          {isVendor ? "Not a vendor?" : "Are you a vendor?"}
+          <button
+            onClick={() => {
+              if (isVendor) {
+                router.push(isSignUp ? "/auth/sign-up" : "/auth/sign-in");
+              } else {
+                router.push(isSignUp ? "/auth/vendor-register" : "/auth/vendor-login");
+              }
+            }}
+            className={`font-bold cursor-pointer ml-1 transition-colors ${
+              isVendor ? "text-indigo-400 hover:text-indigo-300" : "text-amber-600 hover:text-amber-500"
+            }`}
+          >
+            {isVendor 
+              ? (isSignUp ? "Sign Up as Customer" : "Login as Customer") 
+              : (isSignUp ? "Register as Vendor" : "Login as Vendor")}
           </button>
         </p>
       </CardFooter>

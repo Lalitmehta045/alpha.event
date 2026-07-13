@@ -53,6 +53,7 @@ export async function signUp(
   password: string,
   confirmPassword: string,
   otp: number,
+  role: string,
   router: any
 ) {
   const toastId = toast.loading("🔐 Creating your account...");
@@ -66,6 +67,7 @@ export async function signUp(
       password,
       confirmPassword,
       otp,
+      role,
     });
 
     if (!response.data.success) {
@@ -133,10 +135,16 @@ export async function signIn(
 
     // ✅ Redirect to callbackUrl if present, otherwise default route
     const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(user.role);
+    const isVendor = user.role === "VENDOR";
     const callbackUrl = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("callbackUrl")
       : null;
-    router.push(callbackUrl || (isAdmin ? "/admin" : "/"));
+      
+    let defaultRoute = "/";
+    if (isAdmin) defaultRoute = "/admin";
+    else if (isVendor) defaultRoute = "/vendor";
+
+    router.push(callbackUrl || defaultRoute);
 
     return response.data;
 
@@ -200,10 +208,16 @@ export async function msg91SignIn(
 
     // ✅ Redirect to callbackUrl if present, otherwise default route
     const isAdmin = ["ADMIN", "SUPER-ADMIN"].includes(user.role);
+    const isVendor = user.role === "VENDOR";
     const callbackUrl = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("callbackUrl")
       : null;
-    router.push(callbackUrl || (isAdmin ? "/admin" : "/"));
+      
+    let defaultRoute = "/";
+    if (isAdmin) defaultRoute = "/admin";
+    else if (isVendor) defaultRoute = "/vendor";
+
+    router.push(callbackUrl || defaultRoute);
 
     return response.data;
 

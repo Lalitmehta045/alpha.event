@@ -82,8 +82,35 @@ const UserSchema = new Schema<IUserProfile>(
     },
     role: {
       type: String,
-      enum: ["SUPER-ADMIN", "ADMIN", "USER"],
+      enum: ["SUPER-ADMIN", "ADMIN", "USER", "VENDOR"],
       default: "USER",
+    },
+    businessName: {
+      type: String,
+      default: null,
+    },
+    businessPhone: {
+      type: String,
+      default: null,
+    },
+    vendorCategories: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Category",
+      },
+    ],
+    vendorAddress: {
+      type: String,
+      default: null,
+    },
+    idProof: {
+      type: String,
+      default: null,
+    },
+    vendorStatus: {
+      type: String,
+      enum: ["Pending_Profile", "Pending_Review", "Approved", "Rejected"],
+      default: "Pending_Profile",
     },
   },
   {

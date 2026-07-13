@@ -24,7 +24,8 @@ export default function AdminDashboard() {
     users: 0,
     products: 0,
     orders: 0,
-    categories: 0
+    categories: 0,
+    pendingApprovals: 0,
   });
 
   const dispatch = useDispatch();
@@ -81,7 +82,25 @@ export default function AdminDashboard() {
         users: users?.length || 0,
         products: (products?.length || 0) + 45,
         orders: ordersResponse?.totalOrders || 0,
+        pendingApprovals: 0, // Will be updated below
       });
+
+      // Fetch pending vendor approvals
+      try {
+        const pendingRes = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/admin/vendor-products?status=pending`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const pendingData = await pendingRes.json();
+        if (pendingData.success && pendingData.counts) {
+          setStats((prev) => ({
+            ...prev,
+            pendingApprovals: pendingData.counts.pending,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch pending approvals:", err);
+      }
 
       if (ordersResponse?.data) {
         setOrdersData(ordersResponse.data);
@@ -109,7 +128,7 @@ export default function AdminDashboard() {
       <h1 className="text-3xl font-semibold">Dashboard</h1>
       
       {/* Overview Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300">
           <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
             <Users size={24} />
@@ -147,6 +166,20 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm text-gray-500 font-medium">Categories</p>
             <h3 className="text-2xl font-bold">{stats.categories}</h3>
+          </div>
+        </div>
+
+        {/* Pending Approvals Card */}
+        <div 
+          className="bg-indigo-50 p-6 rounded-xl shadow-sm border border-indigo-100 flex items-center space-x-4 transition-transform hover:scale-105 duration-300 cursor-pointer"
+          onClick={() => window.location.href = "/admin/vendor-products"}
+        >
+          <div className="p-3 bg-indigo-100 text-indigo-700 rounded-lg">
+            <Package size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-indigo-600 font-medium">Pending Approvals</p>
+            <h3 className="text-2xl font-bold text-indigo-900">{stats.pendingApprovals}</h3>
           </div>
         </div>
       </div>

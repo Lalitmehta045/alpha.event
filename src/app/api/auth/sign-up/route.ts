@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    let fname, lname, email, phone, password, confirmPassword, otp;
+    let fname, lname, email, phone, password, confirmPassword, otp, role;
     try {
       const body = await req.json();
       fname = body.fname;
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       password = body.password;
       confirmPassword = body.confirmPassword;
       otp = body.otp;
+      role = body.role || "USER";
     } catch (jsonError) {
       return NextResponse.json(
         { success: false, error: "Invalid JSON request body", message: "Invalid JSON request body" },
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
       email,
       phone: mobileStr,
       password: hashedPassword,
-      role: "USER",
+      role: role,
       verify_email: true,
       profileCompleted: true,
     });

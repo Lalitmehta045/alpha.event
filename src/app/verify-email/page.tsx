@@ -95,6 +95,7 @@ export default function VerifyEmailPage() {
         pendingUser.password,
         pendingUser.confirmPassword,
         Number(otp),
+        pendingUser.role || "USER",
         router
       );
 

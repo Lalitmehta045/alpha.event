@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 // 1. Define Public Routes (No login required)
-const authRoutes = ["/auth/sign-in", "/auth/sign-up", "/verify-email"];
+const authRoutes = ["/auth/sign-in", "/auth/sign-up", "/auth/vendor-login", "/verify-email"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -55,6 +55,9 @@ export async function middleware(request: NextRequest) {
       if (role === "SUPER-ADMIN" || role === "ADMIN") {
         return NextResponse.redirect(new URL("/admin", request.url));
       }
+      if (role === "VENDOR") {
+        return NextResponse.redirect(new URL("/vendor", request.url));
+      }
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
@@ -65,6 +68,7 @@ export async function middleware(request: NextRequest) {
     // If trying to access protected routes → Redirect to Login
     if (
       pathname.startsWith("/admin") ||
+      pathname.startsWith("/vendor") ||
       pathname.startsWith("/profile") ||
       pathname.startsWith("/orders") ||
       pathname.startsWith("/purchase-history")
@@ -100,9 +104,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // === SCENARIO C: FOR STANDARD USER ===
+  // === SCENARIO C: FOR VENDOR ===
+  if (role === "VENDOR") {
+    // VENDOR can access /vendor/* routes
+    if (pathname.startsWith("/vendor")) {
+      return NextResponse.next();
+    }
+    // Block VENDOR from /admin
+    if (pathname.startsWith("/admin")) {
+      return NextResponse.redirect(new URL("/vendor", request.url));
+    }
+    // Allow public pages
+    return NextResponse.next();
+  }
+
+  // === SCENARIO D: FOR STANDARD USER ===
   if (role === "USER") {
     if (pathname.startsWith("/admin")) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    if (pathname.startsWith("/vendor")) {
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();

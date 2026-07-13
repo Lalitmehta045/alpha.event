@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
       avatar: user.avatar,
       phone: user.phone,
       profileCompleted: isCompleted,
+      vendorStatus: user.vendorStatus,
     };
 
     const response = NextResponse.json({
@@ -122,4 +123,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

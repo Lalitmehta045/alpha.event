@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
     const search = req.nextUrl.searchParams.get("search")?.trim() || "";
 
-    let filter: any = { role: "USER" };
+    let filter: any = { role: { $in: ["USER", "VENDOR"] } };
 
     if (search) {
       filter.$or = [
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Fetched all USER role data successfully",
+        message: "Fetched all users and vendors successfully",
         data: users,
       },
       { status: 200 }

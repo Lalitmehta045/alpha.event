@@ -136,6 +136,7 @@ export default function ViewUserDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USER">USER</SelectItem>
+                  <SelectItem value="VENDOR">VENDOR</SelectItem>
                   <SelectItem value="ADMIN">ADMIN</SelectItem>
                 </SelectContent>
               </Select>

@@ -31,6 +31,10 @@ export interface Product {
   description: string;
   more_details?: Record<string, string>;
   discount: number;
+  status?: "pending" | "approved" | "rejected";
+  vendorId?: string;
+  vendorNote?: string;
+  createdAt?: string;
 }
 
 // Product sent to backend when creating a new product
@@ -73,6 +77,9 @@ export interface IProduct extends Document {
   description?: string;
   more_details: mongoose.Schema.Types.Mixed;
   publish: boolean;
+  status?: "pending" | "approved" | "rejected";
+  vendorId?: Types.ObjectId | string;
+  vendorNote?: string;
   createdAt: Date;
   updatedAt: Date;
 }

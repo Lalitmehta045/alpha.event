@@ -18,8 +18,10 @@ import {
   PackageSearch,
   ShieldCheck,
   ShoppingCart,
+  Store,
   Upload,
   Users,
+  UserCheck,
 } from "lucide-react";
 import { RootState } from "@/redux/store/store";
 import { useEffect, useState } from "react";
@@ -33,7 +35,9 @@ export const items = [
   { href: "/admin/sub-category", label: "SubCategory", icon: Layers3 },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/vendor-accounts", label: "Vendor Accounts", icon: UserCheck },
   { href: "/admin/all-admins", label: "Admins", icon: ShieldCheck },
+  { href: "/admin/vendor-products", label: "Product Approvals", icon: Store },
   { href: "/admin/recent", label: "Recent", icon: History },
 ];
 
@@ -46,6 +50,8 @@ export default function AdminSidebar({
   const router = useRouter();
   const dispatch = useDispatch();
   const [getUser, setGetUser] = useState<User | null>(null);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+  const token = useSelector((state: RootState) => state.auth.token);
 
   // ⬅️ GET USER ROLE FROM LOCAL-STORAGE (REAL-TIME)
   useEffect(() => {
@@ -55,6 +61,53 @@ export default function AdminSidebar({
       setGetUser(JSON.parse(storedUser)); // ← Fix here
     }
   }, []);
+
+  // Fetch pending vendor products count
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/admin/vendor-products?status=pending`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const data = await res.json();
+        if (data.success && data.counts) {
+          setPendingCount(data.counts.pending);
+        }
+      } catch (error) {
+        console.error("Failed to fetch pending vendor products count:", error);
+      }
+    };
+    
+    const fetchPendingVendorAccounts = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/admin/vendor-accounts?status=Pending_Review`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const data = await res.json();
+        if (data.success && data.data) {
+          // Store count somewhere if needed, but for now we'll just check if > 0
+          // For simplicity we will skip the badge for vendor accounts to avoid adding more state
+        }
+      } catch (error) {
+        console.error("Failed to fetch pending accounts:", error);
+      }
+    };
+    
+    fetchPendingCount();
+    fetchPendingVendorAccounts();
+  }, [token]);
 
   const filteredItems = items.filter((it) => {
     // Hide "Admins" for regular admin
@@ -79,15 +132,22 @@ export default function AdminSidebar({
               key={it.href}
               href={it.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
+                "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition",
                 pathname.startsWith(it.href)
                   ? "bg-gray-200 font-semibold"
                   : "hover:bg-gray-100"
               )}
               onClick={onLinkClick}
             >
-              <it.icon className="w-5 h-5" />
-              {it.label}
+              <div className="flex items-center gap-3">
+                <it.icon className="w-5 h-5" />
+                {it.label}
+              </div>
+              {it.href === "/admin/vendor-products" && pendingCount > 0 && (
+                <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                  {pendingCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
           avatar: user.avatar,
           phone: user.phone,
           profileCompleted: isCompleted,
+          vendorStatus: user.vendorStatus,
         },
       },
     });
@@ -89,4 +90,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

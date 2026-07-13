@@ -2,4 +2,5 @@ export const ACCOUNT_TYPE = {
   USER: "USER",
   ADMIN: "ADMIN",
   SUPERADMIN: "SUPER-ADMIN",
+  VENDOR: "VENDOR",
 };

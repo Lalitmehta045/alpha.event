@@ -15,6 +15,7 @@ import { getAllCartItems } from "@/services/operations/cartItem";
 import { handleAddItemCart } from "@/redux/slices/cartSlice";
 import AIPlannerModal from "@/components/common/aiPlanner/AIPlannerModal";
 import WhatsAppButton from "@/components/common/WhatsAppButton";
+import VendorBanner from "@/components/core/vendor/VendorBanner";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -74,6 +75,7 @@ export default function Home() {
     <div className="relative flex flex-col w-full mx-auto h-min items-center font-sans">
       <LayoutV1>
         <MainHero />
+        <VendorBanner />
         <HomeProducts />
         {/* <CategoryV3 />
           <FeaturedProd />

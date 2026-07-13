@@ -56,6 +56,20 @@ const ProductSchema = new Schema<IProduct>(
       type: Boolean,
       default: true,
     },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    vendorId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    vendorNote: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

@@ -93,6 +93,8 @@ export async function POST(req: NextRequest) {
       role: user.role,
       avatar: user.avatar,
       phone: user.phone,
+      profileCompleted: user.profileCompleted,
+      vendorStatus: user.vendorStatus,
     };
 
     const response = NextResponse.json({

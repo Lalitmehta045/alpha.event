@@ -11,14 +11,23 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || "";
 
-    let filter = {};
+    // Base filter to only show published AND (approved OR existing products without status)
+    let filter: any = {
+      publish: true,
+      $or: [{ status: "approved" }, { status: { $exists: false } }],
+    };
 
-    // If query exists, filter products by name or description (case-insensitive)
+    // If query exists, add name/description search to filter
     if (query) {
       filter = {
-        $or: [
-          { name: { $regex: query, $options: "i" } },
-          { description: { $regex: query, $options: "i" } },
+        $and: [
+          filter,
+          {
+            $or: [
+              { name: { $regex: query, $options: "i" } },
+              { description: { $regex: query, $options: "i" } },
+            ],
+          },
         ],
       };
     }

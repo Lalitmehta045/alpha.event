@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: ParamsPromise) {
 
     const { id } = await params; // ✅ FIX
 
-    const user = await UserModel.findOne({ _id: id, role: "USER" })
+    const user = await UserModel.findOne({ _id: id, role: { $in: ["USER", "VENDOR"] } })
       .select(
         "_id name email phone avatar status role address_details shopping_cart orderHistory"
       )
@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const data = await req.json();
 
     const updatedUser = await UserModel.findOneAndUpdate(
-      { _id: id, role: "USER" },
+      { _id: id, role: { $in: ["USER", "VENDOR"] } },
       data,
       { new: true, runValidators: true }
     ).select("_id status role");
@@ -79,7 +79,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
 
     const deletedUser = await UserModel.findOneAndDelete({
       _id: id,
-      role: "USER",
+      role: { $in: ["USER", "VENDOR"] },
     });
     if (!deletedUser)
       return NextResponse.json({ error: "User not found" }, { status: 404 });

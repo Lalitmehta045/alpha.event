@@ -18,6 +18,7 @@ import SearchBar from "@/components/common/searchBar/searchBar";
 import { BsCart2 } from "react-icons/bs";
 import ProfileSheet from "../profile/ProfileSheet";
 import { useSession, signOut } from "next-auth/react";
+import { HiBuildingStorefront } from "react-icons/hi2";
 
 const HeaderV1 = () => {
   const router = useRouter();
@@ -143,41 +144,74 @@ const HeaderV1 = () => {
           {/* Desktop Button */}
           {/* RIGHT SIDE CONTROLS */}
           <div className="hidden sm:flex items-center gap-6">
-            {/* 🔥 Show Avatar only when user logged in */}
-            {user ? (
-              <Image
-                src={user.avatar || "/assets/images/User3.png"}
-                alt="Avatar"
-                width={45}
-                height={45}
-                className="block mx-auto rounded-full cursor-pointer border"
-                onClick={() => setOpenProfile(true)}
-              />
+            {user && (user as any).role === "VENDOR" ? (
+              /* VENDOR: Show Dashboard button instead of cart/profile */
+              <>
+                <Link
+                  href="/vendor"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl transition-all duration-200 shadow-md shadow-amber-500/25 hover:shadow-amber-500/40 text-sm"
+                >
+                  <HiBuildingStorefront className="text-lg" />
+                  Vendor Dashboard
+                </Link>
+
+                <div
+                  className="relative hidden lg:flex flex-col mr-2 md:mr-0"
+                  onClick={() => router.push("/cart")}
+                >
+                  <BsCart2 className="text-3xl md:text-4xl cursor-pointer text-gray-700" />
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 md:w-5 h-4 md:h-5 text-xs font-bold text-white bg-red-400 rounded-full">
+                    {items[0] ? totalQuantity : 0}
+                  </span>
+                </div>
+
+                <CTAButtonV1
+                  variant="secondary"
+                  text="Logout"
+                  onClick={() => handleLogout()}
+                  className="hidden md:flex px-4 md:px-8 py-5 md:py-6"
+                />
+              </>
             ) : (
-              <FaUserCircle
-                className="text-4xl hidden md:block cursor-pointer text-gray-700"
-                onClick={() => router.push("/auth/sign-in")}
-              />
+              /* USER / ADMIN / Guest: Original behavior */
+              <>
+                {/* 🔥 Show Avatar only when user logged in */}
+                {user ? (
+                  <Image
+                    src={user.avatar || "/assets/images/User3.png"}
+                    alt="Avatar"
+                    width={45}
+                    height={45}
+                    className="block mx-auto rounded-full cursor-pointer border"
+                    onClick={() => setOpenProfile(true)}
+                  />
+                ) : (
+                  <FaUserCircle
+                    className="text-4xl hidden md:block cursor-pointer text-gray-700"
+                    onClick={() => router.push("/auth/sign-in")}
+                  />
+                )}
+
+                <div
+                  className="relative hidden lg:flex flex-col mr-2 md:mr-0"
+                  onClick={() => router.push("/cart")}
+                >
+                  <BsCart2 className="text-3xl md:text-4xl cursor-pointer text-gray-700" />
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 md:w-5 h-4 md:h-5 text-xs font-bold text-white bg-red-400 rounded-full">
+                    {items[0] ? totalQuantity : 0}
+                  </span>
+                </div>
+
+                <CTAButtonV1
+                  variant="secondary"
+                  text={user ? "Logout" : "Log-In"}
+                  onClick={() =>
+                    user ? handleLogout() : router.push("/auth/sign-in")
+                  }
+                  className="hidden md:flex px-4 md:px-8 py-5 md:py-6"
+                />
+              </>
             )}
-
-            <div
-              className="relative hidden lg:flex flex-col mr-2 md:mr-0"
-              onClick={() => router.push("/cart")}
-            >
-              <BsCart2 className="text-3xl md:text-4xl cursor-pointer text-gray-700" />
-              <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 md:w-5 h-4 md:h-5 text-xs font-bold text-white bg-red-400 rounded-full">
-                {items[0] ? totalQuantity : 0}
-              </span>
-            </div>
-
-            <CTAButtonV1
-              variant="secondary"
-              text={user ? "Logout" : "Log-In"}
-              onClick={() =>
-                user ? handleLogout() : router.push("/auth/sign-in")
-              }
-              className="hidden md:flex px-4 md:px-8 py-5 md:py-6"
-            />
           </div>
         </main>
 

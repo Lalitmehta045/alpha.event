@@ -18,6 +18,7 @@ import { getAllCartItems } from "@/services/operations/cartItem";
 import SubCategorySlug from "@/components/core/subcategory/subcategorySlug";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import CategoryCarousel from "@/components/core/category/CategoryCarousel";
 
 export default function CategoryResolverPage() {
   const { slugParts } = useParams<{ slugParts: string[] }>();
@@ -153,6 +154,8 @@ export default function CategoryResolverPage() {
               />
             </motion.section>
 
+            <CategoryCarousel />
+
             <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-14 mt-3 mx-auto md:mt-10">
               {sortedSubCats.map((sub, index) => {
                 const subUrl = `/category/${categorySlug}/${sub.name
@@ -173,6 +176,11 @@ export default function CategoryResolverPage() {
                       image={sub.image as any}
                       onClick={() => router.push(subUrl)}
                       className="rounded-2xl cursor-pointer"
+                      imageClassName={
+                        ["structures", "decor props"].includes(sub.name.toLowerCase())
+                          ? "rotate-90 scale-[1.35]"
+                          : ""
+                      }
                     />
                   </motion.div>
                 );

@@ -137,7 +137,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationChange }) => {
               <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
                 Select City
               </div>
-              {["Indore", "Bhopal", "Ujjain", "Jabalpur"].map((city) => (
+              {["Indore", "Bhopal", "Ujjain", "Jabalpur", "Rau", "Pithampur", "Dewas", "Mhow"].map((city) => (
                 <button
                   key={city}
                   type="button"

@@ -99,6 +99,12 @@ export const adminEndpoints = {
   ADMIN_ORDER_DELETE_API: (id: string) => `${BASE_URL}/api/admin/orders/${id}`,
 
   // ============================================
+  // ✅ VENDOR PRODUCTS APPROVAL
+  // ============================================
+  VENDOR_PRODUCTS_GET_API: `${BASE_URL}/api/admin/vendor-products`,
+  VENDOR_PRODUCT_PATCH_API: (id: string) => `${BASE_URL}/api/admin/vendor-products/${id}`,
+
+  // ============================================
   // ✅ WHATSAPP
   // ============================================
   WHATSAPP_RESEND_API: `${BASE_URL}/api/admin/whatsapp/resend`,
@@ -173,4 +179,12 @@ export const addressEndpoints = {
   POSTADDRESS_API: `${BASE_URL}/api/address`,
   PUTADDRESS_API: (id: string) => `${BASE_URL}/api/address/${id}`,
   DELETEADDRESS_API: (id: string) => `${BASE_URL}/api/address/${id}`,
+};
+
+// ✅ Vendor Endpoints
+export const vendorEndpoints = {
+  VENDOR_PRODUCTS_GET_API: `${BASE_URL}/api/vendor/products`,
+  VENDOR_PRODUCT_POST_API: `${BASE_URL}/api/vendor/product`,
+  VENDOR_UPLOAD_IMAGE_API: `${BASE_URL}/api/vendor/product/upload-image`,
+  VENDOR_PREVIEW_IMAGE_API: `${BASE_URL}/api/vendor/product/preview-image`,
 };

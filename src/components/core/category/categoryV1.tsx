@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import React, { useMemo } from "react";
 import { RootState } from "@/redux/store/store";
 import { BentoCard } from "@/components/ui/newbentogrid";
+import CategoryCarousel from "./CategoryCarousel";
 
 export const valideURLConvert = (name: string) => {
   return name
@@ -51,8 +52,9 @@ const CategoryV1: React.FC = () => {
   // /${valideURLConvert(subcategory.name)}-${subcategory._id}
 
   return (
-    <section className="py-8 px-0 md:px-8 mx-auto">
-      <div className="max-w-max grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 place-items-center md:place-items-start mx-auto">
+    <section className="py-8 w-full">
+      <CategoryCarousel />
+      <div className="max-w-max grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 place-items-center md:place-items-start mx-auto mt-4 px-2 md:px-8">
         {sortedCategories.map((cat: any) => (
           <BentoCard
             key={cat._id}

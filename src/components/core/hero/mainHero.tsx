@@ -50,7 +50,7 @@ const MainHero = () => {
       {/* Hero Content */}
       <ContainerV1>
         <SearchBar onLocationChange={setLocation} />
-        {location === "Indore" ? <CategoryV1 /> : <ComingSoon location={location} />}
+        {["Bhopal", "Jabalpur"].includes(location) ? <ComingSoon location={location} /> : <CategoryV1 />}
       </ContainerV1>
     </section>
   );

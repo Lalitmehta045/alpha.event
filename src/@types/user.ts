@@ -53,7 +53,13 @@ export interface IUserProfile {
   forgot_password_otp?: string;
   forgot_password_expiry?: Date;
   status: string;
-  role: "USER" | "ADMIN" | "SUPER-ADMIN";
+  role: "USER" | "ADMIN" | "SUPER-ADMIN" | "VENDOR";
+  businessName?: string | null;
+  businessPhone?: string | null;
+  vendorCategories?: any[];
+  vendorAddress?: string | null;
+  idProof?: string | null;
+  vendorStatus?: string;
   address_details: IAddress[];
   shopping_cart: CartItem[];
   orderHistory: IOrderItem[];
@@ -69,7 +75,11 @@ export interface USERS {
   profileCompleted: boolean;
   last_login_date?: string | null;
   status: string;
-  role: "USER" | "ADMIN" | "SUPER-ADMIN";
+  role: "USER" | "ADMIN" | "SUPER-ADMIN" | "VENDOR";
+  vendorCategories?: any[];
+  vendorAddress?: string | null;
+  idProof?: string | null;
+  vendorStatus?: string;
   createdAt: string;
   updatedAt: string;
 }

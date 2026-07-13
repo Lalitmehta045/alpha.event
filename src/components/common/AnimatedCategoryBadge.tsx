@@ -42,7 +42,7 @@ const AnimatedCategoryBadge: React.FC<AnimatedCategoryBadgeProps> = ({
     <motion.div
       initial={initial}
       whileInView="visible"
-      viewport={{ once: true }}
+      viewport={{ once: false }}
       whileHover={{
         scale: 1.05,
         filter: 'brightness(1.1)',
