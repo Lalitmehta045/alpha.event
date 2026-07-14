@@ -43,7 +43,6 @@ export async function ensureAdmin(req: NextRequest) {
 
     return decoded; // success → return user info if needed
   } catch (error) {
-    console.error("ensureAdmin Error:", error);
     throw new Error("Unauthorized");
   }
 }
@@ -63,13 +62,17 @@ export async function getCurrentAdmin(req: NextRequest) {
 
   if (!token) throw new Error("Unauthorized");
 
-  const secret = process.env.SECRET_KEY_ACCESS_TOKEN!;
-  const decoded: any = jwt.verify(token, secret);
+  try {
+    const secret = process.env.SECRET_KEY_ACCESS_TOKEN!;
+    const decoded: any = jwt.verify(token, secret);
 
-  if (decoded.role !== "ADMIN" && decoded.role !== "SUPER-ADMIN") {
+    if (decoded.role !== "ADMIN" && decoded.role !== "SUPER-ADMIN") {
+      throw new Error("Unauthorized");
+    }
+    return decoded.id; // Return admin_id
+  } catch (error) {
     throw new Error("Unauthorized");
   }
-  return decoded.id; // Return admin_id
 }
 
 export async function ensureSuperAdmin(req: NextRequest) {

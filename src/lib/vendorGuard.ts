@@ -43,7 +43,6 @@ export async function ensureVendor(req: NextRequest) {
 
     return decoded; // success → return user info if needed
   } catch (error) {
-    console.error("ensureVendor Error:", error);
     throw new Error("Unauthorized");
   }
 }
@@ -63,16 +62,20 @@ export async function getCurrentVendor(req: NextRequest): Promise<string> {
 
   if (!token) throw new Error("Unauthorized");
 
-  const secret = process.env.SECRET_KEY_ACCESS_TOKEN!;
-  const decoded: any = jwt.verify(token, secret);
+  try {
+    const secret = process.env.SECRET_KEY_ACCESS_TOKEN!;
+    const decoded: any = jwt.verify(token, secret);
 
-  if (
-    decoded.role !== ACCOUNT_TYPE.VENDOR &&
-    decoded.role !== ACCOUNT_TYPE.ADMIN &&
-    decoded.role !== ACCOUNT_TYPE.SUPERADMIN
-  ) {
+    if (
+      decoded.role !== ACCOUNT_TYPE.VENDOR &&
+      decoded.role !== ACCOUNT_TYPE.ADMIN &&
+      decoded.role !== ACCOUNT_TYPE.SUPERADMIN
+    ) {
+      throw new Error("Unauthorized");
+    }
+
+    return decoded.id; // Return vendorId for filtering products
+  } catch (error) {
     throw new Error("Unauthorized");
   }
-
-  return decoded.id; // Return vendorId for filtering products
 }
