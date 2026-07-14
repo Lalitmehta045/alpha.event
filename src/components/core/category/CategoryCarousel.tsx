@@ -103,13 +103,13 @@ export default function CategoryCarousel() {
         onMouseLeave={onTouchEnd}
         onClick={() => handleSlideClick(slides[currentIndex]?.subCategory)}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
+            initial={{ opacity: 0, x: 150, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -150, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 260, damping: 25 }}
             className={`absolute inset-0 w-full h-full ${slides[currentIndex].bgClass} p-5 sm:p-8 md:p-10 cursor-pointer`}
             style={{
               backgroundImage: slides[currentIndex].glowColor,

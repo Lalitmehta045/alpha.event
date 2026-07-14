@@ -114,17 +114,17 @@ export default function VendorBanner() {
                   <>
                     <Link
                       href="/auth/vendor-login"
-                      className="group flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2 md:px-6 md:py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px] md:text-base rounded-lg md:rounded-2xl transition-all duration-200 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5"
+                      className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2 md:px-6 md:py-4 bg-white/10 hover:bg-white/15 text-white font-semibold text-[10px] md:text-base rounded-lg md:rounded-2xl border border-white/20 transition-all duration-200 hover:-translate-y-0.5"
                     >
                       Login
-                      <FiArrowRight className="transition-transform duration-200 group-hover:translate-x-1 hidden md:block" />
                     </Link>
 
                     <Link
                       href="/auth/vendor-register"
-                      className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2 md:px-6 md:py-4 bg-white/10 hover:bg-white/15 text-white font-semibold text-[10px] md:text-base rounded-lg md:rounded-2xl border border-white/20 transition-all duration-200 hover:-translate-y-0.5"
+                      className="group flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2 md:px-6 md:py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px] md:text-base rounded-lg md:rounded-2xl transition-all duration-200 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5"
                     >
                       Register
+                      <FiArrowRight className="transition-transform duration-200 group-hover:translate-x-1 hidden md:block" />
                     </Link>
                   </>
                 )}

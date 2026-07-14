@@ -7,7 +7,7 @@ import { getAllCategory } from "@/services/operations/category";
 import { getAllSubCategory } from "@/services/operations/subcategory";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getAllProduct } from "@/services/operations/product";
 import HomeProducts from "@/components/core/homeProducts/HomeProducts";
@@ -21,6 +21,7 @@ export default function Home() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const token = useSelector((state: RootState) => state.auth.token) as string;
+  const [location, setLocation] = useState("Indore");
 
   const productData = useSelector(
     (state: RootState) => state.product.allProducts
@@ -71,12 +72,14 @@ export default function Home() {
     }
   }, [categories.length, subCategories.length, productData.length]);
 
+  const isComingSoon = ["Bhopal", "Jabalpur"].includes(location);
+
   return (
     <div className="relative flex flex-col w-full mx-auto h-min items-center font-sans">
       <LayoutV1>
-        <MainHero />
+        <MainHero location={location} onLocationChange={setLocation} />
         <VendorBanner />
-        <HomeProducts />
+        {!isComingSoon && <HomeProducts />}
         {/* <CategoryV3 />
           <FeaturedProd />
           <MostPopularProd />

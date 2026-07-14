@@ -39,8 +39,15 @@ const ComingSoon = ({ location }: { location: string }) => (
   </motion.div>
 );
 
-const MainHero = () => {
-  const [location, setLocation] = useState("Indore");
+const MainHero = ({ location: propLocation, onLocationChange }: { location?: string; onLocationChange?: (location: string) => void }) => {
+  const [localLocation, setLocalLocation] = useState("Indore");
+
+  const location = propLocation !== undefined ? propLocation : localLocation;
+  
+  const handleLocationChange = (newLocation: string) => {
+    setLocalLocation(newLocation);
+    if (onLocationChange) onLocationChange(newLocation);
+  };
 
   return (
     <section
@@ -49,7 +56,7 @@ const MainHero = () => {
     >
       {/* Hero Content */}
       <ContainerV1>
-        <SearchBar onLocationChange={setLocation} />
+        <SearchBar onLocationChange={handleLocationChange} />
         {["Bhopal", "Jabalpur"].includes(location) ? <ComingSoon location={location} /> : <CategoryV1 />}
       </ContainerV1>
     </section>
