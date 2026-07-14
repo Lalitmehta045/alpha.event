@@ -27,11 +27,14 @@ const AnimatedCategoryBadge: React.FC<AnimatedCategoryBadgeProps> = ({
       opacity: 0
     },
     visible: {
-      clipPath: 'inset(0 0% 0 0)',
-      opacity: 1,
+      clipPath: ['inset(0 100% 0 0)', 'inset(0 0% 0 0)', 'inset(0 0% 0 0)'],
+      opacity: [0, 1, 1],
       transition: {
-        duration: 0.8,
-        ease: "easeOut",
+        duration: 3,
+        times: [0, 0.3, 1],
+        ease: "easeInOut",
+        repeat: Infinity,
+        repeatType: "loop",
       },
     },
   };

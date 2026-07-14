@@ -5,7 +5,7 @@ import ConfirmDeleteDialog from "@/components/admin/ConfirmDialog";
 import AdminProductCard from "@/components/admin/products/AdminProductCard";
 import EditProductDialog from "@/components/admin/products/EditProductDialog";
 import { RootState } from "@/redux/store/store";
-import { deleteProduct, getAllProduct } from "@/services/operations/product";
+import { deleteProduct, getAllAdminProduct } from "@/services/operations/product";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -53,8 +53,8 @@ export default function ProductsPage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  const allProducts = useSelector(
-    (state: RootState) => state.product.allProducts
+  const allAdminProducts = useSelector(
+    (state: RootState) => state.product.allAdminProducts
   );
 
   const handleDelete = async () => {
@@ -66,7 +66,7 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       await deleteProduct(deleteData._id, token);
-      const res = await getAllProduct(dispatch);
+      const res = await getAllAdminProduct(dispatch);
       if (res) setProducts(res);
       toast.success(`Product deleted successfully`);
     } catch (error) {
@@ -81,7 +81,7 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await getAllProduct(dispatch);
+      const res = await getAllAdminProduct(dispatch);
       setProducts(res);
     } catch {
       toast.error("Failed to fetch products");
@@ -92,7 +92,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [products.length, allProducts.length]);
+  }, [products.length, allAdminProducts.length]);
 
   return (
     <div className="space-y-4 p-0 sm:p-2">
@@ -151,7 +151,7 @@ export default function ProductsPage() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 place-content-center gap-2 md:gap-4 scroll-smooth">
             {(() => {
-              const filteredProducts = allProducts.filter((p: Product) =>
+              const filteredProducts = allAdminProducts.filter((p: Product) =>
                 p.name.toLowerCase().includes(searchQuery.toLowerCase())
               );
               const paginatedProducts = filteredProducts.slice(
@@ -170,7 +170,7 @@ export default function ProductsPage() {
             })()}
           </div>
           {(() => {
-            const filteredProducts = allProducts.filter((p: Product) =>
+            const filteredProducts = allAdminProducts.filter((p: Product) =>
               p.name.toLowerCase().includes(searchQuery.toLowerCase())
             );
             const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);

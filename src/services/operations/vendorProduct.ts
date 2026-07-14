@@ -25,7 +25,12 @@ export const addVendorProduct = async (
     result = response.data.data;
     toast.success("Product submitted! Waiting for admin approval.");
   } catch (error: any) {
-    console.error("ADD VENDOR PRODUCT ERROR:", error.response?.data || error);
+    console.log("ADD VENDOR PRODUCT ERROR:", {
+      message: error.message,
+      stack: error.stack,
+      responseData: error.response?.data,
+      error
+    });
     toast.error(
       error.response?.data?.message || error.message || "Failed to submit product"
     );

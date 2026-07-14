@@ -139,7 +139,7 @@ export async function signIn(
     const callbackUrl = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("callbackUrl")
       : null;
-      
+
     let defaultRoute = "/";
     if (isAdmin) defaultRoute = "/admin";
     else if (isVendor) defaultRoute = "/vendor";
@@ -151,7 +151,7 @@ export async function signIn(
   } catch (err: any) {
     toast.dismiss(toastId);
     const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Login failed. Please try again.";
-    
+
     // Redirect to create account if user doesn't exist
     if (errMsg.toLowerCase().includes("user does not exist")) {
       toast.error("User does not exist. Please create an account.");
@@ -159,7 +159,7 @@ export async function signIn(
     } else {
       toast.error(errMsg);
     }
-    
+
     return null;
   }
 }
@@ -212,7 +212,7 @@ export async function msg91SignIn(
     const callbackUrl = typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("callbackUrl")
       : null;
-      
+
     let defaultRoute = "/";
     if (isAdmin) defaultRoute = "/admin";
     else if (isVendor) defaultRoute = "/vendor";

@@ -346,6 +346,11 @@ const UploadProduct: React.FC = () => {
       return;
     }
 
+    if (!values.image || values.image.length === 0) {
+      toast.error("Please upload at least one product image");
+      return;
+    }
+
     try {
       setLoading(true);
 

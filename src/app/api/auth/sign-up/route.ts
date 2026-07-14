@@ -79,10 +79,20 @@ export async function POST(req: NextRequest) {
     // ✅ Check if user already exists
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: "User already exists", message: "User already exists" },
-        { status: 400 }
-      );
+      if (role === "VENDOR" && existingUser.role === "USER") {
+        // User exists as a normal USER, allow them to upgrade to VENDOR
+        // Proceed with registration flow to update their details
+      } else if (existingUser.role === "VENDOR" || existingUser.role === "ADMIN" || existingUser.role === "SUPER-ADMIN") {
+        return NextResponse.json(
+          { success: false, error: "An account with this email already exists and is not a standard user.", message: "An account with this email already exists and is not a standard user." },
+          { status: 400 }
+        );
+      } else {
+        return NextResponse.json(
+          { success: false, error: "User already exists", message: "User already exists" },
+          { status: 400 }
+        );
+      }
     }
 
     // ✅ Get latest OTP
@@ -116,17 +126,34 @@ export async function POST(req: NextRequest) {
     // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create user
-    const user = await UserModel.create({
-      fname,
-      lname, // ✅ FIX — mapped correctly to your UserModel
-      email,
-      phone: mobileStr,
-      password: hashedPassword,
-      role: role,
-      verify_email: true,
-      profileCompleted: true,
-    });
+    // ✅ Create or Update user
+    let user;
+    if (existingUser && role === "VENDOR" && existingUser.role === "USER") {
+      user = await UserModel.findByIdAndUpdate(
+        existingUser._id,
+        {
+          fname,
+          lname,
+          phone: mobileStr,
+          password: hashedPassword,
+          role: "VENDOR",
+          verify_email: true,
+          profileCompleted: true,
+        },
+        { new: true }
+      );
+    } else {
+      user = await UserModel.create({
+        fname,
+        lname,
+        email,
+        phone: mobileStr,
+        password: hashedPassword,
+        role: role,
+        verify_email: true,
+        profileCompleted: true,
+      });
+    }
 
     return NextResponse.json({
       success: true,

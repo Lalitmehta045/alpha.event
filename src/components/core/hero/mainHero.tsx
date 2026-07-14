@@ -31,7 +31,7 @@ const ComingSoon = ({ location }: { location: string }) => (
     </motion.div>
 
     <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
-      Coming Soon to <span className="text-[#ffccd5]">{location}</span>
+      Coming Soon in <span className="text-[#ffccd5]">{location}</span>
     </h2>
     <p className="text-lg md:text-xl text-gray-200 max-w-2xl font-light drop-shadow-md">
       We are working hard to bring our premium event rentals and decorations to your city. Stay tuned for updates!

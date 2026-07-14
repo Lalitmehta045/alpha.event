@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
       discount,
       description,
       more_details,
+      status: "approved",
     });
 
     return NextResponse.json(

@@ -179,7 +179,7 @@ export default function CompleteProfilePage() {
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            
+
             {/* Category Selection */}
             <FormField
               control={form.control}

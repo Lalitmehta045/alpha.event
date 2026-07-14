@@ -9,6 +9,7 @@ export interface SubCategory {
   _id: string;
   name: string;
   image?: string;
+  description?: string;
   category: {
     _id: string;
     name: string;
