@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { signOut, useSession, getSession } from "next-auth/react";
 import { useDispatch, useSelector } from "react-redux";
-import { setToken, setUser } from "@/redux/slices/authSlice";
+import { setToken, setUser, setLoginProvider } from "@/redux/slices/authSlice";
 import { RootState } from "@/redux/store/store";
 import { apiConnector } from "@/services/apiconnector";
 import { endpoints } from "@/services/api_endpoints";
@@ -49,6 +49,13 @@ export default function AuthProvider({
           dispatch(setUser(user));
           if (token) {
             dispatch(setToken(token));
+          }
+          // Restore loginProvider in Redux from localStorage
+          const storedProvider = typeof window !== "undefined"
+            ? localStorage.getItem("loginProvider") as "credentials" | "google" | null
+            : null;
+          if (storedProvider) {
+            dispatch(setLoginProvider(storedProvider));
           }
         } else {
           const error = new Error("Unauthorized") as Error & { status?: number };

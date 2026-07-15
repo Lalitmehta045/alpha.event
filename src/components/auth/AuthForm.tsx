@@ -186,7 +186,7 @@ export default function AuthForm({
                 control={form.control}
                 name="fullName"
                 rules={{
-                  required: "Full Name is required",
+                  required: isVendor ? "Firm Name is required" : "Full Name is required",
                   minLength: { value: 3, message: "Minimum 3 characters" },
                   pattern: {
                     value: /^[A-Za-z ]+$/,
@@ -195,9 +195,9 @@ export default function AuthForm({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={labelClass}>Full Name</FormLabel>
+                    <FormLabel className={labelClass}>{isVendor ? "Firm Name" : "Full Name"}</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="John Doe" className={inputClass} />
+                      <Input {...field} placeholder={isVendor ? "XyzEvents" : "John Doe"} className={inputClass} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -18,6 +18,8 @@ import CTASection from "@/components/common/ctaButton/ctaSection";
 import AddToCartButton from "@/components/common/cart/AddToCartButton";
 import { handleAddItemCart } from "@/redux/slices/cartSlice";
 import { getAllCartItems } from "@/services/operations/cartItem";
+import { Bot } from "lucide-react";
+import AIPlannerModal from "@/components/common/aiPlanner/AIPlannerModal";
 
 export interface ProductDetailsType {
   _id: string;
@@ -58,6 +60,7 @@ const ProductDisplayPage = () => {
   const imageContainerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [aiPlannerOpen, setAiPlannerOpen] = useState(false);
 
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -280,10 +283,23 @@ const ProductDisplayPage = () => {
                 ))}
             </div>
 
-            <h2 className="font-semibold text-3xl lg:text-5xl mb-3">
-              {data.name}
-            </h2>
-            <p className="font-bold">Qty: {data.unit}</p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-2">
+              <div>
+                <h2 className="font-semibold text-3xl lg:text-5xl mb-3">
+                  {data.name}
+                </h2>
+                <p className="font-bold">Qty: {data.unit}</p>
+              </div>
+              
+              <button
+                onClick={() => setAiPlannerOpen(true)}
+                className="flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-purple-200 text-purple-700 hover:shadow-md transition-all hover:-translate-y-0.5 group"
+              >
+                <Bot className="w-5 h-5 text-purple-600 group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-sm tracking-wide">AI Customization</span>
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur opacity-0 group-hover:opacity-20 transition duration-500 -z-10"></div>
+              </button>
+            </div>
 
             {/* PRICING */}
             <div>
@@ -339,6 +355,13 @@ const ProductDisplayPage = () => {
         <FeaturedProd productId={data._id} />
         <CTASection />
       </LayoutV2>
+
+      <AIPlannerModal 
+        externalOpen={aiPlannerOpen} 
+        onExternalClose={() => setAiPlannerOpen(false)} 
+        defaultProduct={data} 
+        hideFloatingButton={true}
+      />
 
       {/* Fullscreen Image Lightbox Modal */}
       {isFullscreen && data.image.length > 0 && (

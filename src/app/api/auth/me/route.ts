@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
       avatar: user.avatar,
       phone: user.phone,
       profileCompleted: isCompleted,
+      vendorStatus: user.vendorStatus ?? null,
     };
 
     const response = NextResponse.json({

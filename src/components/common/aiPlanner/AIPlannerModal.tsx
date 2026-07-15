@@ -43,7 +43,19 @@ const LoadingStates = [
   { text: "Generating Concept..." },
 ];
 
-export default function AIPlannerModal() {
+interface AIPlannerModalProps {
+  externalOpen?: boolean;
+  onExternalClose?: () => void;
+  defaultProduct?: Product | null;
+  hideFloatingButton?: boolean;
+}
+
+export default function AIPlannerModal({ 
+  externalOpen = false, 
+  onExternalClose, 
+  defaultProduct = null,
+  hideFloatingButton = false
+}: AIPlannerModalProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   // Steps: 1 = Select Product, 2 = Choose Colors, 3 = Customize, 4 = Loading, 5 = Result
   const [step, setStep] = useState(1);
@@ -67,6 +79,30 @@ export default function AIPlannerModal() {
   // Pagination for Step 1
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
+
+  // External Control Effect
+  useEffect(() => {
+    if (externalOpen) {
+      if (!isAuthenticated) {
+        toast.error("Please login first to use AI Planner");
+        router.push("/auth/sign-in");
+        if (onExternalClose) onExternalClose();
+      } else {
+        setIsOpen(true);
+        if (defaultProduct && defaultProduct._id) {
+          setSelectedProduct(defaultProduct);
+          setStep(3); // skip to customize
+        }
+      }
+    }
+  }, [externalOpen, defaultProduct, isAuthenticated, router, onExternalClose]);
+
+  const handleClose = (open: boolean) => {
+    setIsOpen(open);
+    if (!open && onExternalClose) {
+      onExternalClose();
+    }
+  };
 
   // ── Filter available products from all products ──
   const balloonProducts = useMemo(() => {
@@ -262,10 +298,16 @@ export default function AIPlannerModal() {
     }
   };
 
+  const handleModalClose = () => {
+    handleClose(false);
+  };
+
   return (
     <>
       {/* ═══════════════ Floating AI Button ═══════════════ */}
-      <div className="fixed bottom-52 md:bottom-44 right-4 md:right-8 z-50 pointer-events-auto">
+      {!hideFloatingButton && (
+        <div className="fixed bottom-52 md:bottom-44 right-4 md:right-8 z-50 pointer-events-auto">
+
         <motion.div
           animate={{ y: [0, -5, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -332,9 +374,10 @@ export default function AIPlannerModal() {
           </motion.button>
         </motion.div>
       </div>
+      )}
 
       {/* ═══════════════ Modal ═══════════════ */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent 
           overlayClassName="bg-black/50 backdrop-blur-sm" 
           className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto rounded-[32px] p-0 bg-[#ffffff] border-none shadow-[0_16px_32px_rgba(0,0,0,0.2)]"
@@ -351,7 +394,7 @@ export default function AIPlannerModal() {
                 </DialogDescription>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={handleModalClose}
                 className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center bg-[#f6f6f3] hover:bg-[#e5e5e0] transition-colors"
               >
                 <X className="w-5 h-5 text-[#000000]" />

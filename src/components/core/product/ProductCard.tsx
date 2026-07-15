@@ -11,7 +11,6 @@ import { Product } from "@/@types/product";
 import { RootState } from "@/redux/store/store";
 import AddToCartButton from "@/components/common/cart/AddToCartButton";
 import AnimatedCategoryBadge from "@/components/common/AnimatedCategoryBadge";
-
 interface ProductCardProps {
   data: Product;
   id: any;
@@ -142,6 +141,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id, hidePrice, customBu
               }
             }}
           />
+
+
 
           {images.length > 1 && (
             <>

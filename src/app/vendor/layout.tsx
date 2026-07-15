@@ -46,23 +46,33 @@ export default function VendorLayout({
 
       // Vendor Status Checks
       const vStatus = (user as any)?.vendorStatus;
-      
+
       if ((user as any)?.role === "VENDOR") {
         if (vStatus === "Pending_Profile" && pathname !== "/vendor/complete-profile") {
           router.replace("/vendor/complete-profile");
         } else if (vStatus === "Pending_Review" && pathname !== "/vendor/pending-review") {
           router.replace("/vendor/pending-review");
         } else if (vStatus === "Approved" && (pathname === "/vendor/complete-profile" || pathname === "/vendor/pending-review")) {
-           router.replace("/vendor");
+          router.replace("/vendor");
         }
       }
-      
+
     } else if (mounted && !isAuthenticated) {
-      router.replace("/auth/sign-in");
+      // Before redirecting, check localStorage as a fallback.
+      // This prevents a premature redirect when Redux hasn't synced yet
+      // (e.g., right after a credentials login before the store stabilizes).
+      const storedUser = typeof window !== "undefined"
+        ? localStorage.getItem("user")
+        : null;
+      if (!storedUser) {
+        router.replace("/auth/sign-in");
+      }
+      // If storedUser exists, AuthProvider will re-hydrate Redux shortly.
     }
   }, [mounted, isAuthenticated, user, pathname, router]);
 
-  if (!mounted || !isAuthenticated) return null;
+  const hasLocalUser = typeof window !== "undefined" && !!localStorage.getItem("user");
+  if (!mounted || (!isAuthenticated && !hasLocalUser)) return null;
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-gray-50">
@@ -85,7 +95,7 @@ export default function VendorLayout({
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -103,7 +113,7 @@ export default function VendorLayout({
               height={40}
               className="rounded-lg bg-white p-1"
             />
-            <span className="font-bold text-lg tracking-wide">Alpha Art</span>
+            <span className="font-bold text-lg tracking-wide">Alpha Events</span>
           </div>
           <p className="text-amber-400 font-semibold text-sm">Vendor Portal</p>
         </div>
@@ -132,11 +142,10 @@ export default function VendorLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
                     ? "bg-white/10 text-amber-400 font-medium"
                     : "text-gray-400 hover:bg-white/5 hover:text-white"
-                }`}
+                  }`}
               >
                 <item.icon className="text-lg" />
                 {item.label}
@@ -147,13 +156,13 @@ export default function VendorLayout({
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-white/10 space-y-2">
-           <Link
-              href="/"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-gray-400 border border-white/10 hover:bg-white/5 hover:text-white transition-all duration-200"
-            >
-              Go to Website
-            </Link>
+          <Link
+            href="/"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-gray-400 border border-white/10 hover:bg-white/5 hover:text-white transition-all duration-200"
+          >
+            Go to Website
+          </Link>
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
