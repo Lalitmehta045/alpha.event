@@ -18,6 +18,7 @@ import {
   PackageSearch,
   ShieldCheck,
   ShoppingCart,
+  ShoppingBag,
   Store,
   Upload,
   Users,
@@ -38,6 +39,7 @@ export const items = [
   { href: "/admin/vendor-accounts", label: "Vendor Accounts", icon: UserCheck },
   { href: "/admin/all-admins", label: "Admins", icon: ShieldCheck },
   { href: "/admin/vendor-products", label: "Product Approvals", icon: Store },
+  { href: "/admin/vendor-orders", label: "Vendor Orders", icon: ShoppingBag },
   { href: "/admin/recent", label: "Recent", icon: History },
 ];
 

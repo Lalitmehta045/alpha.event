@@ -32,7 +32,13 @@ export interface Product {
   more_details?: Record<string, string>;
   discount: number;
   status?: "pending" | "approved" | "rejected";
-  vendorId?: string;
+  vendorId?: {
+    fname: string;
+    lname: string;
+    phone: string;
+    businessName: string;
+    businessPhone: string;
+  } | null;
   vendorNote?: string;
   createdAt?: string;
 }

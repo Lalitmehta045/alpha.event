@@ -21,70 +21,16 @@ export async function GET(req: NextRequest, { params }: ParamsPromise) {
       );
     }
 
-    const product = await ProductModel.aggregate([
-      {
-        $match: { _id: new mongoose.Types.ObjectId(id) },
-      },
-      {
-        // Join categories
-        $lookup: {
-          from: "categories",
-          localField: "category",
-          foreignField: "_id",
-          as: "categoryDetails",
-        },
-      },
-      {
-        // Join subcategories
-        $lookup: {
-          from: "subcategories",
-          localField: "subCategory",
-          foreignField: "_id",
-          as: "subCategoryDetails",
-        },
-      },
-      {
-        $project: {
-          name: 1,
-          image: 1,
-          unit: 1,
-          stock: 1,
-          price: 1,
-          discount: 1,
-          description: 1,
-          more_details: 1,
-          publish: 1,
-          createdAt: 1,
-          updatedAt: 1,
+    const productDoc = await ProductModel.findById(id)
+      .populate("category")
+      .populate("subCategory")
+      .populate({
+        path: "vendorId",
+        select: "fname lname phone businessName businessPhone",
+      })
+      .lean();
 
-          // Project the full array of category objects
-          category: {
-            $map: {
-              input: "$categoryDetails",
-              as: "cat",
-              in: {
-                _id: "$$cat._id",
-                name: "$$cat.name",
-                image: "$$cat.image",
-              },
-            },
-          },
-
-          // Project the full array of subCategory objects
-          subCategory: {
-            $map: {
-              input: "$subCategoryDetails",
-              as: "sub",
-              in: {
-                _id: "$$sub._id",
-                name: "$$sub.name",
-                image: "$$sub.image",
-              },
-            },
-          },
-        },
-      },
-    ]);
+    const product = productDoc ? [productDoc] : [];
 
     if (!product || product.length === 0) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });

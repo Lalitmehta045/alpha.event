@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { logout } from "@/services/operations/auth";
-import { FiHome, FiPackage, FiPlus, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { FiHome, FiPackage, FiPlus, FiLogOut, FiMenu, FiX, FiShoppingBag } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/images/companyLogo.png";
 
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/vendor", label: "Dashboard", icon: FiHome },
   { href: "/vendor/my-products", label: "My Products", icon: FiPackage },
   { href: "/vendor/upload-product", label: "Upload Product", icon: FiPlus },
+  { href: "/vendor/orders", label: "My Orders", icon: FiShoppingBag },
 ];
 
 export default function VendorLayout({

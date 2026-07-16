@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
+import { FiPhone, FiUser } from "react-icons/fi";
 import { DisplayPriceInRupees } from "@/utils/DisplayPriceInRupees";
 import { pricewithDiscount } from "@/utils/PriceWithDiscount";
 import LayoutV2 from "../../layout/layoutV2";
@@ -33,6 +34,13 @@ export interface ProductDetailsType {
   discount?: number;
   description?: string;
   more_details?: Record<string, string>;
+  vendorId?: {
+    fname: string;
+    lname: string;
+    phone: string;
+    businessName: string;
+    businessPhone: string;
+  } | null;
 }
 
 const ProductDisplayPage = () => {
@@ -327,6 +335,25 @@ const ProductDisplayPage = () => {
                 )}
               </div>
             </div>
+
+            {/* VENDOR INFO */}
+            {data.vendorId && (
+              <div className="mt-6 border border-gray-200 rounded-xl p-4 bg-gray-50 flex flex-col gap-2">
+                <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider mb-1">Sold by</h3>
+                <div className="flex items-center gap-2">
+                  <FiUser className="text-gray-500 w-5 h-5" />
+                  <span className="font-semibold text-lg">
+                    {data.vendorId.businessName || `${data.vendorId.fname} ${data.vendorId.lname}`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <FiPhone className="text-gray-500 w-4 h-4" />
+                  <a href={`tel:${data.vendorId.businessPhone || data.vendorId.phone}`} className="text-blue-600 hover:underline font-medium">
+                    {data.vendorId.businessPhone || data.vendorId.phone}
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* Add to Cart */}
             {data.stock === 0 ? (
