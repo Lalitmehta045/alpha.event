@@ -463,8 +463,9 @@ export default function AuthForm({
               className="w-16 h-14 rounded-xl p-2 cursor-pointer"
               onClick={() => {
                 dispatch(setLoginProvider("google"));
+                const currentOrigin = window.location.origin;
                 nextAuthSignIn("google", { 
-                  callbackUrl: `/api/auth/google-sync?callbackUrl=${encodeURIComponent("/")}` 
+                  callbackUrl: `${currentOrigin}/api/auth/google-sync?callbackUrl=${encodeURIComponent("/")}` 
                 });
               }}
             >

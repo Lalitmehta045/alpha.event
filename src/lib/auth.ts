@@ -82,11 +82,20 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // Ensure redirects stay on the allowed host to avoid redirect_uri_mismatch
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
       try {
+        if (url.startsWith("/")) {
+          return `${baseUrl}${url}`;
+        }
         const target = new URL(url);
-        if (target.origin === baseUrl) return url;
+        // Allow live domains or localhost regardless of what NEXTAUTH_URL is configured to.
+        // This prevents the 0.0.0.0 crash when deploying via Docker/PM2.
+        if (
+          target.origin === baseUrl ||
+          target.hostname.includes("alphaartandevents.com") ||
+          target.hostname === "localhost"
+        ) {
+          return url;
+        }
       } catch {
         // fall through to baseUrl
       }
