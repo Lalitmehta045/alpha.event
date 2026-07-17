@@ -6,25 +6,84 @@ import UserModel from "@/lib/models/User.model";
 import { generateAccessToken } from "@/lib/token/generateAccessToken";
 import { generateRefreshToken } from "@/lib/token/generateRefreshToken";
 
+/**
+ * Resolves the canonical public-facing origin for redirects.
+ * Priority:
+ *   1. NEXTAUTH_URL env var (most reliable in production)
+ *   2. x-forwarded-host + x-forwarded-proto (reverse proxy headers)
+ *   3. host header
+ *   4. req.url (development fallback only)
+ */
+function getCanonicalOrigin(req: NextRequest): string {
+  // 1. NEXTAUTH_URL — set explicitly in production .env
+  const nextAuthUrl = process.env.NEXTAUTH_URL;
+  if (nextAuthUrl) {
+    return nextAuthUrl.replace(/\/$/, "");
+  }
+
+  // 2. x-forwarded-host + x-forwarded-proto (Nginx / reverse proxy)
+  const xForwardedHost = req.headers.get("x-forwarded-host");
+  const xForwardedProto = req.headers.get("x-forwarded-proto") || "https";
+  if (xForwardedHost) {
+    return `${xForwardedProto}://${xForwardedHost}`;
+  }
+
+  // 3. host header
+  const host = req.headers.get("host");
+  if (host) {
+    const proto = host.includes("localhost") ? "http" : "https";
+    return `${proto}://${host}`;
+  }
+
+  // 4. Fallback to req.url origin (development only — may be 0.0.0.0 in Docker!)
+  try {
+    const parsed = new URL(req.url);
+    return parsed.origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
+    const canonicalOrigin = getCanonicalOrigin(req);
+
+    // ===== TEMPORARY DEBUG LOGS — REMOVE AFTER PRODUCTION VERIFICATION =====
+    console.log("===== GOOGLE-SYNC DEBUG START =====");
+    console.log("req.url:", req.url);
+    console.log("req.nextUrl.toString():", req.nextUrl.toString());
+    console.log("req.nextUrl.origin:", req.nextUrl.origin);
+    console.log("process.env.NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+    console.log("process.env.AUTH_URL:", process.env.AUTH_URL);
+    console.log("headers.host:", req.headers.get("host"));
+    console.log("headers.x-forwarded-host:", req.headers.get("x-forwarded-host"));
+    console.log("headers.x-forwarded-proto:", req.headers.get("x-forwarded-proto"));
+    console.log("headers.origin:", req.headers.get("origin"));
+    console.log("headers.referer:", req.headers.get("referer"));
+    console.log("canonicalOrigin (resolved):", canonicalOrigin);
+    // ===== END DEBUG LOGS =====
+
     const session = await getServerSession(authOptions);
     const url = new URL(req.url);
     const callbackUrl = url.searchParams.get("callbackUrl") || "/";
+    console.log("callbackUrl (parsed):", callbackUrl);
+    console.log("redirect target (FIXED):", new URL(callbackUrl, canonicalOrigin).toString());
+    console.log("redirect target (OLD/broken):", new URL(callbackUrl, req.url).toString());
+    console.log("===== GOOGLE-SYNC DEBUG END =====");
 
     if (!session || !session.user || !session.user.email) {
-      return NextResponse.redirect(new URL(`/auth/sign-in?error=NoSession`, req.url));
+      return NextResponse.redirect(new URL(`/auth/sign-in?error=NoSession`, canonicalOrigin));
     }
 
     await connectDB();
     const user = await UserModel.findOne({ email: session.user.email });
 
     if (!user) {
-      return NextResponse.redirect(new URL(`/auth/sign-in?error=UserNotFound`, req.url));
+      return NextResponse.redirect(new URL(`/auth/sign-in?error=UserNotFound`, canonicalOrigin));
     }
 
     if (user.status !== "Active") {
-      return NextResponse.redirect(new URL(`/auth/sign-in?error=AccountInactive`, req.url));
+      return NextResponse.redirect(new URL(`/auth/sign-in?error=AccountInactive`, canonicalOrigin));
     }
 
     // Generate Custom JWTs identical to Credentials login
@@ -44,8 +103,8 @@ export async function GET(req: NextRequest) {
     user.refresh_token = refreshToken;
     await user.save();
 
-    // Redirect to the original callback
-    const response = NextResponse.redirect(new URL(callbackUrl, req.url));
+    // Redirect to the original callback using canonical origin (NOT req.url)
+    const response = NextResponse.redirect(new URL(callbackUrl, canonicalOrigin));
 
     // Set identical cookies
     response.cookies.set("accessToken", accessToken, {
@@ -67,6 +126,7 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (error) {
     console.error("Google Sync Error:", error);
-    return NextResponse.redirect(new URL(`/auth/sign-in?error=SyncFailed`, req.url));
+    const fallbackOrigin = getCanonicalOrigin(req);
+    return NextResponse.redirect(new URL(`/auth/sign-in?error=SyncFailed`, fallbackOrigin));
   }
 }
