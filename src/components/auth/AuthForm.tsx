@@ -463,7 +463,9 @@ export default function AuthForm({
               className="w-16 h-14 rounded-xl p-2 cursor-pointer"
               onClick={() => {
                 dispatch(setLoginProvider("google"));
-                nextAuthSignIn("google", { callbackUrl: "/api/auth/google-sync?callbackUrl=/" });
+                nextAuthSignIn("google", { 
+                  callbackUrl: `/api/auth/google-sync?callbackUrl=${encodeURIComponent("/")}` 
+                });
               }}
             >
               <Image src={googleImg} alt="google" />
