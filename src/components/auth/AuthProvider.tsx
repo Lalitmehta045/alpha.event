@@ -25,15 +25,7 @@ export default function AuthProvider({
         ? localStorage.getItem("loginProvider")
         : null;
 
-      if (session?.user && loginProvider === "google") {
-        // Legitimate Google session — let GoogleAuthHandler handle it.
-        // Only skip /api/auth/me when we KNOW this is a Google login,
-        // not a stale session lingering after credentials/OTP logout.
-        setIsChecking(false);
-        return;
-      }
-
-      // For all other cases (credentials, OTP, post-logout):
+      // All cases (credentials, OTP, post-logout, google):
       // proceed to /api/auth/me check normally.
       // If /api/auth/me fails with 401, it will call signOut() which
       // clears the stale Google NextAuth session properly.

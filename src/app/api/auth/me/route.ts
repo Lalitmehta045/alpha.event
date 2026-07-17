@@ -2,44 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import UserModel from "@/lib/models/User.model";
-import { generateAccessToken } from "@/lib/token/generateAccessToken";
 
 export async function GET(req: NextRequest) {
   try {
     const accessToken = req.cookies.get("accessToken")?.value;
-    const refreshToken = req.cookies.get("refreshToken")?.value;
 
     let decoded: any = null;
-    let usedToken = null;
-    let newAccessToken = null;
 
-    // 1. Try accessToken first
     if (accessToken) {
       try {
         const accessSecret = process.env.SECRET_KEY_ACCESS_TOKEN;
         if (!accessSecret) throw new Error("Missing access secret");
         decoded = jwt.verify(accessToken, accessSecret);
-        usedToken = accessToken;
       } catch (err) {
         // Expired or invalid accessToken
-        decoded = null;
-      }
-    }
-
-    // 2. If no valid accessToken, try refreshToken
-    if (!decoded && refreshToken) {
-      try {
-        const refreshSecret = process.env.SECRET_KEY_REFRESH_TOKEN;
-        if (!refreshSecret) throw new Error("Missing refresh secret");
-        decoded = jwt.verify(refreshToken, refreshSecret);
-        newAccessToken = await generateAccessToken(
-          decoded.id,
-          decoded.email,
-          decoded.role
-        );
-        usedToken = newAccessToken;
-      } catch (err) {
-        // Expired or invalid refreshToken
         decoded = null;
       }
     }
@@ -51,7 +27,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 3. Verify user in database
+    // Verify user in database
     await connectDB();
     const user = await UserModel.findById(decoded.id).select("-password -refresh_token");
 
@@ -80,25 +56,14 @@ export async function GET(req: NextRequest) {
       vendorStatus: user.vendorStatus ?? null,
     };
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: {
         user: payload,
-        token: usedToken,
+        token: accessToken,
       },
     });
 
-    if (newAccessToken) {
-      response.cookies.set("accessToken", newAccessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 15 * 60,
-      });
-    }
-
-    return response;
   } catch (error) {
     console.error("Error in /api/auth/me:", error);
     return NextResponse.json(
