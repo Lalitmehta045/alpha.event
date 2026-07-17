@@ -21,24 +21,23 @@ function getCanonicalOrigin(req: NextRequest): string {
     return nextAuthUrl.replace(/\/$/, "");
   }
 
-  // 2. x-forwarded-host + x-forwarded-proto (Nginx / reverse proxy)
+  const proto = req.headers.get("x-forwarded-proto") || "http";
+
+  // 2. x-forwarded-proto + x-forwarded-host (Nginx / reverse proxy)
   const xForwardedHost = req.headers.get("x-forwarded-host");
-  const xForwardedProto = req.headers.get("x-forwarded-proto") || "https";
   if (xForwardedHost) {
-    return `${xForwardedProto}://${xForwardedHost}`;
+    return `${proto}://${xForwardedHost}`;
   }
 
-  // 3. host header
+  // 3. x-forwarded-proto + host
   const host = req.headers.get("host");
   if (host) {
-    const proto = host.includes("localhost") ? "http" : "https";
     return `${proto}://${host}`;
   }
 
-  // 4. Fallback to req.url origin (development only — may be 0.0.0.0 in Docker!)
+  // 4. req.url origin (development fallback only — may be 0.0.0.0 in Docker!)
   try {
-    const parsed = new URL(req.url);
-    return parsed.origin;
+    return new URL(req.url).origin;
   } catch {
     return "http://localhost:3000";
   }
