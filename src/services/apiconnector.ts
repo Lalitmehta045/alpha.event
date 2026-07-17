@@ -94,16 +94,17 @@ axiosInstance.interceptors.response.use(
         processQueue(null, newAccessToken || null);
         // Retry the original request
         return axiosInstance(originalRequest);
-      } else {
         // Refresh returned non-success
         processQueue(new Error("Token refresh failed"));
-        forceLogout();
+        const isAuthCheck = originalRequest.url?.includes("/api/auth/me");
+        forceLogout(isAuthCheck);
         return Promise.reject(error);
       }
     } catch (refreshError) {
       // Refresh request itself failed
       processQueue(refreshError);
-      forceLogout();
+      const isAuthCheck = originalRequest.url?.includes("/api/auth/me");
+      forceLogout(isAuthCheck);
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
@@ -111,7 +112,7 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-function forceLogout() {
+function forceLogout(skipRedirect = false) {
   // Clear client-side data
   if (typeof window !== "undefined") {
     localStorage.removeItem("user");
@@ -119,8 +120,8 @@ function forceLogout() {
     localStorage.removeItem("refreshToken");
     sessionStorage.clear();
 
-    // Redirect to login (only if not already on auth pages)
-    if (!window.location.pathname.startsWith("/auth/")) {
+    // Redirect to login (only if not already on auth pages and not skipping)
+    if (!skipRedirect && !window.location.pathname.startsWith("/auth/")) {
       window.location.href = "/auth/sign-in";
     }
   }
