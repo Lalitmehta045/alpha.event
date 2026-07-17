@@ -82,24 +82,30 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
+      // baseUrl from NextAuth is unreliable on VPS/Docker (comes as http://0.0.0.0:3000)
+      // Always use NEXTAUTH_URL env var as the canonical site URL
+      const siteUrl = (process.env.NEXTAUTH_URL || baseUrl).replace(/\/$/, "");
+
+      // Relative URLs → prepend siteUrl
+      if (url.startsWith("/")) {
+        return `${siteUrl}${url}`;
+      }
+
+      // Absolute URLs → allow only if same origin as siteUrl or alphaartandevents.com
       try {
-        if (url.startsWith("/")) {
-          return `${baseUrl}${url}`;
-        }
         const target = new URL(url);
-        // Allow live domains or localhost regardless of what NEXTAUTH_URL is configured to.
-        // This prevents the 0.0.0.0 crash when deploying via Docker/PM2.
+        const site = new URL(siteUrl);
         if (
-          target.origin === baseUrl ||
-          target.hostname.includes("alphaartandevents.com") ||
-          target.hostname === "localhost"
+          target.origin === site.origin ||
+          target.hostname.includes("alphaartandevents.com")
         ) {
           return url;
         }
       } catch {
-        // fall through to baseUrl
+        // invalid URL — fall through to siteUrl
       }
-      return baseUrl;
+
+      return siteUrl;
     },
 
     async jwt({ token, user }) {
