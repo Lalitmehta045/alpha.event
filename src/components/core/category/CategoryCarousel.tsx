@@ -47,8 +47,8 @@ export default function CategoryCarousel() {
           image: relatedProduct.image?.[0] || sub.image || sub.category?.image,
           glowColor: glowColors[colorIndex % glowColors.length],
           bgClass: "bg-[#2A0F12]",
-          type: "product",
-          data: relatedProduct,
+          type: "subcategory",
+          data: sub,
         });
         colorIndex++;
       }

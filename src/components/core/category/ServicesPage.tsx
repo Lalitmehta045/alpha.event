@@ -88,7 +88,7 @@ const ServicesPage = () => {
                             `/category/${createSlug(
                               parentCat.name,
                               parentCat._id
-                            )}`
+                            )}/${createSlug(sub.name, sub._id)}`
                           );
                         }
                       }}
