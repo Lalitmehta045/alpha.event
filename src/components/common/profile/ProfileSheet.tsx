@@ -21,7 +21,7 @@ import { logout } from "@/services/operations/auth";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { LogOut } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 interface ProfileSheetProps {
   openProfile: boolean;
@@ -48,11 +48,7 @@ const ProfileSheet = ({
 
   const handleLogout = async () => {
     try {
-      if (session?.user) {
-        await signOut({ callbackUrl: "/" });
-      } else {
-        await logout(router, dispatch);
-      }
+      await logout(router, dispatch);
     } catch (error) {
       console.error("Logout failed:", error);
     }

@@ -17,7 +17,7 @@ import SearchBar from "@/components/common/searchBar/searchBar";
 
 import { BsCart2 } from "react-icons/bs";
 import ProfileSheet from "../profile/ProfileSheet";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { HiBuildingStorefront } from "react-icons/hi2";
 
 const HeaderV1 = () => {
@@ -76,11 +76,7 @@ const HeaderV1 = () => {
 
   const handleLogout = async () => {
     try {
-      if (session?.user) {
-        await signOut({ callbackUrl: "/" });
-      } else {
-        await logout(router, dispatch);
-      }
+      await logout(router, dispatch);
     } catch (error) {
       console.error("Logout failed:", error);
     }

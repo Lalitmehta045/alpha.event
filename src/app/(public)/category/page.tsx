@@ -2,7 +2,7 @@
 
 import LayoutV2 from "../layout/layoutV2";
 import MostPopularProd from "@/components/core/mostPopuProd/mostPopularProd";
-import CategoryV2 from "@/components/core/category/categoryV2";
+import ServicesPage from "@/components/core/category/ServicesPage";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { getAllCategory } from "@/services/operations/category";
@@ -46,11 +46,10 @@ const CategoryPage = () => {
 
   return (
     <div 
-      className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-cover bg-center bg-no-repeat bg-fixed"
-      style={{ backgroundImage: "url('/desktop-banner.jpeg')" }}
+      className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-[#f8efde]"
     >
       <LayoutV2>
-        <CategoryV2 />
+        <ServicesPage />
         <MostPopularProd />
       </LayoutV2>
     </div>

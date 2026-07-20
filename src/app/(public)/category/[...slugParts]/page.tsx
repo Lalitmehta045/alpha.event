@@ -36,19 +36,28 @@ export default function CategoryResolverPage() {
     (state: RootState) => state.product.allProducts
   );
 
-  const [isLoaded, setIsLoaded] = useState(false);
+  const hasData = categories.length > 0;
+  const [isLoaded, setIsLoaded] = useState(hasData);
 
   const fetchData = async () => {
     try {
-      await Promise.all([
+      const fetchPromises = [
         getAllCategory(dispatch),
         getAllSubCategory(dispatch),
         getAllProduct(dispatch),
         getAllCartItems(token), // Pass token if available
-      ]);
-      setIsLoaded(true);
+      ];
+
+      if (!hasData) {
+        await Promise.all(fetchPromises);
+        setIsLoaded(true);
+      } else {
+        // Fetch silently in the background if data already exists
+        Promise.all(fetchPromises);
+      }
     } catch (error) {
       console.log("Fetch error:", error);
+      setIsLoaded(true);
     }
   };
 

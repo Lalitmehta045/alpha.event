@@ -298,15 +298,6 @@ const ProductDisplayPage = () => {
                 </h2>
                 <p className="font-bold">Qty: {data.unit}</p>
               </div>
-              
-              <button
-                onClick={() => setAiPlannerOpen(true)}
-                className="flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-purple-200 text-purple-700 hover:shadow-md transition-all hover:-translate-y-0.5 group"
-              >
-                <Bot className="w-5 h-5 text-purple-600 group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-sm tracking-wide">AI Customization</span>
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur opacity-0 group-hover:opacity-20 transition duration-500 -z-10"></div>
-              </button>
             </div>
 
             {/* PRICING */}
@@ -336,24 +327,7 @@ const ProductDisplayPage = () => {
               </div>
             </div>
 
-            {/* VENDOR INFO */}
-            {data.vendorId && (
-              <div className="mt-6 border border-gray-200 rounded-xl p-4 bg-gray-50 flex flex-col gap-2">
-                <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider mb-1">Sold by</h3>
-                <div className="flex items-center gap-2">
-                  <FiUser className="text-gray-500 w-5 h-5" />
-                  <span className="font-semibold text-lg">
-                    {data.vendorId.businessName || `${data.vendorId.fname} ${data.vendorId.lname}`}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <FiPhone className="text-gray-500 w-4 h-4" />
-                  <a href={`tel:${data.vendorId.businessPhone || data.vendorId.phone}`} className="text-blue-600 hover:underline font-medium">
-                    {data.vendorId.businessPhone || data.vendorId.phone}
-                  </a>
-                </div>
-              </div>
-            )}
+            {/* VENDOR INFO REMOVED */}
 
             {/* Add to Cart */}
             {data.stock === 0 ? (
@@ -362,18 +336,19 @@ const ProductDisplayPage = () => {
               <div className="flex flex-col gap-3 my-4">
                 <AddToCartButton
                   data={data}
-                  icon={<IoCartOutline style={{ width: 20, height: 20 }} />}
-                  className="w-full px-2 py-1.5 text-lg rounded-lg text-black"
+                  icon={<IoCartOutline className="w-6 h-6" />}
+                  className="w-full px-4 py-4 text-lg font-bold rounded-xl bg-white text-black hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
                 />
 
-                <CTAButtonV1
-                  variant="outline"
-                  text="Contact Now 7389288488"
-                  icon={<IoCall style={{ width: 20, height: 20 }} />}
-                  // onClick={() => router.push("/recent")}
-                  href="tel:+917389288488"
-                  className="px-4 md:px-8 py-5 md:py-6 w-full text-lg bg-black border border-gray-300 text-white"
-                />
+
+                <button
+                  onClick={() => setAiPlannerOpen(true)}
+                  className="flex justify-center items-center gap-2 px-4 py-4 rounded-xl bg-gradient-to-r from-fuchsia-50 to-purple-50 border border-purple-200 text-purple-700 hover:shadow-md transition-all group w-full relative overflow-hidden"
+                >
+                  <Bot className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-lg tracking-wide">AI Customization</span>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-500 -z-10"></div>
+                </button>
               </div>
             )}
           </div>

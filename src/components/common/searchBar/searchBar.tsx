@@ -46,12 +46,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationChange }) => {
     }
   }, []);
 
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const searchContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setIsLocationDropdownOpen(false);
+        setShowRecentSearches(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -109,11 +110,11 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationChange }) => {
   }, [inputValue]);
 
   return (
-    <div className="relative z-[100] w-full max-w-xl sm:max-w-2xl md:max-w-3xl">
+    <div className="relative z-[100] w-full max-w-xl sm:max-w-2xl md:max-w-3xl" ref={searchContainerRef}>
 
       {/* Search Field */}
       <div className="flex items-center bg-white/70 backdrop-blur-lg border border-white/20 shadow-sm hover:shadow-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#9c6567] focus-within:shadow-md focus-within:hover:shadow-md transition-all duration-300">
-        <div className="relative flex items-center h-full" ref={dropdownRef}>
+        <div className="relative flex items-center h-full">
           <button
             type="button"
             className="flex items-center justify-center gap-1.5 px-3 h-10 sm:h-11 rounded-full bg-[#fcf4f4] text-[#9c6567] hover:bg-[#faeaea] hover:scale-105 transition-all duration-300 shrink-0"
@@ -225,11 +226,23 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationChange }) => {
           className="absolute z-50 w-full top-full left-0 mt-2 bg-white border border-gray-300 rounded-xl shadow-lg max-h-96 overflow-y-auto"
           onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking dropdown
         >
-          <div className="px-4 py-3 border-b border-gray-200">
+          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <FaClock className="text-gray-500" />
               Recent Searches
             </h3>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowRecentSearches(false);
+                setIsFocused(false);
+              }}
+              className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1.5 rounded-full transition-colors flex items-center justify-center"
+              aria-label="Close recent searches"
+            >
+              <FaTimes className="text-sm" />
+            </button>
           </div>
           <div className="py-1">
             {recentSearches.map((search, index) => (
