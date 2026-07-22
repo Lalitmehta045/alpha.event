@@ -1,5 +1,5 @@
-import { connectDB } from "./src/lib/db";
-import WhatsappLogModel from "./src/lib/models/WhatsappLog.model";
+import { connectDB } from "../src/lib/db";
+import WhatsappLogModel from "../src/lib/models/WhatsappLog.model";
 import mongoose from "mongoose";
 import fs from "fs";
 

@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config({ path: ".env" });
-import { connectDB } from "./src/lib/db";
-import { resendWhatsAppMessage } from "./src/services/whatsapp.service";
+import { connectDB } from "../src/lib/db";
+import { resendWhatsAppMessage } from "../src/services/whatsapp.service";
 import mongoose from "mongoose";
 
 async function run() {
