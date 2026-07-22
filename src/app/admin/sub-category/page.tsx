@@ -32,7 +32,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import SubCategoryTableSkeleton from "./loading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 
 interface SubCategory {
@@ -161,7 +161,28 @@ export default function SubCategoryPage() {
 
           <TableBody>
             {loading ? (
-              <SubCategoryTableSkeleton />
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i} className="animate-pulse">
+                  <TableCell className="px-6 text-center">
+                    <Skeleton className="h-6 w-6 mx-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-10 w-14 rounded-md" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : subCategories.length === 0 ? (
               <TableRow>
                 <TableCell

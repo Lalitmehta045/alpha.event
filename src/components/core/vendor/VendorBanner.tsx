@@ -69,8 +69,8 @@ export default function VendorBanner() {
               </h2>
 
               <p className="hidden md:block text-gray-400 text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed lg:mb-0">
-                Join our vendor network. Upload your event decoration products, 
-                reach thousands of customers in Indore, and manage everything 
+                Join our vendor network. Upload your event decoration products,
+                reach thousands of customers in Indore, and manage everything
                 from one simple dashboard.
               </p>
             </div>

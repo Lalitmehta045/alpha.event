@@ -2,26 +2,26 @@
   {
     "id": 1,
     "page": "Wedding Props",
-    "path": "#"
+    "path": "/category"
   },
   {
     "id": 2,
     "page": "Party Décor",
-    "path": "#"
+    "path": "/category"
   },
   {
     "id": 3,
     "page": "Photo Booths",
-    "path": "#"
+    "path": "/category"
   },
   {
     "id": 4,
     "page": "Corporate Events",
-    "path": "#"
+    "path": "/category"
   },
   {
     "id": 5,
     "page": "Custom Themes",
-    "path": "#"
+    "path": "/category"
   }
 ]

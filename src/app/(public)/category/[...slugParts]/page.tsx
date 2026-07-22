@@ -138,7 +138,7 @@ export default function CategoryResolverPage() {
     const sortedSubCats = [...prioritized, ...others];
 
     return (
-      <div 
+      <div
         className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-cover bg-center bg-no-repeat bg-fixed"
         style={{ backgroundImage: "url('/desktop-banner.jpeg')" }}
       >
@@ -185,11 +185,7 @@ export default function CategoryResolverPage() {
                       image={sub.image as any}
                       onClick={() => router.push(subUrl)}
                       className="rounded-2xl cursor-pointer"
-                      imageClassName={
-                        ["structures", "decor props"].includes(sub.name.toLowerCase())
-                          ? "rotate-90 scale-[1.35]"
-                          : ""
-                      }
+                      imageClassName=""
                     />
                   </motion.div>
                 );
@@ -211,7 +207,7 @@ export default function CategoryResolverPage() {
     );
 
     return (
-      <div 
+      <div
         className="relative flex flex-col gap-10 w-full mx-auto min-h-screen items-center font-sans bg-cover bg-center bg-no-repeat bg-fixed"
         style={{ backgroundImage: "url('/desktop-banner.jpeg')" }}
       >

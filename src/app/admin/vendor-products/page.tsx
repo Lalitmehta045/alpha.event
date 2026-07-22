@@ -38,6 +38,9 @@ export default function VendorProductsPage() {
     rejected: 0,
   });
 
+  // Image preview modal state
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   // Rejection modal state
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectingProductId, setRejectingProductId] = useState<string | null>(
@@ -298,7 +301,14 @@ export default function VendorProductsPage() {
                   <tr key={product._id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="relative w-12 h-12 rounded-lg border bg-gray-50 overflow-hidden shrink-0">
+                        <div 
+                          className="relative w-12 h-12 rounded-lg border bg-gray-50 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setPreviewImage(
+                            product.thumbnails?.[0] ||
+                            product.image?.[0] ||
+                            "/assets/images/placeholder.jpg"
+                          )}
+                        >
                           <Image
                             src={
                               product.thumbnails?.[0] ||
@@ -430,6 +440,29 @@ export default function VendorProductsPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent showCloseButton={false} className="max-w-3xl sm:max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none">
+          <DialogTitle className="sr-only">Product Preview</DialogTitle>
+          {previewImage && (
+            <div className="relative w-full h-[85vh] flex items-center justify-center bg-black/95 rounded-2xl shadow-2xl ring-1 ring-white/10">
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-4 right-4 z-50 p-2.5 bg-black/40 hover:bg-red-500 text-white/90 hover:text-white rounded-full backdrop-blur-md transition-all duration-200 border border-white/20 hover:border-red-500 shadow-lg"
+              >
+                <FiX className="w-6 h-6" />
+              </button>
+              <Image
+                src={previewImage}
+                alt="Product Preview"
+                fill
+                className="object-contain p-4"
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

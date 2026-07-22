@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
         buffer.length > 1 * 1024 * 1024; // recompress anything over 1 MB
 
       if (needsResize || needsConvert) {
-        pipeline = sharp(buffer); // fresh pipeline
+        pipeline = sharp(buffer).rotate(); // fresh pipeline, auto-rotated
 
         if (needsResize) {
           pipeline = pipeline.resize(MAX_DIMENSION, MAX_DIMENSION, {
@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
     try {
       thumbBuffer = Buffer.from(
         await sharp(buffer)
+          .rotate()
           .resize(400, 400, { fit: "inside", withoutEnlargement: true })
           .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
           .toBuffer()

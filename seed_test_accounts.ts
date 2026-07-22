@@ -1,7 +1,11 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import 'dotenv/config';
 
-const MONGODB_URI = "mongodb+srv://decorationsalpha_admin:decorationsVinuGudda@alphartevent.rxpkkde.mongodb.net/";
+const MONGODB_URI = process.env.MONGO_URL;
+if (!MONGODB_URI) {
+  throw new Error("MONGO_URL environment variable is required");
+}
 
 const userSchema = new mongoose.Schema({
   fname: String, lname: String, email: String, password: String, role: String,

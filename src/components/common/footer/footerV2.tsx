@@ -11,8 +11,18 @@ import footerQuicklinks from "@/assets/json/footer/footerQuicklinks.json";
 import footerProducts from "@/assets/json/footer/footerProducts.json";
 import footerLegalPage from "@/assets/json/footer/footerLegalPage.json";
 import FooterLinks from "./FooterLinks";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
+import { createSlug } from "@/components/core/category/categoryV2";
 
 export default function FooterV2() {
+  const categories = useSelector((state: RootState) => state.product.allCategory);
+  const dynamicCategories = categories?.slice(0, 5).map((cat: any) => ({
+    id: cat._id,
+    page: cat.name,
+    path: `/category/${createSlug(cat.name, cat._id)}`
+  })) || [];
+
   return (
     <footer className="w-full h-full min-h-170 md:min-h-min bg-(--footer-bg) text-(--footer-text) hover:text-(--footer-text-Hover)">
       <div className="max-w-11/12 mx-auto px-6 sm:px-10 md:px-16 py-12 sm:py-16 lg:py-20">
@@ -55,10 +65,10 @@ export default function FooterV2() {
             {/* Products  */}
             <div>
               <h3 className="text-xl sm:text-2xl font-bold text-(--footer-text) hover:text-(--footer-text-Hover) mb-4">
-                Products
+                Categories
               </h3>
               <ul className="space-y-2 text-center">
-                {footerProducts.map((item) => (
+                {dynamicCategories.map((item: any) => (
                   <li
                     key={item.id}
                     className="mx-auto md:mx-0 text-base sm:text-lg font-medium text-(--footer-text) hover:text-(--footer-text-Hover) transition-colors duration-200"
@@ -90,7 +100,7 @@ export default function FooterV2() {
           <div className="w-full max-w-6xl md:hidden flex flex-wrap justify-around items-start gap-5">
             <FooterLinks
               footerQuicklinks={footerQuicklinks}
-              footerProducts={footerProducts}
+              footerProducts={dynamicCategories}
               footerLegalPage={footerLegalPage}
             />
           </div>
@@ -101,10 +111,18 @@ export default function FooterV2() {
 
         {/* Footer Bottom Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-6 text-center sm:text-left">
-          <p className="text-sm sm:text-base font-semibold text-(--footer-text) hover:text-(--footer-text-Hover)">
-            © {new Date().getFullYear()} Alpha Art & Events. All rights
-            reserved.
-          </p>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm sm:text-base font-semibold text-(--footer-text) hover:text-(--footer-text-Hover)">
+              © {new Date().getFullYear()} Alpha Art & Events. All rights
+              reserved.
+            </p>
+            <p className="text-sm sm:text-base font-medium text-(--footer-text) flex items-center justify-center sm:justify-start gap-1.5">
+              Designed & Developed by{" "}
+              <Link href="https://www.nexuptech.com/" target="_blank" className="font-bold text-[#f5f5f5] hover:text-amber-500 transition-all duration-300">
+                Nexup Technologies
+              </Link>
+            </p>
+          </div>
 
           <div className="flex justify-center sm:justify-end gap-5">
             <Link

@@ -57,7 +57,7 @@ export default function FooterLinks({
           className="text-xl sm:text-2xl font-bold text-(--footer-text) hover:text-(--footer-text-Hover) mb-4 flex justify-between items-center w-full md:w-auto"
           onClick={() => setopenProduct(!openProduct)}
         >
-          Products
+          Categories
           <span className="ml-2 text-lg">
             {openProduct ? (
               <MdArrowDropUp fontSize={26} />

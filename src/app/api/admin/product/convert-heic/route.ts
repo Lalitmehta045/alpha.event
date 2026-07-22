@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         // Step 2: Resize + optimize with sharp (always works for JPEG input)
         const optimizedBuffer = Buffer.from(
             await sharp(Buffer.from(rawJpegBuffer))
+                .rotate()
                 .resize(1920, 1920, {
                     fit: "inside",
                     withoutEnlargement: true,

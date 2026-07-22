@@ -162,9 +162,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ data, id, hidePrice, customBu
                 {images.map((_, idx) => (
                   <div
                     key={idx}
-                    className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${
-                      idx === currentImageIndex ? "w-3 bg-[var(--cta-Bg)]" : "w-1.5 bg-gray-300"
-                    }`}
+                    className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${idx === currentImageIndex ? "w-3 bg-[var(--cta-Bg)]" : "w-1.5 bg-gray-300"
+                      }`}
                   />
                 ))}
               </div>

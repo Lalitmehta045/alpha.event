@@ -232,8 +232,8 @@ export default function CategoryCarousel() {
             key={index}
             onClick={() => setCurrentIndex(index)}
             className={`transition-all duration-300 rounded-full ${index === safeIndex
-                ? "w-5 h-1.5 sm:w-8 sm:h-2 bg-[#E5C984]"
-                : "w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white/20 hover:bg-white/40"
+              ? "w-5 h-1.5 sm:w-8 sm:h-2 bg-[#E5C984]"
+              : "w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white/20 hover:bg-white/40"
               }`}
             aria-label={`Go to slide ${index + 1}`}
           />

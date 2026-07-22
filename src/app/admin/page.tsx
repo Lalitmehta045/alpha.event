@@ -13,8 +13,10 @@ import { getAllUSERS_ADMIN } from "@/services/operations/adminOperations/allUser
 import { getAllAdminProduct } from "@/services/operations/product";
 import { getAdminOrders } from "@/services/operations/orders";
 import OverviewCharts from "@/components/admin/OverviewCharts";
+import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
   const [imageLoadingState, setImageLoadingState] = useState<boolean>(false);
@@ -129,7 +131,10 @@ export default function AdminDashboard() {
       
       {/* Overview Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300">
+        <div 
+          className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300 cursor-pointer"
+          onClick={() => router.push("/admin/users")}
+        >
           <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
             <Users size={24} />
           </div>
@@ -139,7 +144,10 @@ export default function AdminDashboard() {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300">
+        <div 
+          className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300 cursor-pointer"
+          onClick={() => router.push("/admin/products")}
+        >
           <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg">
             <Package size={24} />
           </div>
@@ -149,7 +157,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300">
+        <div 
+          className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300 cursor-pointer"
+          onClick={() => router.push("/admin/orders")}
+        >
           <div className="p-3 bg-emerald-100 text-emerald-600 rounded-lg">
             <ShoppingBag size={24} />
           </div>
@@ -159,7 +170,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300">
+        <div 
+          className="bg-white p-6 rounded-xl shadow-sm border flex items-center space-x-4 transition-transform hover:scale-105 duration-300 cursor-pointer"
+          onClick={() => router.push("/admin/category")}
+        >
           <div className="p-3 bg-amber-100 text-amber-600 rounded-lg">
             <FolderTree size={24} />
           </div>
@@ -172,7 +186,7 @@ export default function AdminDashboard() {
         {/* Pending Approvals Card */}
         <div 
           className="bg-indigo-50 p-6 rounded-xl shadow-sm border border-indigo-100 flex items-center space-x-4 transition-transform hover:scale-105 duration-300 cursor-pointer"
-          onClick={() => window.location.href = "/admin/vendor-products"}
+          onClick={() => router.push("/admin/vendor-products")}
         >
           <div className="p-3 bg-indigo-100 text-indigo-700 rounded-lg">
             <Package size={24} />
